@@ -1,1 +1,853 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Легенды Эльдории — 2D RPG</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { overscroll-behavior: none; }
+  body {
+    margin: 0; min-height: 100vh; background: radial-gradient(circle at 50% 20%, #23241f, #0c0d0a 70%);
+    display: flex; flex-direction: column; align-items: center; padding: 16px;
+    font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; color: #eee2c0;
+  }
+  h1 { margin: 4px 0 10px; letter-spacing: 2px; color: #e8c873; text-shadow: 0 0 8px rgba(232,200,115,.5); font-size: 26px; }
+  #gameWrap { position: relative; box-shadow: 0 0 30px rgba(0,0,0,.7); border-radius: 6px; width: 100%; max-width: 800px; touch-action: none; }
+  canvas { background:#000; display:block; image-rendering: pixelated; border: 4px solid #4a3a20; border-radius: 6px; width:100%; height:auto; touch-action: none; }
+  .overlay {
+    position: absolute; inset: 0; background: rgba(10,8,4,.92); color:#f0e6c8;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 30px;
+    border-radius: 4px; gap: 10px; z-index: 20;
+  }
+  .hidden { display: none !important; }
+  .overlay h2 { color:#e8c873; font-size: 28px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(232,200,115,.6);}
+  .overlay p { max-width: 520px; line-height: 1.5; font-size: 14px; color:#cfc7a8;}
+  .overlay b { color:#f4d98a; }
+  button.startBtn {
+    margin-top: 14px; padding: 12px 30px; font-size: 16px; font-weight:bold; cursor:pointer;
+    background: linear-gradient(#e8c873,#b8892f); border: 2px solid #5c4415; border-radius: 6px; color:#2b1d05;
+    box-shadow: 0 3px 0 #5c4415;
+  }
+  button.startBtn:active { transform: translateY(2px); box-shadow: 0 1px 0 #5c4415; }
+  #help { margin-top: 10px; font-size: 13px; color:#a89d78; text-align:center; max-width:800px; }
+  #help b { color:#e8c873; }
+  #menuBtn {
+    position: absolute; top: 10px; right: 10px; z-index: 15;
+    padding: 7px 16px; font-size: 12px; font-weight:bold; cursor:pointer;
+    background: linear-gradient(#3a3a3a,#1e1e1e); border: 2px solid #5c4415; border-radius: 5px; color:#e8c873;
+    box-shadow: 0 2px 0 #000;
+  }
+  #menuBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
+  #menuBtn:active { transform: translateY(1px); box-shadow: none; }
 
+  /* ---- Сенсорное управление (только на устройствах с touch) ---- */
+  #touchControls { position:absolute; inset:0; pointer-events:none; z-index:12; }
+  #joystickBase {
+    position:absolute; left:18px; bottom:18px; width:110px; height:110px; border-radius:50%;
+    background: rgba(255,255,255,0.08); border:2px solid rgba(232,200,115,0.5);
+    pointer-events:auto; touch-action:none;
+  }
+  #joystickKnob {
+    position:absolute; left:50%; top:50%; width:50px; height:50px; margin:-25px 0 0 -25px; border-radius:50%;
+    background: rgba(232,200,115,0.55); border:2px solid rgba(232,200,115,0.9);
+  }
+  .actionBtn {
+    position:absolute; bottom:26px; width:64px; height:64px; border-radius:50%;
+    background: rgba(216,60,60,0.35); border:2px solid rgba(255,180,180,0.7); color:#fff;
+    font-size:22px; display:flex; align-items:center; justify-content:center;
+    pointer-events:auto; touch-action:none; user-select:none;
+  }
+  .actionBtn:active { background: rgba(216,60,60,0.6); }
+  #attackBtn { right:20px; }
+  #potionBtn { right:96px; bottom:16px; width:52px; height:52px; background: rgba(60,180,90,0.32); border-color: rgba(180,255,190,0.7); font-size:18px; }
+  #potionBtn:active { background: rgba(60,180,90,0.6); }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 18px; }
+    #help { display: none; }
+    .overlay p { font-size: 13px; }
+    .overlay h2 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<h1>⚔ ЛЕГЕНДЫ ЭЛЬДОРИИ ⚔</h1>
+<div id="gameWrap">
+  <canvas id="game" width="800" height="576"></canvas>
+  <button id="menuBtn" class="hidden">Выйти в меню</button>
+
+  <div id="touchControls" class="hidden">
+    <div id="joystickBase"><div id="joystickKnob"></div></div>
+    <div class="actionBtn" id="potionBtn">✚</div>
+    <div class="actionBtn" id="attackBtn">⚔</div>
+  </div>
+
+  <div id="startScreen" class="overlay">
+    <h2>Легенды Эльдории</h2>
+    <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмные пещеры</b>,
+    сражайтесь с волками, скелетами и слизнями, собирайте золото и зелья.
+    В глубинах второго подземелья ждёт <b>Костяной Король</b> — победите его, заберите Амулет Эльдории,
+    и он откроет портал в ещё более опасную <b>Бездну Теней</b>, где правит <b>Повелитель Тьмы</b>.
+    Победите его, чтобы завершить свой поход.</p>
+    <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака &nbsp;|&nbsp; <b>E</b> — выпить зелье &nbsp;|&nbsp; <b>ESC</b> — меню</p>
+    <button class="startBtn" id="startBtn">Начать поход</button>
+    <button class="startBtn hidden" id="resumeBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">Вернуться в игру</button>
+  </div>
+
+  <div id="deathScreen" class="overlay hidden">
+    <h2 style="color:#d9534f;">Вы пали...</h2>
+    <p id="deathStats"></p>
+    <button class="startBtn" id="restartBtn">Начать заново</button>
+  </div>
+
+  <div id="winScreen" class="overlay hidden">
+    <h2>🏆 Победа!</h2>
+    <p id="winStats"></p>
+    <button class="startBtn" id="restartBtn2">Играть снова</button>
+  </div>
+</div>
+<div id="help">Совет: избегайте боя с несколькими врагами одновременно на низком уровне. Зелья лечат 30 HP. Уровень повышает здоровье и урон.</div>
+
+<script>
+(() => {
+'use strict';
+const TILE = 32, VIEW_W = 25, VIEW_H = 18;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const rndf = (a,b) => Math.random()*(b-a)+a;
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const overlap = (a,b) => a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+
+function makeGrid(w,h,fill){ return Array.from({length:h},()=>Array(w).fill(fill)); }
+function clearArea(grid,cx,cy,r,tile){
+  for(let y=cy-r;y<=cy+r;y++) for(let x=cx-r;x<=cx+r;x++)
+    if(y>0&&y<grid.length-1&&x>0&&x<grid[0].length-1) grid[y][x]=tile;
+}
+function findFloor(grid,w,h,tile,minDist,fromX,fromY){
+  for(let tries=0;tries<400;tries++){
+    const x=rnd(2,w-3), y=rnd(2,h-3);
+    if(grid[y][x]!==tile) continue;
+    if(minDist && Math.hypot(x-fromX,y-fromY)<minDist) continue;
+    return {x,y};
+  }
+  return {x: Math.floor(w/2), y: Math.floor(h/2)};
+}
+
+// ---------- Генерация открытого мира ----------
+function generateOverworld(){
+  const W=60,H=60;
+  const grid = makeGrid(W,H,'.');
+  for(let x=0;x<W;x++){ grid[0][x]='^'; grid[H-1][x]='^'; }
+  for(let y=0;y<H;y++){ grid[y][0]='^'; grid[y][W-1]='^'; }
+  // озёра — сплошные (без случайных дыр/одиночных клеток внутри)
+  for(let i=0;i<7;i++){
+    const cx=rnd(6,W-6), cy=rnd(6,H-6), r=rnd(3,7);
+    for(let y=cy-r;y<=cy+r;y++) for(let x=cx-r;x<=cx+r;x++){
+      if(x<1||y<1||x>=W-1||y>=H-1) continue;
+      if(Math.hypot(x-cx,y-cy)<r*0.85) grid[y][x]='~';
+    }
+  }
+  // убираем случайные одиночные клетки воды (без соседей-воды)
+  for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){
+    if(grid[y][x]==='~'){
+      const neighbors=[grid[y-1][x],grid[y+1][x],grid[y][x-1],grid[y][x+1]];
+      if(!neighbors.includes('~')) grid[y][x]='.';
+    }
+  }
+  // деревья
+  for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++)
+    if(grid[y][x]==='.' && Math.random()<0.09) grid[y][x]='#';
+
+  const cx=Math.floor(W/2), cy=Math.floor(H/2);
+  clearArea(grid,cx,cy,3,'.');
+
+  // входы в подземелья, подальше друг от друга и от центра
+  const e1 = findFloor(grid,W,H,'.',18,cx,cy);
+  clearArea(grid,e1.x,e1.y,2,'.');
+  grid[e1.y][e1.x]='>';
+  let e2 = findFloor(grid,W,H,'.',18,cx,cy);
+  let tries=0;
+  while(Math.hypot(e2.x-e1.x,e2.y-e1.y)<20 && tries<300){ e2=findFloor(grid,W,H,'.',18,cx,cy); tries++; }
+  clearArea(grid,e2.x,e2.y,2,'.');
+  grid[e2.y][e2.x]='>';
+
+  const enemies=[];
+  for(let i=0;i<16;i++){
+    const p=findFloor(grid,W,H,'.',9,cx,cy);
+    enemies.push(makeEnemy('wolf', p.x*TILE+4, p.y*TILE+4));
+  }
+  const items=[];
+  for(let i=0;i<14;i++){
+    const p=findFloor(grid,W,H,'.',3,cx,cy);
+    items.push(makeItem(Math.random()<0.5?'potion':'gold', p.x*TILE+10, p.y*TILE+10));
+  }
+
+  return {
+    type:'overworld', grid, width:W, height:H, enemies, items,
+    spawn:{x:cx*TILE, y:cy*TILE},
+    entrances:[
+      {tx:e1.x, ty:e1.y, dungeon:'dungeon1', back:{x:e1.x*TILE, y:(e1.y+2)*TILE}},
+      {tx:e2.x, ty:e2.y, dungeon:'dungeon2', back:{x:e2.x*TILE, y:(e2.y+2)*TILE}}
+    ]
+  };
+}
+
+// ---------- Генерация подземелья ----------
+function generateDungeon(level){
+  const W = level<3 ? 30 : 42, H = level<3 ? 30 : 42;
+  const grid = makeGrid(W,H,'#');
+  const setFloor=(x,y)=>{ if(x>0&&y>0&&x<W-1&&y<H-1) grid[y][x]='.'; };
+  const carveH=(y,x1,x2)=>{ for(let x=Math.min(x1,x2);x<=Math.max(x1,x2);x++){ setFloor(x,y); setFloor(x,y+1); } };
+  const carveV=(x,y1,y2)=>{ for(let y=Math.min(y1,y2);y<=Math.max(y1,y2);y++){ setFloor(x,y); setFloor(x+1,y); } };
+  const roomCount = level<3 ? 7+level*2 : 24;
+  const rooms=[];
+  for(let i=0;i<roomCount;i++){
+    const rw=rnd(4,7), rh=rnd(4,7);
+    const rx=rnd(1,W-rw-2), ry=rnd(1,H-rh-2);
+    for(let y=ry;y<ry+rh;y++) for(let x=rx;x<rx+rw;x++) grid[y][x]='.';
+    rooms.push({x:rx,y:ry,w:rw,h:rh,cx:rx+Math.floor(rw/2),cy:ry+Math.floor(rh/2)});
+  }
+  // коридоры шириной 2 клетки, чтобы крупные враги (Костяной Король) могли проходить
+  for(let i=1;i<rooms.length;i++){
+    const a=rooms[i-1], b=rooms[i];
+    if(Math.random()<0.5){
+      carveH(a.cy, a.cx, b.cx);
+      carveV(b.cx, a.cy, b.cy);
+    } else {
+      carveV(a.cx, a.cy, b.cy);
+      carveH(b.cy, a.cx, b.cx);
+    }
+  }
+  const entrance = rooms[0];
+  grid[entrance.cy][entrance.cx]='<';
+
+  const enemies=[];
+  const types = level===1 ? ['slime','skeleton']
+              : level===2 ? ['skeleton','skeleton','slime']
+              : ['skeleton','wraith','wraith','slime','skeleton'];
+  const fillChance = level<3 ? 0.75 : 0.85;
+  for(let i=1;i<rooms.length-1;i++){
+    if(Math.random()<fillChance){
+      const r=rooms[i];
+      const t=types[rnd(0,types.length-1)];
+      enemies.push(makeEnemy(t, r.cx*TILE+4, r.cy*TILE+4, level));
+    }
+  }
+  const items=[];
+  for(let i=1;i<rooms.length-1;i++){
+    if(Math.random()<0.5){
+      const r=rooms[i];
+      items.push(makeItem(Math.random()<0.6?'potion':'gold', r.cx*TILE+10+rnd(-8,8), r.cy*TILE+10+rnd(-8,8)));
+    }
+  }
+  const lastRoom = rooms[rooms.length-1];
+  let boss=null;
+  if(level===2){
+    boss = makeEnemy('boss', lastRoom.cx*TILE, lastRoom.cy*TILE, level);
+    enemies.push(boss);
+  } else if(level===3){
+    boss = makeEnemy('shadowlord', lastRoom.cx*TILE, lastRoom.cy*TILE, level);
+    enemies.push(boss);
+  }
+
+  return {
+    type:'dungeon', level, grid, width:W, height:H, enemies, items, boss,
+    spawn:{x:entrance.cx*TILE, y:(entrance.cy+1)*TILE},
+    exit:{tx:entrance.cx, ty:entrance.cy}
+  };
+}
+
+// ---------- Сущности ----------
+function makeEnemy(type,x,y,level=1){
+  const base = {
+    wolf:   {hp:28,  dmg:7,  speed:75,  xp:14, gold:2, color:'#9c9c9c', size:22, aggro:150},
+    slime:  {hp:18,  dmg:5,  speed:40,  xp:9,  gold:2, color:'#4fd15b', size:20, aggro:110},
+    skeleton:{hp:42, dmg:11, speed:55,  xp:24, gold:5, color:'#d8d3bd', size:24, aggro:170},
+    wraith: {hp:58,  dmg:15, speed:72,  xp:34, gold:8, color:'#7a4fbd', size:24, aggro:200},
+    boss:   {hp:220, dmg:20, speed:55,  xp:150,gold:60, color:'#b23a3a', size:38, aggro:260},
+    shadowlord:{hp:340,dmg:27,speed:62, xp:320,gold:150,color:'#3a1a4d', size:42, aggro:300},
+  }[type];
+  return {
+    type, x, y, w:base.size, h:base.size, hp:base.hp*(1+(level-1)*0.3), maxHp:base.hp*(1+(level-1)*0.3),
+    dmg:Math.round(base.dmg*(1+(level-1)*0.25)), speed:base.speed, xp:base.xp, gold:base.gold,
+    color:base.color, aggro:base.aggro, cooldown:0, hitFlash:0, dir:'down'
+  };
+}
+function makeItem(type,x,y){
+  return { type, x, y, w:16, h:16, value: type==='gold'? rnd(3,10) : 1 };
+}
+
+// ---------- Игрок ----------
+const player = {
+  x:0,y:0,w:22,h:22, speed:165, dir:'down',
+  hp:100, maxHp:100, atk:16, level:1, xp:0, xpNext:50, gold:0, potions:3,
+  attackTimer:0, attackDuration:220, attacking:false, invuln:0, hitFlash:0
+};
+
+let world = {};
+let currentLocId = 'overworld';
+let loc = null;
+let transitionCooldown = 0;
+let notifications = [];
+let fullInvNoticeTimer = 0;
+let gameState = 'start'; // start | playing | dead | won
+
+function addNote(text, color='#f4d98a'){
+  notifications.push({text, color, timer:2600, max:2600});
+}
+
+function resetGame(){
+  world = { overworld: generateOverworld(), dungeon1: generateDungeon(1), dungeon2: generateDungeon(2), dungeon3: generateDungeon(3) };
+  currentLocId = 'overworld';
+  loc = world.overworld;
+  player.x = loc.spawn.x; player.y = loc.spawn.y;
+  player.hp=100; player.maxHp=100; player.atk=16; player.level=1; player.xp=0; player.xpNext=50;
+  player.gold=0; player.potions=3; player.invuln=0; player.dir='down';
+  notifications = [];
+  transitionCooldown = 0;
+  fullInvNoticeTimer = 0;
+}
+
+function goTo(locId, x, y, message){
+  currentLocId = locId;
+  loc = world[locId];
+  player.x = x; player.y = y;
+  transitionCooldown = 700;
+  if(message) addNote(message);
+}
+
+// ---------- Ввод ----------
+const keys = {};
+let attackKeyLatch = false, potionKeyLatch = false;
+// Используем e.code вместо e.key: код физической клавиши не зависит от раскладки
+// (при русской раскладке e.key для W/A/S/D/E вернул бы кириллицу).
+window.addEventListener('keydown', e=>{
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD','KeyE'].includes(e.code)) e.preventDefault();
+  keys[e.code] = true;
+});
+window.addEventListener('keyup', e=>{ keys[e.code] = false; });
+
+// ---------- Сенсорное управление ----------
+const virtualMove = {x:0, y:0};
+(function setupTouchControls(){
+  const base = document.getElementById('joystickBase');
+  const knob = document.getElementById('joystickKnob');
+  const attackBtn = document.getElementById('attackBtn');
+  const potionBtn = document.getElementById('potionBtn');
+  const maxR = 38;
+  let activePointerId = null;
+
+  function setKnob(dx,dy){ knob.style.transform = `translate(${dx}px, ${dy}px)`; }
+  function resetKnob(){ setKnob(0,0); virtualMove.x=0; virtualMove.y=0; }
+
+  base.addEventListener('pointerdown', e=>{
+    activePointerId = e.pointerId;
+    base.setPointerCapture(e.pointerId);
+    updateFromEvent(e);
+  });
+  base.addEventListener('pointermove', e=>{
+    if(e.pointerId!==activePointerId) return;
+    updateFromEvent(e);
+  });
+  function endTouch(e){
+    if(e.pointerId!==activePointerId) return;
+    activePointerId = null;
+    resetKnob();
+  }
+  base.addEventListener('pointerup', endTouch);
+  base.addEventListener('pointercancel', endTouch);
+
+  function updateFromEvent(e){
+    const rect = base.getBoundingClientRect();
+    const cx = rect.left+rect.width/2, cy = rect.top+rect.height/2;
+    let dx = e.clientX-cx, dy = e.clientY-cy;
+    const dist = Math.hypot(dx,dy);
+    if(dist > maxR){ dx = dx/dist*maxR; dy = dy/dist*maxR; }
+    setKnob(dx,dy);
+    virtualMove.x = dx/maxR; virtualMove.y = dy/maxR;
+  }
+
+  // Кнопки атаки и зелья — работают как удержание клавиш пробел/E
+  function bindHoldButton(el, code){
+    el.addEventListener('pointerdown', e=>{ e.preventDefault(); keys[code]=true; });
+    el.addEventListener('pointerup', ()=>{ keys[code]=false; });
+    el.addEventListener('pointercancel', ()=>{ keys[code]=false; });
+    el.addEventListener('pointerleave', ()=>{ keys[code]=false; });
+  }
+  bindHoldButton(attackBtn, 'Space');
+  bindHoldButton(potionBtn, 'KeyE');
+})();
+
+// ---------- Коллизии ----------
+function blockedTiles(locType){
+  return locType==='overworld' ? new Set(['~','^','#']) : new Set(['#']);
+}
+function isBlocked(gridInfo, x, y, w, h){
+  const blocked = blockedTiles(gridInfo.type);
+  const pts = [[x,y],[x+w,y],[x,y+h],[x+w,y+h]];
+  for(const [px,py] of pts){
+    const tx = Math.floor(px/TILE), ty = Math.floor(py/TILE);
+    if(tx<0||ty<0||tx>=gridInfo.width||ty>=gridInfo.height) return true;
+    if(blocked.has(gridInfo.grid[ty][tx])) return true;
+  }
+  return false;
+}
+function tryMove(entity, dx, dy, gridInfo){
+  if(dx!==0){
+    const nx = entity.x+dx;
+    if(!isBlocked(gridInfo, nx, entity.y, entity.w, entity.h)) entity.x = nx;
+  }
+  if(dy!==0){
+    const ny = entity.y+dy;
+    if(!isBlocked(gridInfo, entity.x, ny, entity.w, entity.h)) entity.y = ny;
+  }
+}
+// Как tryMove, но для рывков/отбрасывания — не даёт "телепортироваться" сквозь стены,
+// проверяя коллизию так же, как при обычном движении.
+function tryPush(entity, dx, dy, gridInfo){ tryMove(entity, dx, dy, gridInfo); }
+
+// ---------- Обновление ----------
+function attackHitbox(){
+  const s=34;
+  if(player.dir==='up')    return {x:player.x+player.w/2-s/2, y:player.y-s+6, w:s, h:s};
+  if(player.dir==='down')  return {x:player.x+player.w/2-s/2, y:player.y+player.h-6, w:s, h:s};
+  if(player.dir==='left')  return {x:player.x-s+6, y:player.y+player.h/2-s/2, w:s, h:s};
+  return {x:player.x+player.w-6, y:player.y+player.h/2-s/2, w:s, h:s};
+}
+
+function playerLevelUp(){
+  player.level++;
+  player.xp -= player.xpNext;
+  player.xpNext = Math.round(player.xpNext*1.35);
+  player.maxHp += 18; player.atk += 4;
+  player.hp = player.maxHp;
+  addNote(`✦ Новый уровень: ${player.level}! Здоровье и урон возросли.`, '#7fe07f');
+}
+
+function killEnemy(e){
+  player.xp += e.xp; player.gold += e.gold;
+  addNote(`Повержен враг: +${e.xp} опыта, +${e.gold} золота`, '#e0c96a');
+  if(e.type==='boss'){
+    loc.items.push(makeItem('amulet', e.x, e.y));
+    addNote('☠ Костяной Король повержен! Заберите Амулет — он откроет путь глубже.', '#ff9f4a');
+  } else if(e.type==='shadowlord'){
+    loc.items.push(makeItem('treasure', e.x, e.y));
+    addNote('☠ Повелитель Тьмы повержен! Заберите Сердце Тьмы, чтобы завершить поход.', '#ff9f4a');
+  }
+  while(player.xp >= player.xpNext) playerLevelUp();
+}
+
+function update(dt){
+  if(gameState!=='playing') return;
+  transitionCooldown = Math.max(0, transitionCooldown-dt*1000);
+  fullInvNoticeTimer = Math.max(0, fullInvNoticeTimer-dt*1000);
+  player.invuln = Math.max(0, player.invuln-dt*1000);
+  player.hitFlash = Math.max(0, player.hitFlash-dt*1000);
+
+  // движение
+  let mx=0,my=0;
+  if(keys['KeyW']||keys['ArrowUp']){ my=-1; player.dir='up'; }
+  if(keys['KeyS']||keys['ArrowDown']){ my=1; player.dir='down'; }
+  if(keys['KeyA']||keys['ArrowLeft']){ mx=-1; player.dir='left'; }
+  if(keys['KeyD']||keys['ArrowRight']){ mx=1; player.dir='right'; }
+  const vDist = Math.hypot(virtualMove.x, virtualMove.y);
+  let usingVirtual = false;
+  if(vDist > 0.15){
+    mx = clamp(virtualMove.x, -1, 1); my = clamp(virtualMove.y, -1, 1);
+    usingVirtual = true;
+    if(Math.abs(virtualMove.x) > Math.abs(virtualMove.y)) player.dir = virtualMove.x>0?'right':'left';
+    else player.dir = virtualMove.y>0?'down':'up';
+  }
+  if(!usingVirtual && mx!==0 && my!==0){ mx*=0.7071; my*=0.7071; }
+  tryMove(player, mx*player.speed*dt, my*player.speed*dt, loc);
+
+  // атака
+  player.attackTimer = Math.max(0, player.attackTimer-dt*1000);
+  if(keys['Space'] && !attackKeyLatch && player.attackTimer<=0){
+    attackKeyLatch = true;
+    player.attackTimer = 380;
+    player.attacking = true;
+    setTimeout(()=>{ player.attacking=false; }, 140);
+    const hb = attackHitbox();
+    for(const e of loc.enemies){
+      if(e.hp<=0) continue;
+      if(overlap(hb, e)){
+        e.hp -= player.atk;
+        e.hitFlash = 150;
+        const pushX = e.x - (player.x+player.w/2), pushY = e.y-(player.y+player.h/2);
+        const len = Math.hypot(pushX,pushY)||1;
+        tryPush(e, (pushX/len)*14, (pushY/len)*14, loc);
+        if(e.hp<=0) killEnemy(e);
+      }
+    }
+  }
+  if(!keys['Space']) attackKeyLatch = false;
+
+  // зелье
+  if(keys['KeyE'] && !potionKeyLatch){
+    potionKeyLatch = true;
+    if(player.potions>0 && player.hp<player.maxHp){
+      player.potions--; player.hp = Math.min(player.maxHp, player.hp+30);
+      addNote('Выпито зелье здоровья (+30 HP)', '#7fe07f');
+    } else if(player.potions<=0){
+      addNote('Нет зелий здоровья!', '#e07f7f');
+    }
+  }
+  if(!keys['KeyE']) potionKeyLatch = false;
+
+  // враги
+  for(const e of loc.enemies){
+    if(e.hp<=0) continue;
+    e.hitFlash = Math.max(0, e.hitFlash-dt*1000);
+    e.cooldown = Math.max(0, e.cooldown-dt*1000);
+    const dx = (player.x+player.w/2)-(e.x+e.w/2), dy=(player.y+player.h/2)-(e.y+e.h/2);
+    const dist = Math.hypot(dx,dy);
+    if(dist < e.aggro){
+      const nx=dx/(dist||1), ny=dy/(dist||1);
+      tryMove(e, nx*e.speed*dt, ny*e.speed*dt, loc);
+    }
+    if(overlap(e, {x:player.x,y:player.y,w:player.w,h:player.h}) && e.cooldown<=0){
+      if(player.invuln<=0){
+        player.hp -= e.dmg; player.invuln = 700; player.hitFlash=250;
+        if(player.hp<=0){ player.hp=0; onPlayerDeath(); }
+      }
+      e.cooldown = 900;
+    }
+  }
+
+  // предметы
+  const curLoc = loc;
+  let teleported = false;
+  curLoc.items = curLoc.items.filter(it=>{
+    if(overlap(it, {x:player.x,y:player.y,w:player.w,h:player.h})){
+      if(it.type==='potion'){
+        if(player.potions<8){
+          player.potions++; addNote('Подобрано зелье здоровья', '#7fe07f');
+          return false;
+        } else {
+          if(fullInvNoticeTimer<=0){ addNote('Инвентарь полон! (макс. 8 зелий)', '#e0a03a'); fullInvNoticeTimer=1500; }
+          return true;
+        }
+      }
+      else if(it.type==='gold'){ player.gold += it.value; addNote(`+${it.value} золота`, '#e0c96a'); return false; }
+      else if(it.type==='amulet'){
+        addNote('✦ Амулет Эльдории в ваших руках. Тьма зовёт глубже...', '#c9a8ff');
+        goTo('dungeon3', world.dungeon3.spawn.x, world.dungeon3.spawn.y, 'Портал открывается — вы спускаетесь в Бездну Теней...');
+        teleported = true;
+        return false;
+      }
+      else if(it.type==='treasure'){ onWin(); return false; }
+    }
+    return true;
+  });
+  if(teleported) return; // не обрабатываем переходы карты в том же кадре после телепортации
+
+  // переходы между локациями
+  const centerTX = Math.floor((player.x+player.w/2)/TILE);
+  const centerTY = Math.floor((player.y+player.h/2)/TILE);
+  if(transitionCooldown<=0){
+    if(loc.type==='overworld'){
+      for(const en of loc.entrances){
+        if(en.tx===centerTX && en.ty===centerTY){
+          const d = world[en.dungeon];
+          goTo(en.dungeon, d.spawn.x, d.spawn.y, en.dungeon==='dungeon2' ? 'Вы спускаетесь в логово Костяного Короля...' : 'Вы входите в пещеру...');
+          break;
+        }
+      }
+    } else if(loc.type==='dungeon'){
+      if(loc.exit.tx===centerTX && loc.exit.ty===centerTY){
+        const backDungeonId = currentLocId==='dungeon3' ? 'dungeon2' : currentLocId;
+        const back = world.overworld.entrances.find(e=>e.dungeon===backDungeonId).back;
+        goTo('overworld', back.x, back.y, 'Вы возвращаетесь на поверхность');
+      }
+    }
+  }
+
+  notifications.forEach(n=> n.timer -= dt*1000);
+  notifications = notifications.filter(n=>n.timer>0);
+}
+
+function onPlayerDeath(){
+  gameState='dead';
+  document.getElementById('deathStats').textContent =
+    `Уровень: ${player.level}  •  Золото: ${player.gold}  •  Локация: ${getLocName(loc)}`;
+  document.getElementById('deathScreen').classList.remove('hidden');
+  menuBtn.classList.add('hidden');
+  touchControls.classList.add('hidden');
+}
+function onWin(){
+  gameState='won';
+  document.getElementById('winStats').textContent =
+    `Вы забрали Сердце Тьмы и повергли Повелителя Тьмы! Уровень: ${player.level}  •  Золото: ${player.gold}`;
+  document.getElementById('winScreen').classList.remove('hidden');
+  menuBtn.classList.add('hidden');
+  touchControls.classList.add('hidden');
+}
+
+// ---------- Отрисовка ----------
+function tileColor(t, x, y){
+  const flick = (x*31+y*17)%2===0;
+  switch(t){
+    case '.': return loc.type==='overworld' ? (flick?'#3f7d32':'#437f37') : (flick?'#4a4a55':'#4e4e5a');
+    case '~': return flick?'#2a5d8a':'#2f6690';
+    case '^': return flick?'#6b6b6b':'#616161';
+    case '#': return loc.type==='overworld' ? '#1f4d1a' : '#232327';
+    case '>': return '#241a10';
+    case '<': return '#3a2f10';
+    default: return '#000';
+  }
+}
+function drawTile(t, sx, sy, x, y){
+  ctx.fillStyle = tileColor(t,x,y);
+  ctx.fillRect(sx, sy, TILE, TILE);
+  if(t==='#' && loc.type==='overworld'){
+    ctx.fillStyle = '#173d13';
+    ctx.beginPath(); ctx.arc(sx+TILE/2, sy+TILE/2, TILE*0.42, 0, Math.PI*2); ctx.fill();
+  } else if(t==='#'){
+    ctx.fillStyle='rgba(255,255,255,0.05)';
+    ctx.fillRect(sx,sy,TILE,3);
+  } else if(t==='>'){
+    ctx.fillStyle='#000';
+    ctx.beginPath(); ctx.ellipse(sx+TILE/2, sy+TILE/2+3, TILE*0.32, TILE*0.24, 0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#5c4415'; ctx.lineWidth=2; ctx.stroke();
+  } else if(t==='<'){
+    ctx.fillStyle='#e8c873';
+    ctx.beginPath(); ctx.arc(sx+TILE/2, sy+TILE/2, 7, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#5c4415'; ctx.stroke();
+  }
+}
+
+function drawHPBar(x,y,w,h,ratio,fg,bg='#2a2a2a'){
+  ctx.fillStyle=bg; ctx.fillRect(x,y,w,h);
+  ctx.fillStyle=fg; ctx.fillRect(x,y,w*clamp(ratio,0,1),h);
+  ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.strokeRect(x+0.5,y+0.5,w,h);
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(gameState==='start'){ return; }
+
+  const mapPxW = loc.width*TILE, mapPxH = loc.height*TILE;
+  const camX = clamp(player.x+player.w/2-canvas.width/2, 0, Math.max(0,mapPxW-canvas.width));
+  const camY = clamp(player.y+player.h/2-canvas.height/2, 0, Math.max(0,mapPxH-canvas.height));
+
+  const startTX = Math.max(0, Math.floor(camX/TILE));
+  const startTY = Math.max(0, Math.floor(camY/TILE));
+  const endTX = Math.min(loc.width, startTX+VIEW_W+2);
+  const endTY = Math.min(loc.height, startTY+VIEW_H+2);
+
+  for(let y=startTY;y<endTY;y++){
+    for(let x=startTX;x<endTX;x++){
+      drawTile(loc.grid[y][x], x*TILE-camX, y*TILE-camY, x, y);
+    }
+  }
+
+  // предметы
+  for(const it of loc.items){
+    const sx=it.x-camX, sy=it.y-camY;
+    if(it.type==='potion'){ ctx.fillStyle='#e05a5a'; ctx.beginPath(); ctx.arc(sx+8,sy+8,7,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#ffb3b3'; ctx.fillRect(sx+6,sy+2,4,4); }
+    else if(it.type==='gold'){ ctx.fillStyle='#e0c23a'; ctx.beginPath(); ctx.arc(sx+8,sy+8,6,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#8a6c15'; ctx.stroke(); }
+    else if(it.type==='amulet'){
+      ctx.save(); ctx.translate(sx+8,sy+8); ctx.rotate(Math.PI/4);
+      ctx.fillStyle='#c9a8ff'; ctx.fillRect(-8,-8,16,16);
+      ctx.strokeStyle='#5c3d99'; ctx.lineWidth=2; ctx.strokeRect(-8,-8,16,16);
+      ctx.restore();
+    }
+    else if(it.type==='treasure'){ ctx.fillStyle='#ff9f4a'; ctx.beginPath(); ctx.arc(sx+8,sy+8,10,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#7a3d00'; ctx.lineWidth=2; ctx.stroke(); }
+  }
+
+  // враги
+  for(const e of loc.enemies){
+    if(e.hp<=0) continue;
+    const sx=e.x-camX, sy=e.y-camY;
+    ctx.fillStyle = e.hitFlash>0 ? '#fff' : e.color;
+    ctx.beginPath(); ctx.arc(sx+e.w/2, sy+e.h/2, e.w/2, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.stroke();
+    drawHPBar(sx, sy-8, e.w, 4, e.hp/e.maxHp, e.type==='boss'||e.type==='shadowlord'?'#ff5050':'#e05a5a');
+    if(e.type==='boss'){
+      ctx.fillStyle='#fff'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('КОСТЯНОЙ КОРОЛЬ', sx+e.w/2, sy-12);
+    } else if(e.type==='shadowlord'){
+      ctx.fillStyle='#fff'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('ПОВЕЛИТЕЛЬ ТЬМЫ', sx+e.w/2, sy-12);
+    }
+  }
+
+  // игрок
+  {
+    const sx=player.x-camX, sy=player.y-camY;
+    ctx.fillStyle = player.invuln>0 && Math.floor(Date.now()/80)%2===0 ? '#ffffff' : '#4aa0e0';
+    ctx.fillRect(sx, sy, player.w, player.h);
+    ctx.strokeStyle='#12314a'; ctx.strokeRect(sx,sy,player.w,player.h);
+    // индикатор направления
+    ctx.fillStyle='#fff';
+    const cx2=sx+player.w/2, cy2=sy+player.h/2;
+    if(player.dir==='up') ctx.fillRect(cx2-2, sy-2, 4,4);
+    if(player.dir==='down') ctx.fillRect(cx2-2, sy+player.h-2, 4,4);
+    if(player.dir==='left') ctx.fillRect(sx-2, cy2-2, 4,4);
+    if(player.dir==='right') ctx.fillRect(sx+player.w-2, cy2-2, 4,4);
+    if(player.attacking){
+      const hb = attackHitbox();
+      ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=2;
+      ctx.strokeRect(hb.x-camX, hb.y-camY, hb.w, hb.h);
+    }
+  }
+
+  drawHUD();
+  if(loc.type==='overworld') drawMinimap();
+}
+
+function getLocName(l){
+  if(l.type==='overworld') return 'Оверворлд';
+  if(l.level===1) return 'Пещера теней';
+  if(l.level===2) return 'Логово Костяного Короля';
+  return 'Бездна Теней';
+}
+
+function drawHUD(){
+  ctx.textAlign='left';
+  // панель
+  ctx.fillStyle='rgba(10,8,4,0.65)';
+  ctx.fillRect(8,8,230,132);
+  ctx.strokeStyle='#5c4415'; ctx.strokeRect(8,8,230,132);
+
+  ctx.fillStyle='#f0e6c8'; ctx.font='bold 13px sans-serif';
+  ctx.fillText(`Уровень ${player.level}`, 16, 24);
+
+  drawHPBar(16,30,150,12, player.hp/player.maxHp, '#d9534f');
+  ctx.fillStyle='#fff'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(`${Math.ceil(player.hp)}/${player.maxHp}`, 16+75, 39);
+  ctx.textAlign='left';
+
+  drawHPBar(16,46,150,7, player.xp/player.xpNext, '#5aa7e0');
+
+  ctx.fillStyle='#e0c23a'; ctx.font='12px sans-serif';
+  ctx.fillText(`◆ Золото: ${player.gold}`, 16, 68);
+  ctx.fillStyle='#e05a5a';
+  ctx.fillText(`✚ Зелья: ${player.potions}`, 130, 68);
+
+  // Инвентарь — слоты с зельями здоровья
+  ctx.fillStyle='#cfc7a8'; ctx.font='11px sans-serif';
+  ctx.fillText('Инвентарь:', 16, 86);
+  const slotSize=18, gap=4, slots=8, startX=16, startY=92;
+  for(let i=0;i<slots;i++){
+    const sx = startX + i*(slotSize+gap);
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(sx, startY, slotSize, slotSize);
+    ctx.strokeStyle = '#5c4415';
+    ctx.strokeRect(sx+0.5, startY+0.5, slotSize, slotSize);
+    if(i < player.potions){
+      ctx.fillStyle='#e05a5a';
+      ctx.beginPath(); ctx.arc(sx+slotSize/2, startY+slotSize/2+2, slotSize*0.32, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle='#ffb3b3'; ctx.fillRect(sx+slotSize/2-2, startY+3, 4,3);
+    }
+  }
+  if(player.potions>slots){
+    ctx.fillStyle='#f0e6c8'; ctx.font='11px sans-serif';
+    ctx.fillText(`+${player.potions-slots}`, startX+slots*(slotSize+gap), startY+13);
+  }
+
+  ctx.fillStyle='#cfc7a8'; ctx.font='11px sans-serif';
+  const locName = getLocName(loc);
+  ctx.fillText(locName, 16, 128);
+
+  // название локации сверху по центру
+  ctx.textAlign='center'; ctx.font='bold 14px sans-serif';
+  ctx.fillStyle='rgba(10,8,4,0.55)'; ctx.fillRect(canvas.width/2-90,8,180,22);
+  ctx.fillStyle='#e8c873'; ctx.fillText(locName, canvas.width/2, 24);
+  ctx.textAlign='left';
+
+  // уведомления
+  ctx.textAlign='center';
+  notifications.slice(-4).forEach((n,i)=>{
+    const alpha = clamp(n.timer/600,0,1);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle='rgba(10,8,4,0.6)';
+    const w = ctx.measureText(n.text).width+20;
+    ctx.fillRect(canvas.width/2-w/2, 40+i*22, w, 18);
+    ctx.fillStyle = n.color;
+    ctx.font='12px sans-serif';
+    ctx.fillText(n.text, canvas.width/2, 53+i*22);
+    ctx.globalAlpha = 1;
+  });
+  ctx.textAlign='left';
+}
+
+function drawMinimap(){
+  const mw=140, mh=140, mx=10, my=canvas.height-mh-10;
+  ctx.fillStyle='rgba(10,8,4,0.7)'; ctx.fillRect(mx-2,my-2,mw+4,mh+4);
+  ctx.strokeStyle='#5c4415'; ctx.strokeRect(mx-2,my-2,mw+4,mh+4);
+  const sx = mw/loc.width, sy = mh/loc.height;
+  for(let y=0;y<loc.height;y+=2){
+    for(let x=0;x<loc.width;x+=2){
+      const t=loc.grid[y][x];
+      ctx.fillStyle = t==='~'?'#2f6690': t==='^'?'#5a5a5a': t==='#'?'#1f4d1a': t==='>'?'#e8c873':'#3f7d32';
+      ctx.fillRect(mx+x*sx, my+y*sy, sx*2, sy*2);
+    }
+  }
+  ctx.fillStyle='#4aa0e0';
+  ctx.beginPath(); ctx.arc(mx+(player.x/TILE)*sx, my+(player.y/TILE)*sy, 3,0,Math.PI*2); ctx.fill();
+}
+
+// ---------- Игровой цикл ----------
+let lastTime = performance.now();
+function loop(now){
+  const dt = Math.min(0.05, (now-lastTime)/1000);
+  lastTime = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+const menuBtn = document.getElementById('menuBtn');
+const startScreenEl = document.getElementById('startScreen');
+const resumeBtn = document.getElementById('resumeBtn');
+const touchControls = document.getElementById('touchControls');
+const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+let hasActiveGame = false;
+
+function beginNewGame(){
+  resetGame();
+  hasActiveGame = true;
+  gameState='playing';
+  startScreenEl.classList.add('hidden');
+  document.getElementById('deathScreen').classList.add('hidden');
+  document.getElementById('winScreen').classList.add('hidden');
+  menuBtn.classList.remove('hidden');
+  if(isTouchDevice) touchControls.classList.remove('hidden');
+}
+function exitToMenu(){
+  if(gameState!=='playing') return;
+  gameState='start';
+  menuBtn.classList.add('hidden');
+  touchControls.classList.add('hidden');
+  resumeBtn.classList.toggle('hidden', !hasActiveGame);
+  startScreenEl.classList.remove('hidden');
+}
+function resumeGame(){
+  if(!hasActiveGame) return;
+  gameState='playing';
+  startScreenEl.classList.add('hidden');
+  menuBtn.classList.remove('hidden');
+  if(isTouchDevice) touchControls.classList.remove('hidden');
+}
+
+document.getElementById('startBtn').addEventListener('click', beginNewGame);
+document.getElementById('restartBtn').addEventListener('click', beginNewGame);
+document.getElementById('restartBtn2').addEventListener('click', beginNewGame);
+resumeBtn.addEventListener('click', resumeGame);
+menuBtn.addEventListener('click', exitToMenu);
+window.addEventListener('keydown', e=>{
+  if(e.code==='Escape') exitToMenu();
+});
+
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
