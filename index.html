@@ -14,7 +14,7 @@
     font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; color: #eee2c0;
   }
   h1 { margin: 4px 0 10px; letter-spacing: 2px; color: #e8c873; text-shadow: 0 0 8px rgba(232,200,115,.5); font-size: 26px; }
-  #gameWrap { position: relative; box-shadow: 0 0 30px rgba(0,0,0,.7); border-radius: 6px; width: 100%; max-width: 800px; touch-action: none; }
+  #gameWrap { position: relative; box-shadow: 0 0 30px rgba(0,0,0,.7); border-radius: 6px; width: 100%; max-width: 960px; touch-action: none; }
   canvas { background:#000; display:block; image-rendering: pixelated; border: 4px solid #4a3a20; border-radius: 6px; width:100%; height:auto; touch-action: none; }
 
   /* Полноэкранный режим */
@@ -40,10 +40,10 @@
     box-shadow: 0 3px 0 #5c4415;
   }
   button.startBtn:active { transform: translateY(2px); box-shadow: 0 1px 0 #5c4415; }
-  #help { margin-top: 10px; font-size: 13px; color:#a89d78; text-align:center; max-width:800px; }
+  #help { margin-top: 10px; font-size: 13px; color:#a89d78; text-align:center; max-width:960px; }
   #help b { color:#e8c873; }
   #menuBtn {
-    position: absolute; top: 10px; right: 10px; z-index: 15;
+    position: absolute; top: 10px; right: 52px; z-index: 15;
     padding: 7px 16px; font-size: 12px; font-weight:bold; cursor:pointer;
     background: linear-gradient(#3a3a3a,#1e1e1e); border: 2px solid #5c4415; border-radius: 5px; color:#e8c873;
     box-shadow: 0 2px 0 #000;
@@ -51,18 +51,24 @@
   #menuBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
   #menuBtn:active { transform: translateY(1px); box-shadow: none; }
   #fullscreenBtn {
-    position: absolute; top: 10px; left: 10px; z-index: 15;
-    padding: 7px 14px; font-size: 12px; font-weight:bold; cursor:pointer;
+    position: absolute; top: 10px; right: 10px; z-index: 15; width: 34px; height: 34px;
+    padding: 0; font-size: 15px; font-weight:bold; cursor:pointer; line-height:1;
     background: linear-gradient(#3a3a3a,#1e1e1e); border: 2px solid #5c4415; border-radius: 5px; color:#e8c873;
-    box-shadow: 0 2px 0 #000;
+    box-shadow: 0 2px 0 #000; display:flex; align-items:center; justify-content:center;
   }
   #fullscreenBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
   #fullscreenBtn:active { transform: translateY(1px); box-shadow: none; }
+  #fsToast {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:30;
+    max-width:85%; background:rgba(10,8,4,0.96); border:2px solid #5c4415; border-radius:8px;
+    padding:14px 18px; font-size:13px; line-height:1.5; color:#f0e6c8; text-align:center;
+    box-shadow:0 4px 20px rgba(0,0,0,0.6);
+  }
 
   /* ---- Сенсорное управление (только на устройствах с touch) ---- */
   #touchControls { position:absolute; inset:0; pointer-events:none; z-index:12; }
   #joystickBase {
-    position:absolute; left:50%; bottom:16px; transform: translateX(-50%); width:78px; height:78px; border-radius:50%;
+    position:absolute; left:16px; bottom:16px; width:78px; height:78px; border-radius:50%;
     background: rgba(255,255,255,0.08); border:2px solid rgba(232,200,115,0.5);
     pointer-events:auto; touch-action:none;
   }
@@ -92,9 +98,11 @@
 <body>
 <h1>⚔ ЛЕГЕНДЫ ЭЛЬДОРИИ ⚔</h1>
 <div id="gameWrap">
-  <canvas id="game" width="800" height="576"></canvas>
-  <button id="fullscreenBtn" class="hidden">⛶ Экран</button>
+  <canvas id="game" width="960" height="512"></canvas>
+  <button id="fullscreenBtn" class="hidden">⛶</button>
   <button id="menuBtn" class="hidden">Выйти в меню</button>
+
+  <div id="fsToast" class="hidden"></div>
 
   <div id="touchControls" class="hidden">
     <div id="joystickBase"><div id="joystickKnob"></div></div>
@@ -131,7 +139,7 @@
 <script>
 (() => {
 'use strict';
-const TILE = 32, VIEW_W = 25, VIEW_H = 18;
+const TILE = 32, VIEW_W = 30, VIEW_H = 16;
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
@@ -800,7 +808,7 @@ function drawHUD(){
 }
 
 function drawMinimap(){
-  const mw=140, mh=140, mx=10, my=canvas.height-mh-10;
+  const mw=140, mh=140, mx=10, my=Math.round((canvas.height-mh)/2);
   ctx.fillStyle='rgba(10,8,4,0.7)'; ctx.fillRect(mx-2,my-2,mw+4,mh+4);
   ctx.strokeStyle='#5c4415'; ctx.strokeRect(mx-2,my-2,mw+4,mh+4);
   const sx = mw/loc.width, sy = mh/loc.height;
@@ -863,17 +871,35 @@ function resumeGame(){
 }
 
 // ---------- Полноэкранный режим ----------
+let fsToastTimer = null;
+function showFsToast(msg){
+  const el = document.getElementById('fsToast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(fsToastTimer);
+  fsToastTimer = setTimeout(()=>el.classList.add('hidden'), 5500);
+}
 function toggleFullscreen(){
   const el = document.getElementById('gameWrap');
   const isFs = document.fullscreenElement || document.webkitFullscreenElement;
   if(!isFs){
     const req = el.requestFullscreen || el.webkitRequestFullscreen;
-    if(req){
+    if(!req){
+      // Safari на iPhone/iPad не реализует Fullscreen API для обычных элементов —
+      // это ограничение самой Apple, через код браузера это не обойти.
+      showFsToast('На iPhone/iPad полноэкранный режим недоступен — это ограничение Safari, а не игры. Похожий эффект даёт «Поделиться» → «На экран «Домой»»: ярлык игры откроется без адресной строки.');
+      return;
+    }
+    try{
       Promise.resolve(req.call(el)).then(()=>{
         if(screen.orientation && screen.orientation.lock){
           screen.orientation.lock('landscape').catch(()=>{});
         }
-      }).catch(()=>{});
+      }).catch(()=>{
+        showFsToast('Не удалось включить полноэкранный режим в этом браузере.');
+      });
+    } catch(err){
+      showFsToast('Не удалось включить полноэкранный режим в этом браузере.');
     }
   } else {
     const exit = document.exitFullscreen || document.webkitExitFullscreen;
@@ -882,7 +908,7 @@ function toggleFullscreen(){
 }
 function updateFsButton(){
   const isFs = document.fullscreenElement || document.webkitFullscreenElement;
-  fullscreenBtn.textContent = isFs ? '🗗 Свернуть' : '⛶ Экран';
+  fullscreenBtn.textContent = isFs ? '🗗' : '⛶';
 }
 fullscreenBtn.addEventListener('click', toggleFullscreen);
 document.addEventListener('fullscreenchange', updateFsButton);
