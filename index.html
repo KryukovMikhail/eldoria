@@ -16,26 +16,34 @@
   html, body {
     margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000;
     position:fixed; inset:0; overscroll-behavior:none;
-    touch-action:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;
+    touch-action:manipulation; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;
     -webkit-text-size-adjust:100%; text-size-adjust:100%;
     font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif; color:#eee2c0;
   }
-  #gameWrap { position:fixed; inset:0; width:100%; height:100%; height:100dvh; background:#000; touch-action:none; }
+  #gameWrap { position:fixed; inset:0; width:100%; height:100%; height:100dvh; background:#000; touch-action:manipulation; }
   canvas { background:#000; display:block; image-rendering:pixelated; image-rendering:crisp-edges; width:100%; height:100%; border:0; touch-action:none; }
 
   .overlay {
     position: absolute; inset: 0; background: rgba(10,8,4,.92); color:#f0e6c8;
     display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 30px;
-    gap: 10px; z-index: 20; overflow-y:auto; touch-action:pan-y; -webkit-overflow-scrolling:touch;
+    gap: 10px; z-index: 20; overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
     padding-left:max(30px,env(safe-area-inset-left)); padding-right:max(30px,env(safe-area-inset-right));
   }
   .hidden { display: none !important; }
   .overlay::before, .overlay::after { content:''; flex:1 0 0; }
   #iosHint { font-size:13px; color:#e8c873; border:1px dashed #5c4415; border-radius:6px; padding:8px 12px; max-width:520px; }
+  .btnRow { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
   #rotateHint { position:absolute; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:rgba(10,8,4,.96); color:#e8c873; text-align:center; font-size:18px; pointer-events:none; }
   #rotateHint span { font-size:54px; }
   @media (orientation: portrait) and (pointer: coarse) and (max-width: 700px) { #rotateHint { display:flex; } }
-  @media (max-height: 480px) { .overlay { padding-top:10px; padding-bottom:10px; gap:6px; } .overlay h2 { font-size:20px; margin:0; } .overlay p { font-size:12px; line-height:1.35; } button.startBtn { margin-top:6px; padding:9px 24px; } }
+  @media (max-height: 520px) {
+    .overlay { padding-top:8px; padding-bottom:8px; gap:5px; }
+    .overlay::before, .overlay::after { flex:0 0 0; }
+    .overlay h2 { font-size:19px; margin:0; }
+    .overlay p { font-size:11.5px; line-height:1.3; max-width:680px; margin:0; }
+    button.startBtn { margin-top:2px; padding:8px 22px; font-size:15px; }
+    #iosHint { font-size:11.5px; padding:5px 10px; }
+  }
   .overlay h2 { color:#e8c873; font-size: 28px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(232,200,115,.6);}
   .overlay p { max-width: 520px; line-height: 1.5; font-size: 14px; color:#cfc7a8;}
   .overlay b { color:#f4d98a; }
@@ -123,8 +131,10 @@
     <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака &nbsp;|&nbsp; <b>E</b> — выпить зелье &nbsp;|&nbsp; <b>ESC</b> — меню</p>
     <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Зелья лечат 30 HP, уровень повышает здоровье и урон.</p>
     <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
-    <button class="startBtn" id="startBtn">Начать поход</button>
-    <button class="startBtn hidden" id="resumeBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">Вернуться в игру</button>
+    <div class="btnRow">
+      <button class="startBtn hidden" id="resumeBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">Вернуться в игру</button>
+      <button class="startBtn" id="startBtn">Начать поход</button>
+    </div>
   </div>
 
   <div id="deathScreen" class="overlay hidden">
@@ -365,7 +375,18 @@ function goTo(locId, x, y, message){
 
 // ---------- Защита от зума/двойного тапа (iOS Safari игнорирует user-scalable=no) ----------
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t, e=>e.preventDefault(), {passive:false}));
-document.addEventListener('touchmove', e=>{ if(e.touches.length>1 || !e.target.closest('.overlay')) e.preventDefault(); }, {passive:false});
+let ovY = null;
+document.addEventListener('touchstart', e=>{ ovY = e.touches.length===1 ? e.touches[0].clientY : null; }, {passive:true});
+document.addEventListener('touchmove', e=>{
+  const ov = e.target.closest && e.target.closest('.overlay');
+  if(e.touches.length>1 || !ov){ e.preventDefault(); return; }
+  // свайп внутри экрана-оверлея: прокручиваем вручную (надёжно на Android)
+  if(ov.scrollHeight > ov.clientHeight && ovY!==null){
+    const y = e.touches[0].clientY;
+    ov.scrollTop += ovY - y; ovY = y;
+    e.preventDefault();
+  }
+}, {passive:false});
 let lastTouchEnd = 0;
 document.addEventListener('touchend', e=>{
   const now = Date.now();
