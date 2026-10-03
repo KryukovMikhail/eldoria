@@ -32,6 +32,13 @@
   .hidden { display: none !important; }
   .overlay::before, .overlay::after { content:''; flex:1 0 0; }
   #iosHint { font-size:13px; color:#e8c873; border:1px dashed #5c4415; border-radius:6px; padding:8px 12px; max-width:520px; }
+  .shopItem { display:flex; align-items:center; justify-content:space-between; gap:14px; width:100%; max-width:520px; padding:10px 12px; background:rgba(60,45,20,.55); border:1px solid #5c4415; border-radius:6px; text-align:left; }
+  .shopInfo { display:flex; flex-direction:column; gap:3px; font-size:13px; color:#cfc7a8; }
+  .shopInfo b { color:#f4d98a; font-size:15px; }
+  button.shopBtn { margin:0; padding:9px 14px; font-size:14px; white-space:nowrap; }
+  button.startBtn:disabled { opacity:.55; cursor:default; box-shadow:none; }
+  #shopGold { color:#e0c23a; font-weight:bold; }
+  #shopMsg { min-height:20px; }
   .btnRow { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
   #rotateHint { position:absolute; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:rgba(10,8,4,.96); color:#e8c873; text-align:center; font-size:18px; pointer-events:none; }
   #rotateHint span { font-size:54px; }
@@ -125,8 +132,7 @@
     <h2>Легенды Эльдории</h2>
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмные пещеры</b>,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и зелья.
-    В глубинах второго подземелья ждёт <b>Костяной Король</b> — победите его, заберите Амулет Эльдории,
-    и он откроет портал в ещё более опасную <b>Бездну Теней</b>, где правит <b>Повелитель Тьмы</b>.
+    В глубинах второго подземелья ждёт <b>Костяной Король</b> — победите его — и в зале откроется спуск в ещё более опасную <b>Бездну Теней</b>, где правит <b>Повелитель Тьмы</b>. В одном из углов карты стоит <b>торговая лавка</b>: накопите золото и купите оружие посильнее.
     Победите его, чтобы завершить свой поход.</p>
     <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака &nbsp;|&nbsp; <b>E</b> — выпить зелье &nbsp;|&nbsp; <b>ESC</b> — меню</p>
     <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Зелья лечат 30 HP, уровень повышает здоровье и урон.</p>
@@ -141,6 +147,14 @@
     <h2 style="color:#d9534f;">Вы пали...</h2>
     <p id="deathStats"></p>
     <button class="startBtn" id="restartBtn">Начать заново</button>
+  </div>
+
+  <div id="shopScreen" class="overlay hidden">
+    <h2>Торговая лавка</h2>
+    <p id="shopMsg"></p>
+    <div id="shopGold"></div>
+    <div id="shopList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <button class="startBtn" id="shopClose">Уйти</button>
   </div>
 
   <div id="winScreen" class="overlay hidden">
@@ -218,19 +232,36 @@ function generateOverworld(){
   const cx=Math.floor(W/2), cy=Math.floor(H/2);
   clearArea(grid,cx,cy,3,'.');
 
+  // торговая лавка — в случайном углу карты
+  const shopLeft = Math.random()<0.5, shopTop = Math.random()<0.5;
+  const shopX = shopLeft ? 7 : W-8, shopY = shopTop ? 7 : H-8;
+  clearArea(grid,shopX,shopY,4,'.');
+  // дорога от лавки к центру: прорубаем воду и лес, чтобы лавка всегда была достижима
+  for(let x=Math.min(shopX,cx); x<=Math.max(shopX,cx); x++) for(let d=0; d<2; d++){
+    const t=grid[shopY+d][x]; if(t==='~'||t==='#') grid[shopY+d][x]='.';
+  }
+  for(let y=Math.min(shopY,cy); y<=Math.max(shopY,cy); y++) for(let d=0; d<2; d++){
+    const t=grid[y][cx+d]; if(t==='~'||t==='#') grid[y][cx+d]='.';
+  }
+  const stallY = shopTop ? shopY-1 : shopY+1;
+  for(let dx=-1; dx<=1; dx++) grid[stallY][shopX+dx]='S';
+  const farShop = p => Math.hypot(p.x-shopX,p.y-shopY) >= 10;
+
   // входы в подземелья, подальше друг от друга и от центра
-  const e1 = findFloor(grid,W,H,'.',18,cx,cy);
+  let e1 = findFloor(grid,W,H,'.',18,cx,cy);
+  for(let t=0; !farShop(e1) && t<100; t++) e1 = findFloor(grid,W,H,'.',18,cx,cy);
   clearArea(grid,e1.x,e1.y,2,'.');
   grid[e1.y][e1.x]='>';
   let e2 = findFloor(grid,W,H,'.',18,cx,cy);
   let tries=0;
-  while(Math.hypot(e2.x-e1.x,e2.y-e1.y)<20 && tries<300){ e2=findFloor(grid,W,H,'.',18,cx,cy); tries++; }
+  while((Math.hypot(e2.x-e1.x,e2.y-e1.y)<20 || !farShop(e2)) && tries<300){ e2=findFloor(grid,W,H,'.',18,cx,cy); tries++; }
   clearArea(grid,e2.x,e2.y,2,'.');
   grid[e2.y][e2.x]='>';
 
   const enemies=[];
   for(let i=0;i<16;i++){
-    const p=findFloor(grid,W,H,'.',9,cx,cy);
+    let p=findFloor(grid,W,H,'.',9,cx,cy);
+    for(let t=0; Math.hypot(p.x-shopX,p.y-shopY)<8 && t<60; t++) p=findFloor(grid,W,H,'.',9,cx,cy);
     enemies.push(makeEnemy('wolf', p.x*TILE+4, p.y*TILE+4));
   }
   const items=[];
@@ -242,6 +273,8 @@ function generateOverworld(){
   return {
     type:'overworld', grid, width:W, height:H, enemies, items,
     spawn:{x:cx*TILE, y:cy*TILE},
+    shop:{tx:shopX, ty:shopY},
+    merchant:{x:shopX*TILE+5, y:shopY*TILE+5, w:22, h:22},
     entrances:[
       {tx:e1.x, ty:e1.y, dungeon:'dungeon1', back:{x:e1.x*TILE, y:(e1.y+2)*TILE}},
       {tx:e2.x, ty:e2.y, dungeon:'dungeon2', back:{x:e2.x*TILE, y:(e2.y+2)*TILE}}
@@ -298,17 +331,18 @@ function generateDungeon(level){
     }
   }
   const lastRoom = rooms[rooms.length-1];
-  let boss=null;
+  let boss=null, portal=null;
   if(level===2){
     boss = makeEnemy('boss', lastRoom.cx*TILE, lastRoom.cy*TILE, level);
     enemies.push(boss);
+    portal = {tx:lastRoom.cx, ty:lastRoom.cy, open:false}; // спуск в Бездну Теней, откроется после победы над королём
   } else if(level===3){
     boss = makeEnemy('shadowlord', lastRoom.cx*TILE, lastRoom.cy*TILE, level);
     enemies.push(boss);
   }
 
   return {
-    type:'dungeon', level, grid, width:W, height:H, enemies, items, boss,
+    type:'dungeon', level, grid, width:W, height:H, enemies, items, boss, portal,
     spawn:{x:entrance.cx*TILE, y:(entrance.cy+1)*TILE},
     exit:{tx:entrance.cx, ty:entrance.cy}
   };
@@ -334,12 +368,21 @@ function makeItem(type,x,y){
   return { type, x, y, w:16, h:16, value: type==='gold'? rnd(3,10) : 1 };
 }
 
+// ---------- Оружие ----------
+// mult — множитель к базовому урону игрока (растёт с уровнем). Новое оружие добавляется сюда же.
+const WEAPONS = {
+  sword: { name:'Меч',   mult:1,   price:0,  desc:'Базовое оружие, удар на одну клетку.' },
+  spear: { name:'Копьё', mult:1.5, price:50, desc:'Заметно сильнее меча.' }
+};
+
 // ---------- Игрок ----------
 const player = {
   x:0,y:0,w:22,h:22, speed:165, dir:'down',
   hp:100, maxHp:100, atk:16, level:1, xp:0, xpNext:50, gold:0, potions:3,
-  attackTimer:0, attackDuration:220, attacking:false, invuln:0, hitFlash:0
+  attackTimer:0, attackDuration:220, attacking:false, invuln:0, hitFlash:0,
+  weapon:'sword', owned:{sword:true}
 };
+function playerDamage(){ return Math.round(player.atk * WEAPONS[player.weapon].mult); }
 
 let world = {};
 let currentLocId = 'overworld';
@@ -347,6 +390,7 @@ let loc = null;
 let transitionCooldown = 0;
 let notifications = [];
 let fullInvNoticeTimer = 0;
+let shopLock = false; // после закрытия лавки она не открывается снова, пока игрок не отойдёт
 let gameState = 'start'; // start | playing | dead | won
 
 function addNote(text, color='#f4d98a'){
@@ -360,6 +404,7 @@ function resetGame(){
   player.x = loc.spawn.x; player.y = loc.spawn.y;
   player.hp=100; player.maxHp=100; player.atk=16; player.level=1; player.xp=0; player.xpNext=50;
   player.gold=0; player.potions=3; player.invuln=0; player.dir='down';
+  player.weapon='sword'; player.owned={sword:true}; shopLock=false;
   notifications = [];
   transitionCooldown = 0;
   fullInvNoticeTimer = 0;
@@ -460,7 +505,7 @@ const virtualMove = {x:0, y:0};
 
 // ---------- Коллизии ----------
 function blockedTiles(locType){
-  return locType==='overworld' ? new Set(['~','^','#']) : new Set(['#']);
+  return locType==='overworld' ? new Set(['~','^','#','S']) : new Set(['#']);
 }
 function isBlocked(gridInfo, x, y, w, h){
   const blocked = blockedTiles(gridInfo.type);
@@ -508,8 +553,11 @@ function killEnemy(e){
   player.xp += e.xp; player.gold += e.gold;
   addNote(`Повержен враг: +${e.xp} опыта, +${e.gold} золота`, '#e0c96a');
   if(e.type==='boss'){
-    loc.items.push(makeItem('amulet', e.x, e.y));
-    addNote('☠ Костяной Король повержен! Заберите Амулет — он откроет путь глубже.', '#ff9f4a');
+    if(loc.portal){
+      loc.grid[loc.portal.ty][loc.portal.tx]='v'; loc.portal.open=true;
+      transitionCooldown = 1500; // чтобы случайно не провалиться сразу
+    }
+    addNote('☠ Костяной Король повержен! В зале, где он стоял, открылся спуск в Бездну Теней.', '#ff9f4a');
   } else if(e.type==='shadowlord'){
     loc.items.push(makeItem('treasure', e.x, e.y));
     addNote('☠ Повелитель Тьмы повержен! Заберите Сердце Тьмы, чтобы завершить поход.', '#ff9f4a');
@@ -552,7 +600,7 @@ function update(dt){
     for(const e of loc.enemies){
       if(e.hp<=0) continue;
       if(overlap(hb, e)){
-        e.hp -= player.atk;
+        e.hp -= playerDamage();
         e.hitFlash = 150;
         const pushX = e.x - (player.x+player.w/2), pushY = e.y-(player.y+player.h/2);
         const len = Math.hypot(pushX,pushY)||1;
@@ -610,12 +658,6 @@ function update(dt){
         }
       }
       else if(it.type==='gold'){ player.gold += it.value; addNote(`+${it.value} золота`, '#e0c96a'); return false; }
-      else if(it.type==='amulet'){
-        addNote('✦ Амулет Эльдории в ваших руках. Тьма зовёт глубже...', '#c9a8ff');
-        goTo('dungeon3', world.dungeon3.spawn.x, world.dungeon3.spawn.y, 'Портал открывается — вы спускаетесь в Бездну Теней...');
-        teleported = true;
-        return false;
-      }
       else if(it.type==='treasure'){ onWin(); return false; }
     }
     return true;
@@ -635,12 +677,27 @@ function update(dt){
         }
       }
     } else if(loc.type==='dungeon'){
-      if(loc.exit.tx===centerTX && loc.exit.ty===centerTY){
-        const backDungeonId = currentLocId==='dungeon3' ? 'dungeon2' : currentLocId;
-        const back = world.overworld.entrances.find(e=>e.dungeon===backDungeonId).back;
-        goTo('overworld', back.x, back.y, 'Вы возвращаетесь на поверхность');
+      if(loc.portal && loc.portal.open && loc.portal.tx===centerTX && loc.portal.ty===centerTY){
+        goTo('dungeon3', world.dungeon3.spawn.x, world.dungeon3.spawn.y, 'Вы спускаетесь в Бездну Теней...');
+      } else if(loc.exit.tx===centerTX && loc.exit.ty===centerTY){
+        if(currentLocId==='dungeon3'){
+          // из Бездны возвращаемся в зал Костяного Короля, к спуску
+          const pt = world.dungeon2.portal;
+          goTo('dungeon2', pt.tx*TILE+5, (pt.ty+1)*TILE+5, 'Вы поднимаетесь в логово Костяного Короля');
+        } else {
+          const back = world.overworld.entrances.find(e=>e.dungeon===currentLocId).back;
+          goTo('overworld', back.x, back.y, 'Вы возвращаетесь на поверхность');
+        }
       }
     }
+  }
+
+  // торговец: лавка открывается, когда игрок подходит вплотную
+  if(loc.type==='overworld' && loc.merchant){
+    const m=loc.merchant;
+    const d=Math.hypot(player.x+player.w/2-(m.x+m.w/2), player.y+player.h/2-(m.y+m.h/2));
+    if(d>96) shopLock=false;
+    else if(d<56 && !shopLock){ openShop(); return; }
   }
 
   notifications.forEach(n=> n.timer -= dt*1000);
@@ -676,6 +733,8 @@ function tileColor(t, x, y){
     case '#': return loc.type==='overworld' ? '#1f4d1a' : '#232327';
     case '>': return '#241a10';
     case '<': return '#3a2f10';
+    case 'S': return '#437f37';
+    case 'v': return '#2a2a33';
     default: return '#000';
   }
 }
@@ -692,6 +751,17 @@ function drawTile(t, sx, sy, x, y){
     ctx.fillStyle='#000';
     ctx.beginPath(); ctx.ellipse(sx+TILE/2, sy+TILE/2+3, TILE*0.32, TILE*0.24, 0,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='#5c4415'; ctx.lineWidth=2; ctx.stroke();
+  } else if(t==='S'){
+    ctx.fillStyle='#8a5a2b'; ctx.fillRect(sx, sy+14, TILE, TILE-14);
+    for(let i=0;i<4;i++){ ctx.fillStyle = i%2 ? '#f0e6c8' : '#c0392b'; ctx.fillRect(sx+i*8, sy, 8, 14); }
+    ctx.fillStyle='#e8c873'; ctx.fillRect(sx+4, sy+19, 6, 6); ctx.fillRect(sx+20, sy+21, 7, 4);
+  } else if(t==='v'){
+    const pulse = 0.5+0.5*Math.sin(Date.now()/300);
+    ctx.fillStyle='#07030d';
+    ctx.beginPath(); ctx.ellipse(sx+TILE/2, sy+TILE/2, TILE*0.42, TILE*0.36, 0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(201,168,255,'+(0.45+0.45*pulse)+')'; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle='rgba(122,79,189,'+(0.25+0.25*pulse)+')';
+    ctx.beginPath(); ctx.ellipse(sx+TILE/2, sy+TILE/2, TILE*0.22, TILE*0.18, 0,0,Math.PI*2); ctx.fill();
   } else if(t==='<'){
     ctx.fillStyle='#e8c873';
     ctx.beginPath(); ctx.arc(sx+TILE/2, sy+TILE/2, 7, 0, Math.PI*2); ctx.fill();
@@ -742,6 +812,16 @@ function draw(){
       ctx.strokeStyle='#7a3d00'; ctx.lineWidth=2; ctx.stroke(); }
   }
 
+  // торговец
+  if(loc.merchant){
+    const m=loc.merchant, mx2=m.x-camX, my2=m.y-camY;
+    ctx.fillStyle='#a06a2c'; ctx.beginPath(); ctx.arc(mx2+m.w/2, my2+m.h/2, m.w/2, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#4a2d0c'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.moveTo(mx2+2, my2+6); ctx.lineTo(mx2+m.w-2, my2+6); ctx.lineTo(mx2+m.w/2, my2-6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#e8c873'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('ТОРГОВЕЦ', mx2+m.w/2, my2-17); ctx.textAlign='left';
+  }
+
   // враги
   for(const e of loc.enemies){
     if(e.hp<=0) continue;
@@ -776,6 +856,31 @@ function draw(){
       const hb = attackHitbox();
       ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=2;
       ctx.strokeRect(hb.x-camX, hb.y-camY, hb.w, hb.h);
+      if(player.weapon==='spear'){
+        // древко и наконечник копья
+        const px=sx+player.w/2, py=sy+player.h/2;
+        const vx = player.dir==='left'?-1:player.dir==='right'?1:0, vy = player.dir==='up'?-1:player.dir==='down'?1:0;
+        ctx.strokeStyle='#d8c08a'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+vx*34, py+vy*34); ctx.stroke();
+        ctx.fillStyle='#ffffff';
+        ctx.beginPath(); ctx.arc(px+vx*36, py+vy*36, 4, 0, Math.PI*2); ctx.fill();
+      }
+    }
+  }
+
+  // стрелка к открытому спуску в Бездну, если он за краем экрана
+  if(loc.portal && loc.portal.open){
+    const px=(loc.portal.tx+0.5)*TILE-camX, py=(loc.portal.ty+0.5)*TILE-camY, m=26;
+    if(px<0||py<0||px>canvas.width||py>canvas.height){
+      const cxs=canvas.width/2, cys=canvas.height/2, dx=px-cxs, dy=py-cys;
+      const k=Math.min((cxs-m)/Math.max(Math.abs(dx),1e-6),(cys-m)/Math.max(Math.abs(dy),1e-6));
+      const ax=cxs+dx*k, ay=cys+dy*k;
+      ctx.save(); ctx.translate(ax,ay); ctx.rotate(Math.atan2(dy,dx));
+      ctx.fillStyle='#c9a8ff'; ctx.strokeStyle='#2a1450'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(-8,-9); ctx.lineTo(-8,9); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle='#c9a8ff'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('Спуск', ax, ay<cys ? ay+24 : ay-14); ctx.textAlign='left';
     }
   }
 
@@ -794,8 +899,8 @@ function drawHUD(){
   ctx.textAlign='left';
   // панель
   ctx.fillStyle='rgba(10,8,4,0.65)';
-  ctx.fillRect(8,8,230,132);
-  ctx.strokeStyle='#5c4415'; ctx.strokeRect(8,8,230,132);
+  ctx.fillRect(8,8,230,150);
+  ctx.strokeStyle='#5c4415'; ctx.strokeRect(8,8,230,150);
 
   ctx.fillStyle='#f0e6c8'; ctx.font='bold 13px sans-serif';
   ctx.fillText(`Уровень ${player.level}`, 16, 24);
@@ -833,9 +938,10 @@ function drawHUD(){
     ctx.fillText(`+${player.potions-slots}`, startX+slots*(slotSize+gap), startY+13);
   }
 
-  ctx.fillStyle='#cfc7a8'; ctx.font='11px sans-serif';
   const locName = getLocName(loc);
-  ctx.fillText(locName, 16, 128);
+  ctx.fillStyle='#cfc7a8'; ctx.font='11px sans-serif';
+  ctx.fillText(`Оружие: ${WEAPONS[player.weapon].name}  •  Урон: ${playerDamage()}`, 16, 128);
+  ctx.fillText(locName, 16, 146);
 
   // название локации сверху по центру
   ctx.textAlign='center'; ctx.font='bold 14px sans-serif';
@@ -870,6 +976,10 @@ function drawMinimap(){
       ctx.fillStyle = t==='~'?'#2f6690': t==='^'?'#5a5a5a': t==='#'?'#1f4d1a': t==='>'?'#e8c873':'#3f7d32';
       ctx.fillRect(mx+x*sx, my+y*sy, sx*2, sy*2);
     }
+  }
+  if(loc.shop){
+    ctx.fillStyle='#ff9f4a'; ctx.fillRect(mx+loc.shop.tx*sx-3, my+loc.shop.ty*sy-3, 7, 7);
+    ctx.strokeStyle='#4a2d0c'; ctx.lineWidth=1; ctx.strokeRect(mx+loc.shop.tx*sx-3, my+loc.shop.ty*sy-3, 7, 7);
   }
   ctx.fillStyle='#4aa0e0';
   ctx.beginPath(); ctx.arc(mx+(player.x/TILE)*sx, my+(player.y/TILE)*sy, 3,0,Math.PI*2); ctx.fill();
@@ -934,6 +1044,51 @@ function resumeGame(){
   if(isTouchDevice) touchControls.classList.remove('hidden');
 }
 
+// ---------- Торговая лавка ----------
+const shopScreen = document.getElementById('shopScreen');
+const shopList = document.getElementById('shopList');
+function openShop(msg){
+  for(const k in keys) keys[k]=false;
+  gameState='shop';
+  renderShop(msg || 'Добро пожаловать, путник! Лучшее оружие во всей Эльдории — только у меня.');
+  shopScreen.classList.remove('hidden');
+}
+function closeShop(){
+  shopScreen.classList.add('hidden');
+  gameState='playing';
+  shopLock=true;
+}
+function renderShop(msg){
+  document.getElementById('shopMsg').textContent = msg;
+  document.getElementById('shopGold').textContent = '◆ Золото: ' + player.gold;
+  shopList.innerHTML='';
+  for(const id of Object.keys(WEAPONS)){
+    const w = WEAPONS[id];
+    const row = document.createElement('div'); row.className='shopItem';
+    const info = document.createElement('div'); info.className='shopInfo';
+    const nm = document.createElement('b'); nm.textContent = w.name;
+    const ds = document.createElement('span');
+    ds.textContent = `Урон ×${w.mult} (сейчас ${Math.round(player.atk*w.mult)}). ${w.desc}`;
+    info.append(nm, ds);
+    const btn = document.createElement('button'); btn.className='startBtn shopBtn';
+    if(player.weapon===id){ btn.textContent='Экипировано'; btn.disabled=true; }
+    else if(player.owned[id]){
+      btn.textContent='Экипировать';
+      btn.addEventListener('click', ()=>{ player.weapon=id; renderShop('Экипировано: '+w.name+'.'); });
+    } else {
+      btn.textContent = `Купить — ${w.price} ◆`;
+      btn.addEventListener('click', ()=>{
+        if(player.gold < w.price){ renderShop(`Не хватает золота: нужно ${w.price}, у вас ${player.gold}.`); return; }
+        player.gold -= w.price; player.owned[id]=true; player.weapon=id;
+        addNote(`Куплено оружие: ${w.name}`, '#7fe07f');
+        renderShop(`${w.name} куплено и экипировано. Удачной охоты!`);
+      });
+    }
+    row.append(info, btn); shopList.appendChild(row);
+  }
+}
+document.getElementById('shopClose').addEventListener('click', closeShop);
+
 // ---------- Полноэкранный режим ----------
 let fsToastTimer = null;
 function showFsToast(msg){
@@ -984,7 +1139,7 @@ document.getElementById('restartBtn2').addEventListener('click', beginNewGame);
 resumeBtn.addEventListener('click', resumeGame);
 menuBtn.addEventListener('click', exitToMenu);
 window.addEventListener('keydown', e=>{
-  if(e.code==='Escape') exitToMenu();
+  if(e.code==='Escape'){ if(gameState==='shop') closeShop(); else exitToMenu(); }
 });
 
 requestAnimationFrame(loop);
