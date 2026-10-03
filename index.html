@@ -3,34 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Эльдория">
+<meta name="theme-color" content="#000000">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%231a140a'/%3E%3Crect%20x='3'%20y='3'%20width='94'%20height='94'%20rx='19'%20fill='none'%20stroke='%235c4415'%20stroke-width='4'/%3E%3Ctext%20x='50'%20y='70'%20font-size='58'%20text-anchor='middle'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <title>Легенды Эльдории — 2D RPG</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { overscroll-behavior: none; }
-  body {
-    margin: 0; min-height: 100vh; background: radial-gradient(circle at 50% 20%, #23241f, #0c0d0a 70%);
-    display: flex; flex-direction: column; align-items: center; padding: 16px;
-    font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; color: #eee2c0;
+  html, body {
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000;
+    position:fixed; inset:0; overscroll-behavior:none;
+    touch-action:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;
+    -webkit-text-size-adjust:100%; text-size-adjust:100%;
+    font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif; color:#eee2c0;
   }
-  h1 { margin: 4px 0 10px; letter-spacing: 2px; color: #e8c873; text-shadow: 0 0 8px rgba(232,200,115,.5); font-size: 26px; }
-  #gameWrap { position: relative; box-shadow: 0 0 30px rgba(0,0,0,.7); border-radius: 6px; width: 100%; max-width: 960px; touch-action: none; }
-  canvas { background:#000; display:block; image-rendering: pixelated; border: 4px solid #4a3a20; border-radius: 6px; width:100%; height:auto; touch-action: none; }
+  #gameWrap { position:fixed; inset:0; width:100%; height:100%; height:100dvh; background:#000; touch-action:none; }
+  canvas { background:#000; display:block; image-rendering:pixelated; image-rendering:crisp-edges; width:100%; height:100%; border:0; touch-action:none; }
 
-  /* Полноэкранный режим */
-  #gameWrap:fullscreen, #gameWrap:-webkit-full-screen {
-    width:100vw; height:100vh; max-width:none; background:#000; border-radius:0;
-    display:flex; align-items:center; justify-content:center;
-  }
-  #gameWrap:fullscreen canvas, #gameWrap:-webkit-full-screen canvas {
-    width:auto; height:auto; max-width:100vw; max-height:100vh; border:none; border-radius:0;
-  }
   .overlay {
     position: absolute; inset: 0; background: rgba(10,8,4,.92); color:#f0e6c8;
     display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 30px;
-    border-radius: 4px; gap: 10px; z-index: 20;
+    gap: 10px; z-index: 20; overflow-y:auto; touch-action:pan-y; -webkit-overflow-scrolling:touch;
+    padding-left:max(30px,env(safe-area-inset-left)); padding-right:max(30px,env(safe-area-inset-right));
   }
   .hidden { display: none !important; }
+  .overlay::before, .overlay::after { content:''; flex:1 0 0; }
+  #iosHint { font-size:13px; color:#e8c873; border:1px dashed #5c4415; border-radius:6px; padding:8px 12px; max-width:520px; }
+  #rotateHint { position:absolute; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:rgba(10,8,4,.96); color:#e8c873; text-align:center; font-size:18px; pointer-events:none; }
+  #rotateHint span { font-size:54px; }
+  @media (orientation: portrait) and (pointer: coarse) and (max-width: 700px) { #rotateHint { display:flex; } }
+  @media (max-height: 480px) { .overlay { padding-top:10px; padding-bottom:10px; gap:6px; } .overlay h2 { font-size:20px; margin:0; } .overlay p { font-size:12px; line-height:1.35; } button.startBtn { margin-top:6px; padding:9px 24px; } }
   .overlay h2 { color:#e8c873; font-size: 28px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(232,200,115,.6);}
   .overlay p { max-width: 520px; line-height: 1.5; font-size: 14px; color:#cfc7a8;}
   .overlay b { color:#f4d98a; }
@@ -43,7 +48,7 @@
   #help { margin-top: 10px; font-size: 13px; color:#a89d78; text-align:center; max-width:960px; }
   #help b { color:#e8c873; }
   #menuBtn {
-    position: absolute; top: 10px; right: 52px; z-index: 15;
+    position: absolute; top: calc(10px + env(safe-area-inset-top)); right: calc(52px + env(safe-area-inset-right)); z-index: 15;
     padding: 7px 16px; font-size: 12px; font-weight:bold; cursor:pointer;
     background: linear-gradient(#3a3a3a,#1e1e1e); border: 2px solid #5c4415; border-radius: 5px; color:#e8c873;
     box-shadow: 0 2px 0 #000;
@@ -51,7 +56,7 @@
   #menuBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
   #menuBtn:active { transform: translateY(1px); box-shadow: none; }
   #fullscreenBtn {
-    position: absolute; top: 10px; right: 10px; z-index: 15; width: 34px; height: 34px;
+    position: absolute; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); z-index: 15; width: 34px; height: 34px;
     padding: 0; font-size: 15px; font-weight:bold; cursor:pointer; line-height:1;
     background: linear-gradient(#3a3a3a,#1e1e1e); border: 2px solid #5c4415; border-radius: 5px; color:#e8c873;
     box-shadow: 0 2px 0 #000; display:flex; align-items:center; justify-content:center;
@@ -68,7 +73,7 @@
   /* ---- Сенсорное управление (только на устройствах с touch) ---- */
   #touchControls { position:absolute; inset:0; pointer-events:none; z-index:12; }
   #joystickBase {
-    position:absolute; left:16px; bottom:16px; width:78px; height:78px; border-radius:50%;
+    position:absolute; left:calc(20px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); width:90px; height:90px; border-radius:50%;
     background: rgba(255,255,255,0.08); border:2px solid rgba(232,200,115,0.5);
     pointer-events:auto; touch-action:none;
   }
@@ -77,28 +82,26 @@
     background: rgba(232,200,115,0.55); border:2px solid rgba(232,200,115,0.9);
   }
   .actionBtn {
-    position:absolute; bottom:26px; width:64px; height:64px; border-radius:50%;
+    position:absolute; bottom:calc(28px + env(safe-area-inset-bottom)); width:68px; height:68px; border-radius:50%;
     background: rgba(216,60,60,0.35); border:2px solid rgba(255,180,180,0.7); color:#fff;
     font-size:22px; display:flex; align-items:center; justify-content:center;
     pointer-events:auto; touch-action:none; user-select:none;
   }
   .actionBtn:active { background: rgba(216,60,60,0.6); }
-  #attackBtn { right:20px; }
-  #potionBtn { right:96px; bottom:16px; width:52px; height:52px; background: rgba(60,180,90,0.32); border-color: rgba(180,255,190,0.7); font-size:18px; }
+  #attackBtn { right:calc(22px + env(safe-area-inset-right)); }
+  #potionBtn { right:calc(104px + env(safe-area-inset-right)); bottom:calc(20px + env(safe-area-inset-bottom)); width:52px; height:52px; background: rgba(60,180,90,0.32); border-color: rgba(180,255,190,0.7); font-size:18px; }
   #potionBtn:active { background: rgba(60,180,90,0.6); }
 
   @media (max-width: 480px) {
-    h1 { font-size: 18px; }
-    #help { display: none; }
     .overlay p { font-size: 13px; }
     .overlay h2 { font-size: 22px; }
   }
 </style>
 </head>
 <body>
-<h1>⚔ ЛЕГЕНДЫ ЭЛЬДОРИИ ⚔</h1>
 <div id="gameWrap">
-  <canvas id="game" width="960" height="512"></canvas>
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="rotateHint"><span>📱↻</span><div>Поверните телефон горизонтально</div></div>
   <button id="fullscreenBtn" class="hidden">⛶</button>
   <button id="menuBtn" class="hidden">Выйти в меню</button>
 
@@ -118,6 +121,8 @@
     и он откроет портал в ещё более опасную <b>Бездну Теней</b>, где правит <b>Повелитель Тьмы</b>.
     Победите его, чтобы завершить свой поход.</p>
     <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака &nbsp;|&nbsp; <b>E</b> — выпить зелье &nbsp;|&nbsp; <b>ESC</b> — меню</p>
+    <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Зелья лечат 30 HP, уровень повышает здоровье и урон.</p>
+    <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
     <button class="startBtn" id="startBtn">Начать поход</button>
     <button class="startBtn hidden" id="resumeBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">Вернуться в игру</button>
   </div>
@@ -134,7 +139,6 @@
     <button class="startBtn" id="restartBtn2">Играть снова</button>
   </div>
 </div>
-<div id="help">Совет: избегайте боя с несколькими врагами одновременно на низком уровне. Зелья лечат 30 HP. Уровень повышает здоровье и урон.</div>
 
 <script>
 (() => {
@@ -142,6 +146,20 @@
 const TILE = 32, VIEW_W = 30, VIEW_H = 16;
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+const gameWrap = document.getElementById('gameWrap');
+// Холст подстраивается под всё окно: логический размер = размер окна / масштаб
+function resizeCanvas(){
+  const w = gameWrap.clientWidth || window.innerWidth, h = gameWrap.clientHeight || window.innerHeight;
+  const zoom = Math.max(0.8, Math.min(3, h/540));
+  const bw = Math.max(320, Math.ceil(w/zoom)), bh = Math.max(240, Math.ceil(h/zoom));
+  if(canvas.width!==bw) canvas.width=bw;
+  if(canvas.height!==bh) canvas.height=bh;
+  ctx.imageSmoothingEnabled = false;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', ()=>{ resizeCanvas(); setTimeout(resizeCanvas,200); setTimeout(resizeCanvas,600); });
+if(window.visualViewport) window.visualViewport.addEventListener('resize', resizeCanvas);
 const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
 const rndf = (a,b) => Math.random()*(b-a)+a;
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
@@ -344,6 +362,18 @@ function goTo(locId, x, y, message){
   transitionCooldown = 700;
   if(message) addNote(message);
 }
+
+// ---------- Защита от зума/двойного тапа (iOS Safari игнорирует user-scalable=no) ----------
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t, e=>e.preventDefault(), {passive:false}));
+document.addEventListener('touchmove', e=>{ if(e.touches.length>1 || !e.target.closest('.overlay')) e.preventDefault(); }, {passive:false});
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e=>{
+  const now = Date.now();
+  if(now-lastTouchEnd < 350) e.preventDefault();
+  lastTouchEnd = now;
+}, {passive:false});
+document.addEventListener('dblclick', e=>e.preventDefault(), {passive:false});
+document.addEventListener('contextmenu', e=>e.preventDefault());
 
 // ---------- Ввод ----------
 const keys = {};
@@ -659,13 +689,14 @@ function draw(){
   if(gameState==='start'){ return; }
 
   const mapPxW = loc.width*TILE, mapPxH = loc.height*TILE;
-  const camX = clamp(player.x+player.w/2-canvas.width/2, 0, Math.max(0,mapPxW-canvas.width));
-  const camY = clamp(player.y+player.h/2-canvas.height/2, 0, Math.max(0,mapPxH-canvas.height));
+  // если карта меньше экрана — центрируем её, иначе камера следует за игроком
+  const camX = mapPxW<=canvas.width ? -(canvas.width-mapPxW)/2 : clamp(player.x+player.w/2-canvas.width/2, 0, mapPxW-canvas.width);
+  const camY = mapPxH<=canvas.height ? -(canvas.height-mapPxH)/2 : clamp(player.y+player.h/2-canvas.height/2, 0, mapPxH-canvas.height);
 
   const startTX = Math.max(0, Math.floor(camX/TILE));
   const startTY = Math.max(0, Math.floor(camY/TILE));
-  const endTX = Math.min(loc.width, startTX+VIEW_W+2);
-  const endTY = Math.min(loc.height, startTY+VIEW_H+2);
+  const endTX = Math.min(loc.width, Math.ceil((camX+canvas.width)/TILE)+1);
+  const endTY = Math.min(loc.height, Math.ceil((camY+canvas.height)/TILE)+1);
 
   for(let y=startTY;y<endTY;y++){
     for(let x=startTX;x<endTX;x++){
@@ -839,6 +870,18 @@ const startScreenEl = document.getElementById('startScreen');
 const resumeBtn = document.getElementById('resumeBtn');
 const touchControls = document.getElementById('touchControls');
 const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const fsSupported = !!(gameWrap.requestFullscreen || gameWrap.webkitRequestFullscreen);
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+const isStandalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+// iPhone: Safari не умеет Fullscreen API для страниц — предлагаем запуск с иконки «Домой»
+if(isIOS && !fsSupported && !isStandalone) document.getElementById('iosHint').classList.remove('hidden');
+// иконка для «На экран Домой»
+try{
+  const c=document.createElement('canvas'); c.width=c.height=180; const g=c.getContext('2d');
+  g.fillStyle='#1a140a'; g.fillRect(0,0,180,180); g.strokeStyle='#5c4415'; g.lineWidth=10; g.strokeRect(8,8,164,164);
+  g.font='100px sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('⚔️',90,96);
+  const l=document.createElement('link'); l.rel='apple-touch-icon'; l.href=c.toDataURL('image/png'); document.head.appendChild(l);
+}catch(e){}
 let hasActiveGame = false;
 
 function beginNewGame(){
@@ -849,7 +892,7 @@ function beginNewGame(){
   document.getElementById('deathScreen').classList.add('hidden');
   document.getElementById('winScreen').classList.add('hidden');
   menuBtn.classList.remove('hidden');
-  fullscreenBtn.classList.remove('hidden');
+  if(fsSupported) fullscreenBtn.classList.remove('hidden');
   if(isTouchDevice) touchControls.classList.remove('hidden');
 }
 function exitToMenu(){
@@ -866,7 +909,7 @@ function resumeGame(){
   gameState='playing';
   startScreenEl.classList.add('hidden');
   menuBtn.classList.remove('hidden');
-  fullscreenBtn.classList.remove('hidden');
+  if(fsSupported) fullscreenBtn.classList.remove('hidden');
   if(isTouchDevice) touchControls.classList.remove('hidden');
 }
 
@@ -911,8 +954,8 @@ function updateFsButton(){
   fullscreenBtn.textContent = isFs ? '🗗' : '⛶';
 }
 fullscreenBtn.addEventListener('click', toggleFullscreen);
-document.addEventListener('fullscreenchange', updateFsButton);
-document.addEventListener('webkitfullscreenchange', updateFsButton);
+document.addEventListener('fullscreenchange', ()=>{ updateFsButton(); setTimeout(resizeCanvas,100); });
+document.addEventListener('webkitfullscreenchange', ()=>{ updateFsButton(); setTimeout(resizeCanvas,100); });
 
 document.getElementById('startBtn').addEventListener('click', beginNewGame);
 document.getElementById('restartBtn').addEventListener('click', beginNewGame);
