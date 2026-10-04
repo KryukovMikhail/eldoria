@@ -39,6 +39,10 @@
   button.startBtn:disabled { opacity:.55; cursor:default; box-shadow:none; }
   #shopGold { color:#e0c23a; font-weight:bold; }
   #shopMsg { min-height:20px; }
+  .shopTabs { display:flex; gap:8px; }
+  .tabBtn { padding:7px 14px; font-size:14px; font-weight:bold; cursor:pointer; background:#2a2316; color:#e8c873; border:2px solid #5c4415; border-radius:6px; }
+  .tabBtn.active { background:linear-gradient(#e8c873,#b8892f); color:#2b1d05; }
+  .shopBtns { display:flex; gap:8px; }
   .btnRow { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
   #rotateHint { position:absolute; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:rgba(10,8,4,.96); color:#e8c873; text-align:center; font-size:18px; pointer-events:none; }
   #rotateHint span { font-size:54px; }
@@ -50,6 +54,12 @@
     .overlay p { font-size:11.5px; line-height:1.3; max-width:680px; margin:0; }
     button.startBtn { margin-top:2px; padding:8px 22px; font-size:15px; }
     #iosHint { font-size:11.5px; padding:5px 10px; }
+    .shopItem { padding:5px 10px; gap:10px; }
+    .shopInfo { font-size:11px; gap:1px; }
+    .shopInfo b { font-size:13px; }
+    button.shopBtn { padding:6px 12px; font-size:12.5px; }
+    .tabBtn { padding:5px 12px; font-size:13px; }
+    #shopMsg { min-height:0; }
   }
   .overlay h2 { color:#e8c873; font-size: 28px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(232,200,115,.6);}
   .overlay p { max-width: 520px; line-height: 1.5; font-size: 14px; color:#cfc7a8;}
@@ -132,13 +142,15 @@
     <h2>Легенды Эльдории</h2>
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмные пещеры</b>,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и зелья.
-    В глубинах второго подземелья ждёт <b>Костяной Король</b> — победите его — и в зале откроется спуск в ещё более опасную <b>Бездну Теней</b>, где правит <b>Повелитель Тьмы</b>. В одном из углов карты стоит <b>торговая лавка</b>: накопите золото и купите оружие посильнее.
+    В глубинах второго подземелья ждёт <b>Костяной Король</b> — победите его — и в зале откроется спуск в ещё более опасную <b>Бездну Теней</b>, где правит <b>Повелитель Тьмы</b>. В одном из углов карты стоит <b>торговая лавка</b>: накопите золото и купите оружие, броню и зелья. Игра сохраняется автоматически.
     Победите его, чтобы завершить свой поход.</p>
     <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака &nbsp;|&nbsp; <b>E</b> — выпить зелье &nbsp;|&nbsp; <b>ESC</b> — меню</p>
     <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Зелья лечат 30 HP, уровень повышает здоровье и урон.</p>
     <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
+    <div id="saveInfo" class="hidden" style="font-size:12px;color:#a89d78"></div>
     <div class="btnRow">
       <button class="startBtn hidden" id="resumeBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">Вернуться в игру</button>
+      <button class="startBtn hidden" id="continueBtn" style="background:linear-gradient(#8fd38f,#3f8f4a); border-color:#1d4a22;">Загрузить сохранение</button>
       <button class="startBtn" id="startBtn">Начать поход</button>
     </div>
   </div>
@@ -146,6 +158,7 @@
   <div id="deathScreen" class="overlay hidden">
     <h2 style="color:#d9534f;">Вы пали...</h2>
     <p id="deathStats"></p>
+    <button class="startBtn hidden" id="loadBtn" style="background:linear-gradient(#8fd38f,#3f8f4a); border-color:#1d4a22;">Загрузить сохранение</button>
     <button class="startBtn" id="restartBtn">Начать заново</button>
   </div>
 
@@ -153,6 +166,7 @@
     <h2>Торговая лавка</h2>
     <p id="shopMsg"></p>
     <div id="shopGold"></div>
+    <div class="shopTabs" id="shopTabs"></div>
     <div id="shopList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
     <button class="startBtn" id="shopClose">Уйти</button>
   </div>
@@ -375,13 +389,24 @@ const WEAPONS = {
   spear: { name:'Копьё', mult:1.5, price:50, desc:'Заметно сильнее меча.' }
 };
 
+// ---------- Броня ----------
+// reduce — доля урона, которую броня гасит. Новая броня добавляется строкой в эту таблицу.
+const ARMORS = {
+  none:    { name:'Без брони',      reduce:0,    price:0,   color:'#12314a', desc:'Простая одежда путника.' },
+  leather: { name:'Кожаная броня',  reduce:0.20, price:60,  color:'#a8702f', desc:'Лёгкая и недорогая.' },
+  chain:   { name:'Кольчуга',       reduce:0.35, price:140, color:'#b8c4d0', desc:'Надёжная защита от скелетов и волков.' },
+  plate:   { name:'Стальные латы',  reduce:0.50, price:240, color:'#e8d27a', desc:'Лучшая броня в Эльдории.' }
+};
+const POTION_BUY = 20, POTION_SELL = 8, POTION_MAX = 8;
+
 // ---------- Игрок ----------
 const player = {
   x:0,y:0,w:22,h:22, speed:165, dir:'down',
   hp:100, maxHp:100, atk:16, level:1, xp:0, xpNext:50, gold:0, potions:3,
   attackTimer:0, attackDuration:220, attacking:false, invuln:0, hitFlash:0,
-  weapon:'sword', owned:{sword:true}
+  weapon:'sword', owned:{sword:true}, armor:'none', ownedArmor:{none:true}
 };
+function incomingDamage(d){ return Math.max(1, Math.round(d * (1 - ARMORS[player.armor].reduce))); }
 function playerDamage(){ return Math.round(player.atk * WEAPONS[player.weapon].mult); }
 
 let world = {};
@@ -390,6 +415,7 @@ let loc = null;
 let transitionCooldown = 0;
 let notifications = [];
 let fullInvNoticeTimer = 0;
+let saveFlash = 0, storageOK = false;
 let shopLock = false; // после закрытия лавки она не открывается снова, пока игрок не отойдёт
 let gameState = 'start'; // start | playing | dead | won
 
@@ -404,7 +430,7 @@ function resetGame(){
   player.x = loc.spawn.x; player.y = loc.spawn.y;
   player.hp=100; player.maxHp=100; player.atk=16; player.level=1; player.xp=0; player.xpNext=50;
   player.gold=0; player.potions=3; player.invuln=0; player.dir='down';
-  player.weapon='sword'; player.owned={sword:true}; shopLock=false;
+  player.weapon='sword'; player.owned={sword:true}; player.armor='none'; player.ownedArmor={none:true}; shopLock=false;
   notifications = [];
   transitionCooldown = 0;
   fullInvNoticeTimer = 0;
@@ -416,6 +442,7 @@ function goTo(locId, x, y, message){
   player.x = x; player.y = y;
   transitionCooldown = 700;
   if(message) addNote(message);
+  saveGame(); // контрольная точка при каждом переходе
 }
 
 // ---------- Защита от зума/двойного тапа (iOS Safari игнорирует user-scalable=no) ----------
@@ -547,6 +574,7 @@ function playerLevelUp(){
   player.maxHp += 18; player.atk += 4;
   player.hp = player.maxHp;
   addNote(`✦ Новый уровень: ${player.level}! Здоровье и урон возросли.`, '#7fe07f');
+  saveGame();
 }
 
 function killEnemy(e){
@@ -558,6 +586,7 @@ function killEnemy(e){
       transitionCooldown = 1500; // чтобы случайно не провалиться сразу
     }
     addNote('☠ Костяной Король повержен! В зале, где он стоял, открылся спуск в Бездну Теней.', '#ff9f4a');
+    saveGame();
   } else if(e.type==='shadowlord'){
     loc.items.push(makeItem('treasure', e.x, e.y));
     addNote('☠ Повелитель Тьмы повержен! Заберите Сердце Тьмы, чтобы завершить поход.', '#ff9f4a');
@@ -568,6 +597,7 @@ function killEnemy(e){
 function update(dt){
   if(gameState!=='playing') return;
   transitionCooldown = Math.max(0, transitionCooldown-dt*1000);
+  saveFlash = Math.max(0, saveFlash-dt*1000);
   fullInvNoticeTimer = Math.max(0, fullInvNoticeTimer-dt*1000);
   player.invuln = Math.max(0, player.invuln-dt*1000);
   player.hitFlash = Math.max(0, player.hitFlash-dt*1000);
@@ -636,7 +666,7 @@ function update(dt){
     }
     if(overlap(e, {x:player.x,y:player.y,w:player.w,h:player.h}) && e.cooldown<=0){
       if(player.invuln<=0){
-        player.hp -= e.dmg; player.invuln = 700; player.hitFlash=250;
+        player.hp -= incomingDamage(e.dmg); player.invuln = 700; player.hitFlash=250;
         if(player.hp<=0){ player.hp=0; onPlayerDeath(); }
       }
       e.cooldown = 900;
@@ -706,6 +736,7 @@ function update(dt){
 
 function onPlayerDeath(){
   gameState='dead';
+  refreshSaveUI();
   document.getElementById('deathStats').textContent =
     `Уровень: ${player.level}  •  Золото: ${player.gold}  •  Локация: ${getLocName(loc)}`;
   document.getElementById('deathScreen').classList.remove('hidden');
@@ -715,6 +746,7 @@ function onPlayerDeath(){
 }
 function onWin(){
   gameState='won';
+  clearSave(); refreshSaveUI();
   document.getElementById('winStats').textContent =
     `Вы забрали Сердце Тьмы и повергли Повелителя Тьмы! Уровень: ${player.level}  •  Золото: ${player.gold}`;
   document.getElementById('winScreen').classList.remove('hidden');
@@ -759,7 +791,7 @@ function drawTile(t, sx, sy, x, y){
     const pulse = 0.5+0.5*Math.sin(Date.now()/300);
     ctx.fillStyle='#07030d';
     ctx.beginPath(); ctx.ellipse(sx+TILE/2, sy+TILE/2, TILE*0.42, TILE*0.36, 0,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='rgba(201,168,255,'+(0.45+0.45*pulse)+')'; ctx.lineWidth=3; ctx.stroke();
+    ctx.strokeStyle='rgba(201,168,255,'+(0.45+0.45*pulse)+')'; ctx.lineWidth=3; ctx.stroke(); ctx.lineWidth=1;
     ctx.fillStyle='rgba(122,79,189,'+(0.25+0.25*pulse)+')';
     ctx.beginPath(); ctx.ellipse(sx+TILE/2, sy+TILE/2, TILE*0.22, TILE*0.18, 0,0,Math.PI*2); ctx.fill();
   } else if(t==='<'){
@@ -816,7 +848,7 @@ function draw(){
   if(loc.merchant){
     const m=loc.merchant, mx2=m.x-camX, my2=m.y-camY;
     ctx.fillStyle='#a06a2c'; ctx.beginPath(); ctx.arc(mx2+m.w/2, my2+m.h/2, m.w/2, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle='#4a2d0c'; ctx.lineWidth=2; ctx.stroke();
+    ctx.strokeStyle='#4a2d0c'; ctx.lineWidth=2; ctx.stroke(); ctx.lineWidth=1;
     ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.moveTo(mx2+2, my2+6); ctx.lineTo(mx2+m.w-2, my2+6); ctx.lineTo(mx2+m.w/2, my2-6); ctx.closePath(); ctx.fill();
     ctx.fillStyle='#e8c873'; ctx.font='10px sans-serif'; ctx.textAlign='center';
     ctx.fillText('ТОРГОВЕЦ', mx2+m.w/2, my2-17); ctx.textAlign='left';
@@ -844,7 +876,10 @@ function draw(){
     const sx=player.x-camX, sy=player.y-camY;
     ctx.fillStyle = player.invuln>0 && Math.floor(Date.now()/80)%2===0 ? '#ffffff' : '#4aa0e0';
     ctx.fillRect(sx, sy, player.w, player.h);
-    ctx.strokeStyle='#12314a'; ctx.strokeRect(sx,sy,player.w,player.h);
+    ctx.save();
+    if(player.armor==='none'){ ctx.strokeStyle='#12314a'; ctx.lineWidth=1; ctx.strokeRect(sx,sy,player.w,player.h); }
+    else { ctx.strokeStyle=ARMORS[player.armor].color; ctx.lineWidth=3; ctx.strokeRect(sx+1.5,sy+1.5,player.w-3,player.h-3); }
+    ctx.restore();
     // индикатор направления
     ctx.fillStyle='#fff';
     const cx2=sx+player.w/2, cy2=sy+player.h/2;
@@ -941,7 +976,7 @@ function drawHUD(){
   const locName = getLocName(loc);
   ctx.fillStyle='#cfc7a8'; ctx.font='11px sans-serif';
   ctx.fillText(`Оружие: ${WEAPONS[player.weapon].name}  •  Урон: ${playerDamage()}`, 16, 128);
-  ctx.fillText(locName, 16, 146);
+  ctx.fillText(`Броня: ${ARMORS[player.armor].name}  •  Защита: ${Math.round(ARMORS[player.armor].reduce*100)}%`, 16, 146);
 
   // название локации сверху по центру
   ctx.textAlign='center'; ctx.font='bold 14px sans-serif';
@@ -963,6 +998,12 @@ function drawHUD(){
     ctx.globalAlpha = 1;
   });
   ctx.textAlign='left';
+  if(saveFlash>0){
+    ctx.globalAlpha = clamp(saveFlash/500,0,1);
+    ctx.fillStyle='#a8d8a8'; ctx.font='11px sans-serif'; ctx.textAlign='right';
+    ctx.fillText('💾 Сохранено', canvas.width-14, 70);
+    ctx.textAlign='left'; ctx.globalAlpha=1;
+  }
 }
 
 function drawMinimap(){
@@ -1015,24 +1056,30 @@ try{
 }catch(e){}
 let hasActiveGame = false;
 
-function beginNewGame(){
-  resetGame();
+function enterPlaying(){
   hasActiveGame = true;
   gameState='playing';
   startScreenEl.classList.add('hidden');
   document.getElementById('deathScreen').classList.add('hidden');
   document.getElementById('winScreen').classList.add('hidden');
+  document.getElementById('shopScreen').classList.add('hidden');
   menuBtn.classList.remove('hidden');
   if(fsSupported) fullscreenBtn.classList.remove('hidden');
   if(isTouchDevice) touchControls.classList.remove('hidden');
 }
+function beginNewGame(){
+  resetGame();
+  enterPlaying();
+}
 function exitToMenu(){
   if(gameState!=='playing') return;
+  saveGame();
   gameState='start';
   menuBtn.classList.add('hidden');
   fullscreenBtn.classList.add('hidden');
   touchControls.classList.add('hidden');
   resumeBtn.classList.toggle('hidden', !hasActiveGame);
+  refreshSaveUI();
   startScreenEl.classList.remove('hidden');
 }
 function resumeGame(){
@@ -1044,47 +1091,173 @@ function resumeGame(){
   if(isTouchDevice) touchControls.classList.remove('hidden');
 }
 
+// ---------- Сохранение ----------
+const SAVE_KEY = 'eldoria_save_v1';
+try{ localStorage.setItem('__eldoria_t','1'); localStorage.removeItem('__eldoria_t'); storageOK=true; }catch(e){ storageOK=false; }
+const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','weapon','owned','armor','ownedArmor'];
+const continueBtn = document.getElementById('continueBtn');
+const loadBtn = document.getElementById('loadBtn');
+const saveInfoEl = document.getElementById('saveInfo');
+
+function packLoc(L){
+  const o={};
+  for(const k in L){ if(k==='boss') continue; o[k] = (k==='grid') ? L.grid.map(r=>r.join('')) : L[k]; }
+  return o;
+}
+function unpackLoc(o){
+  const L = Object.assign({}, o);
+  L.grid = o.grid.map(r=>r.split(''));
+  if(L.type==='dungeon') L.boss = L.enemies.find(e=>e.type==='boss'||e.type==='shadowlord') || null;
+  return L;
+}
+function getSaveInfo(){
+  if(!storageOK) return null;
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return null;
+    const d = JSON.parse(raw);
+    return (d && d.v===1 && d.player && d.world) ? d : null;
+  }catch(e){ return null; }
+}
+function saveGame(){
+  if(!storageOK || !hasActiveGame || gameState==='dead' || gameState==='won' || player.hp<=0) return false;
+  try{
+    const data = { v:1, t:Date.now(), locId:currentLocId, locName:getLocName(loc), player:{}, world:{} };
+    for(const k of PLAYER_KEYS) data.player[k] = player[k];
+    for(const id of Object.keys(world)) data.world[id] = packLoc(world[id]);
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    saveFlash = 1500;
+    return true;
+  }catch(e){ return false; }
+}
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function refreshSaveUI(){
+  const info = getSaveInfo();
+  continueBtn.classList.toggle('hidden', !info);
+  loadBtn.classList.toggle('hidden', !info);
+  if(info){
+    const when = new Date(info.t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    saveInfoEl.textContent = `Сохранение: уровень ${info.player.level} • золото ${info.player.gold} • ${info.locName} • ${when}`;
+    saveInfoEl.classList.remove('hidden');
+  } else if(!storageOK){
+    saveInfoEl.textContent = 'Сохранение недоступно в этом браузере (возможно, включён приватный режим).';
+    saveInfoEl.classList.remove('hidden');
+  } else {
+    saveInfoEl.classList.add('hidden');
+  }
+}
+function loadGame(){
+  const d = getSaveInfo();
+  if(!d) return false;
+  try{
+    const w = {};
+    for(const id of Object.keys(d.world)) w[id] = unpackLoc(d.world[id]);
+    if(!w.overworld || !w.dungeon1 || !w.dungeon2 || !w.dungeon3 || !w[d.locId]) throw new Error('bad save');
+    world = w; currentLocId = d.locId; loc = world[currentLocId];
+    for(const k of PLAYER_KEYS) if(k in d.player) player[k] = d.player[k];
+    if(!WEAPONS[player.weapon]) player.weapon='sword';
+    if(!ARMORS[player.armor]) player.armor='none';
+    player.owned = Object.assign({sword:true}, player.owned||{});
+    player.ownedArmor = Object.assign({none:true}, player.ownedArmor||{});
+    player.invuln = 1500; player.hitFlash = 0; player.attackTimer = 0; player.attacking = false;
+    notifications = []; transitionCooldown = 700; fullInvNoticeTimer = 0; shopLock = true;
+    for(const k in keys) keys[k]=false;
+    enterPlaying();
+    addNote('💾 Сохранение загружено', '#7fe07f');
+    return true;
+  }catch(e){
+    saveInfoEl.textContent = 'Не удалось загрузить сохранение.'; saveInfoEl.classList.remove('hidden');
+    return false;
+  }
+}
+// периодическое автосохранение — только когда рядом нет врагов (чтобы не сохраниться посреди боя)
+setInterval(()=>{
+  if(gameState!=='playing') return;
+  const calm = !loc.enemies.some(e=> e.hp>0 && Math.hypot(e.x-player.x, e.y-player.y) < e.aggro+60);
+  if(calm) saveGame();
+}, 20000);
+// при сворачивании вкладки и закрытии страницы сохраняем точное состояние
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveGame(); });
+window.addEventListener('pagehide', saveGame);
+
 // ---------- Торговая лавка ----------
 const shopScreen = document.getElementById('shopScreen');
 const shopList = document.getElementById('shopList');
+const shopTabsEl = document.getElementById('shopTabs');
+let shopTab = 'weapons';
+const SHOP_TABS = [['weapons','⚔ Оружие'],['armor','🛡 Броня'],['potions','✚ Зелья']];
 function openShop(msg){
   for(const k in keys) keys[k]=false;
   gameState='shop';
-  renderShop(msg || 'Добро пожаловать, путник! Лучшее оружие во всей Эльдории — только у меня.');
+  renderShop(msg || 'Добро пожаловать, путник! Оружие, броня и зелья — всё у меня.');
   shopScreen.classList.remove('hidden');
 }
 function closeShop(){
   shopScreen.classList.add('hidden');
   gameState='playing';
   shopLock=true;
+  saveGame();
+}
+function shopRow(title, desc, buttons){
+  const row = document.createElement('div'); row.className='shopItem';
+  const info = document.createElement('div'); info.className='shopInfo';
+  const nm = document.createElement('b'); nm.textContent = title;
+  const ds = document.createElement('span'); ds.textContent = desc;
+  info.append(nm, ds);
+  const box = document.createElement('div'); box.className='shopBtns';
+  buttons.forEach(b=>box.appendChild(b));
+  row.append(info, box); shopList.appendChild(row);
+}
+function shopButton(text, onClick, disabled){
+  const b = document.createElement('button'); b.className='startBtn shopBtn'; b.textContent=text;
+  if(disabled) b.disabled = true; else b.addEventListener('click', onClick);
+  return b;
+}
+// одна строка снаряжения: оружие или броня
+function gearRow(kind, id, def){
+  const isW = kind==='weapon';
+  const owned = isW ? player.owned : player.ownedArmor;
+  const current = isW ? player.weapon : player.armor;
+  const desc = isW
+    ? `Урон ×${def.mult} (сейчас ${Math.round(player.atk*def.mult)}). ${def.desc}`
+    : `Гасит ${Math.round(def.reduce*100)}% получаемого урона. ${def.desc}`;
+  const equip = ()=>{ if(isW) player.weapon=id; else player.armor=id; };
+  let btn;
+  if(current===id) btn = shopButton('Экипировано', null, true);
+  else if(owned[id]) btn = shopButton('Экипировать', ()=>{ equip(); saveGame(); renderShop(`Экипировано: ${def.name}.`); });
+  else btn = shopButton(`Купить — ${def.price} ◆`, ()=>{
+    if(player.gold < def.price){ renderShop(`Не хватает золота: нужно ${def.price}, у вас ${player.gold}.`); return; }
+    player.gold -= def.price; owned[id]=true; equip();
+    addNote(`Куплено: ${def.name}`, '#7fe07f'); saveGame();
+    renderShop(`${def.name} куплено и экипировано. Удачной охоты!`);
+  });
+  shopRow(def.name, desc, [btn]);
 }
 function renderShop(msg){
-  document.getElementById('shopMsg').textContent = msg;
+  document.getElementById('shopMsg').textContent = msg || '';
   document.getElementById('shopGold').textContent = '◆ Золото: ' + player.gold;
+  shopTabsEl.innerHTML='';
+  SHOP_TABS.forEach(([id,label])=>{
+    const t = document.createElement('button'); t.className = 'tabBtn' + (shopTab===id ? ' active' : ''); t.textContent = label;
+    t.addEventListener('click', ()=>{ shopTab=id; renderShop(''); });
+    shopTabsEl.appendChild(t);
+  });
   shopList.innerHTML='';
-  for(const id of Object.keys(WEAPONS)){
-    const w = WEAPONS[id];
-    const row = document.createElement('div'); row.className='shopItem';
-    const info = document.createElement('div'); info.className='shopInfo';
-    const nm = document.createElement('b'); nm.textContent = w.name;
-    const ds = document.createElement('span');
-    ds.textContent = `Урон ×${w.mult} (сейчас ${Math.round(player.atk*w.mult)}). ${w.desc}`;
-    info.append(nm, ds);
-    const btn = document.createElement('button'); btn.className='startBtn shopBtn';
-    if(player.weapon===id){ btn.textContent='Экипировано'; btn.disabled=true; }
-    else if(player.owned[id]){
-      btn.textContent='Экипировать';
-      btn.addEventListener('click', ()=>{ player.weapon=id; renderShop('Экипировано: '+w.name+'.'); });
-    } else {
-      btn.textContent = `Купить — ${w.price} ◆`;
-      btn.addEventListener('click', ()=>{
-        if(player.gold < w.price){ renderShop(`Не хватает золота: нужно ${w.price}, у вас ${player.gold}.`); return; }
-        player.gold -= w.price; player.owned[id]=true; player.weapon=id;
-        addNote(`Куплено оружие: ${w.name}`, '#7fe07f');
-        renderShop(`${w.name} куплено и экипировано. Удачной охоты!`);
-      });
-    }
-    row.append(info, btn); shopList.appendChild(row);
+  if(shopTab==='weapons'){
+    for(const id of Object.keys(WEAPONS)) gearRow('weapon', id, WEAPONS[id]);
+  } else if(shopTab==='armor'){
+    for(const id of Object.keys(ARMORS)) if(id!=='none') gearRow('armor', id, ARMORS[id]);
+  } else {
+    const buy = shopButton(`Купить — ${POTION_BUY} ◆`, ()=>{
+      if(player.potions>=POTION_MAX){ renderShop(`В инвентаре максимум зелий (${POTION_MAX}).`); return; }
+      if(player.gold<POTION_BUY){ renderShop(`Не хватает золота: нужно ${POTION_BUY}, у вас ${player.gold}.`); return; }
+      player.gold-=POTION_BUY; player.potions++; saveGame(); renderShop('Зелье здоровья куплено.');
+    }, false);
+    const sell = shopButton(`Продать — ${POTION_SELL} ◆`, ()=>{
+      if(player.potions<=0){ renderShop('У вас нет зелий на продажу.'); return; }
+      player.potions--; player.gold+=POTION_SELL; saveGame(); renderShop('Зелье продано.');
+    }, false);
+    shopRow('Зелье здоровья', `Лечит 30 HP. У вас: ${player.potions}/${POTION_MAX}. Скупаю по ${POTION_SELL} ◆.`, [buy, sell]);
   }
 }
 document.getElementById('shopClose').addEventListener('click', closeShop);
@@ -1133,7 +1306,13 @@ fullscreenBtn.addEventListener('click', toggleFullscreen);
 document.addEventListener('fullscreenchange', ()=>{ updateFsButton(); setTimeout(resizeCanvas,100); });
 document.addEventListener('webkitfullscreenchange', ()=>{ updateFsButton(); setTimeout(resizeCanvas,100); });
 
-document.getElementById('startBtn').addEventListener('click', beginNewGame);
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  if(getSaveInfo() && !confirm('Начать новую игру? Старое сохранение будет перезаписано, как только вы продвинетесь.')) return;
+  beginNewGame();
+});
+continueBtn.addEventListener('click', loadGame);
+loadBtn.addEventListener('click', loadGame);
+refreshSaveUI();
 document.getElementById('restartBtn').addEventListener('click', beginNewGame);
 document.getElementById('restartBtn2').addEventListener('click', beginNewGame);
 resumeBtn.addEventListener('click', resumeGame);
