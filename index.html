@@ -149,14 +149,15 @@
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмные пещеры</b>,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и зелья.
     Победите <b>Костяного Короля</b> — и откроется спуск в <b>Бездну Теней</b>. Дальше путь ведёт через <b>Огненные недра</b> и <b>Пустыню Миражей</b> в <b>Ледяной край</b>, где правит Ледяной Король. Днём и ночью, в дождь, туман и метель вас ждут новые враги. В углу карты стоит <b>торговая лавка</b>: покупайте и продавайте оружие, броню и зелья. Игра сохраняется автоматически.</p>
+    <p style="font-size:13px">Карта и местность скрыты туманом: он рассеивается, когда вы подходите. Торговые лавки есть в углу карты, в Пустыне Миражей и в Ледяном крае.</p>
     <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака &nbsp;|&nbsp; <b>E</b> — выпить зелье &nbsp;|&nbsp; <b>ESC</b> — меню</p>
     <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Зелья лечат 30 HP, уровень повышает здоровье и урон.</p>
     <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
     <div id="saveInfo" class="hidden" style="font-size:12px;color:#a89d78"></div>
     <div class="btnRow">
       <button class="startBtn hidden" id="resumeBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">Вернуться в игру</button>
-      <button class="startBtn hidden" id="continueBtn" style="background:linear-gradient(#8fd38f,#3f8f4a); border-color:#1d4a22;">Загрузить сохранение</button>
       <button class="startBtn" id="startBtn">Начать поход</button>
+      <button class="startBtn" id="savesBtn" style="background:linear-gradient(#8fd38f,#3f8f4a); border-color:#1d4a22;">Сохранения</button>
     </div>
   </div>
 
@@ -174,6 +175,14 @@
     <div class="shopTabs" id="shopTabs"></div>
     <div id="shopList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
     <button class="startBtn" id="shopClose">Уйти</button>
+  </div>
+
+  <div id="savesScreen" class="overlay hidden">
+    <h2>Сохранения</h2>
+    <p id="savesLast"></p>
+    <p id="savesMsg" style="min-height:18px"></p>
+    <div id="savesList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <button class="startBtn" id="savesBack">Назад</button>
   </div>
 
   <div id="winScreen" class="overlay hidden">
@@ -417,6 +426,15 @@ function addLavaPools(grid, rooms){
 }
 
 // открытые карты (пустыня, ледяной край): широкое поле, вход слева, арена с владыкой справа
+// торговая лавка на открытых картах: рядом со входом, чтобы можно было закупиться
+function fieldShop(grid){
+  const H = grid.length, W = grid[0].length, sx = 10, sy = Math.floor(H/2)-7;
+  for(let y=sy-3;y<=sy+3;y++) for(let x=sx-3;x<=sx+3;x++)
+    if(Math.hypot(x-sx,y-sy)<=3.4 && x>=2 && y>=2 && x<W-2 && y<H-2) grid[y][x] = '.';
+  for(let dx=-1;dx<=1;dx++) grid[sy+1][sx+dx] = 'S';
+  grid[sy+1][sx-2] = 'B'; grid[sy+1][sx+2] = 'B';
+  return { shop:{tx:sx, ty:sy}, merchant:{x:sx*TILE+5, y:sy*TILE+5, w:22, h:22} };
+}
 function generateField(level, biome){
   const W=56, H=56, my=Math.floor(H/2), ax=W-11;
   const grid = makeGrid(W,H,'.');
@@ -430,12 +448,13 @@ function generateField(level, biome){
   clearC(5,my,4); clearC(ax,my,6);
   for(let x=2;x<=ax;x++) for(let d=-1;d<=1;d++) grid[my+d][x]='.';
   grid[my][3]='<';
+  const fs = fieldShop(grid);
   // клетки, достижимые от входа и окружённые свободным местом (чтобы враги не застревали)
   const seen = makeGrid(W,H,false), q=[[5,my]]; seen[my][5]=true;
-  while(q.length){ const [x,y]=q.pop(); for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+dx, ny=y+dy; if(nx<0||ny<0||nx>=W||ny>=H||seen[ny][nx]||grid[ny][nx]==='#') continue; seen[ny][nx]=true; q.push([nx,ny]); } }
-  const open8 = (x,y)=>{ for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) if(grid[y+dy][x+dx]==='#') return false; return true; };
+  while(q.length){ const [x,y]=q.pop(); for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+dx, ny=y+dy; if(nx<0||ny<0||nx>=W||ny>=H||seen[ny][nx]||'#SB'.includes(grid[ny][nx])) continue; seen[ny][nx]=true; q.push([nx,ny]); } }
+  const open8 = (x,y)=>{ for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) if('#SB'.includes(grid[y+dy][x+dx])) return false; return true; };
   const cells=[];
-  for(let y=3;y<H-3;y++) for(let x=3;x<W-3;x++) if(seen[y][x] && grid[y][x]==='.' && open8(x,y)) cells.push([x,y]);
+  for(let y=3;y<H-3;y++) for(let x=3;x<W-3;x++) if(seen[y][x] && grid[y][x]==='.' && open8(x,y) && Math.hypot(x-fs.shop.tx,y-fs.shop.ty)>=5) cells.push([x,y]);
   const take=(pred)=>{ const c = cells.filter(pred); return c.length ? c[rnd(0,c.length-1)] : [Math.floor(W/2), my]; };
   const dEnt=(c)=>Math.hypot(c[0]-5,c[1]-my), dArena=(c)=>Math.hypot(c[0]-ax,c[1]-my);
   const roster = biome==='desert' ? ['scorpion','mummy','cobra','scorpion','mummy','cobra'] : ['icewolf','yeti','frostwraith','icewolf','frostwraith'];
@@ -445,7 +464,7 @@ function generateField(level, biome){
   for(let i=0;i<12;i++){ const c=take(c=>dEnt(c)>=5); items.push(makeItem(Math.random()<0.55?'potion':'gold', c[0]*TILE+10, c[1]*TILE+10)); }
   const boss = makeEnemy(biome==='desert' ? 'pharaoh' : 'frostking', ax*TILE, my*TILE, level);
   enemies.push(boss);
-  return { type:'dungeon', level, biome, grid, width:W, height:H, enemies, items, boss,
+  return { type:'dungeon', level, biome, grid, width:W, height:H, enemies, items, boss, shop:fs.shop, merchant:fs.merchant,
     portal: biome==='desert' ? {tx:ax, ty:my, open:false} : null,
     spawn:{x:5*TILE, y:my*TILE}, exit:{tx:3, ty:my} };
 }
@@ -854,6 +873,7 @@ function ensureWorldExtras(){
   if(!world.lava) world.lava = generateDungeon(4);
   if(!world.desert) world.desert = generateField(5,'desert');
   if(!world.ice) world.ice = generateField(6,'ice');
+  for(const id of ['desert','ice']) if(!world[id].merchant) Object.assign(world[id], fieldShop(world[id].grid));
   const d3 = world.dungeon3;
   if(d3){
     d3.items = d3.items.filter(it=>it.type!=='treasure');
@@ -986,7 +1006,7 @@ const virtualMove = {x:0, y:0};
 
 // ---------- Коллизии ----------
 function blockedTiles(locType){
-  return locType==='overworld' ? new Set(['~','^','#','S','B']) : new Set(['#','L']);
+  return locType==='overworld' ? new Set(['~','^','#','S','B']) : new Set(['#','L','S','B']);
 }
 function isBlocked(gridInfo, x, y, w, h){
   const blocked = blockedTiles(gridInfo.type);
@@ -1130,6 +1150,7 @@ function update(dt){
   updateArrows(dt);
   updateEnemyShots(dt);
   updateEnv(dt);
+  updateFog();
   transitionCooldown = Math.max(0, transitionCooldown-dt*1000);
   saveFlash = Math.max(0, saveFlash-dt*1000);
   fullInvNoticeTimer = Math.max(0, fullInvNoticeTimer-dt*1000);
@@ -1270,7 +1291,7 @@ function update(dt){
   }
 
   // торговец: лавка открывается, когда игрок подходит вплотную
-  if(loc.type==='overworld' && loc.merchant){
+  if(loc.merchant){
     const m=loc.merchant;
     const d=Math.hypot(player.x+player.w/2-(m.x+m.w/2), player.y+player.h/2-(m.y+m.h/2));
     if(d>115) shopLock=false;
@@ -2676,6 +2697,7 @@ function draw(){
     drawShopGround(camX,camY);
   } else {
     drawDungeonGround(camX,camY);
+    drawShopGround(camX,camY);
     if(loc.level===4) drawLavaAnim(startTX,startTY,endTX,endTY,camX,camY);
   }
   drawPrints(camX,camY);
@@ -2732,6 +2754,7 @@ function draw(){
   drawParticles(camX, camY);
   if(loc.merchant) drawStallRoof(camX, camY);   // навес перекрывает всё, что за прилавком
 
+  drawFog(camX, camY);
   drawAtmosphere(camX, camY);
 
   // стрелка к открытому спуску, если он за краем экрана
@@ -2852,8 +2875,10 @@ function drawHUD(){
 }
 
 function minimapSize(){ return canvas.width<900 ? 112 : 146; }
+const MM_COL = { '~':[47,102,144], '^':[90,90,90], '#':[31,77,26], 'S':[138,90,43], 'B':[138,90,43], '.':[63,125,50] }, MM_FOG = [74,82,96];
 function drawMinimap(){
   const mw=minimapSize(), mh=mw, mx=UI.l+248, my=UI.t+10;   // вверху, правее панели экипировки
+  const F = getFog(loc);
   ctx.save();
   ctx.fillStyle='rgba(10,8,4,0.3)'; ctx.fillRect(mx-2,my-2,mw+4,mh+4);
   ctx.strokeStyle='rgba(92,68,21,0.8)'; ctx.strokeRect(mx-2,my-2,mw+4,mh+4);
@@ -2861,26 +2886,91 @@ function drawMinimap(){
   ctx.globalAlpha = 0.5; // сама карта полупрозрачная — сквозь неё видно игру
   for(let y=0;y<loc.height;y+=2){
     for(let x=0;x<loc.width;x+=2){
-      const t=loc.grid[y][x];
-      ctx.fillStyle = t==='~'?'#2f6690': t==='^'?'#5a5a5a': t==='#'?'#1f4d1a': (t==='S'||t==='B')?'#8a5a2b':'#3f7d32';
+      const c = MM_COL[loc.grid[y][x]] || MM_COL['.'];
+      const v = Math.max(F.data[y*F.W+x], x+1<F.W ? F.data[y*F.W+x+1] : 0, y+1<F.H ? F.data[(y+1)*F.W+x] : 0);   // неоткрытое скрыто туманом
+      ctx.fillStyle = 'rgb('+((MM_FOG[0]+(c[0]-MM_FOG[0])*v)|0)+','+((MM_FOG[1]+(c[1]-MM_FOG[1])*v)|0)+','+((MM_FOG[2]+(c[2]-MM_FOG[2])*v)|0)+')';
       ctx.fillRect(mx+x*sx, my+y*sy, sx*2, sy*2);
     }
   }
-  if(loc.shop){
-    ctx.fillStyle='#ff9f4a'; ctx.fillRect(mx+loc.shop.tx*sx-3, my+loc.shop.ty*sy-3, 7, 7);
-    ctx.strokeStyle='#4a2d0c'; ctx.lineWidth=1; ctx.strokeRect(mx+loc.shop.tx*sx-3, my+loc.shop.ty*sy-3, 7, 7);
-  }
   ctx.globalAlpha = 0.95;
-  // входы в пещеры рисуем отдельно: карта выбирает каждый 2-й тайл и одиночный вход мог пропасть
+  // лавка (красная точка) и входы в пещеры (коричневые) показываются, когда их уже нашли
+  if(loc.shop && F.data[loc.shop.ty*F.W+loc.shop.tx]>0.5){
+    ctx.fillStyle='#e02a2a'; ctx.strokeStyle='#4a0c0c'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(mx+(loc.shop.tx+0.5)*sx, my+(loc.shop.ty+0.5)*sy, 3.4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  }
   if(loc.entrances){
     for(const e of loc.entrances){
-      ctx.fillStyle='#e8c873'; ctx.strokeStyle='#5c4415'; ctx.lineWidth=1;
+      if(F.data[e.ty*F.W+e.tx]<=0.5) continue;
+      ctx.fillStyle='#8b5a2b'; ctx.strokeStyle='#2e1a08'; ctx.lineWidth=1;
       ctx.beginPath(); ctx.arc(mx+(e.tx+0.5)*sx, my+(e.ty+0.5)*sy, 3, 0, Math.PI*2); ctx.fill(); ctx.stroke();
     }
   }
   ctx.fillStyle='#4aa0e0'; ctx.strokeStyle='#0d2a40'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.arc(mx+(player.x/TILE)*sx, my+(player.y/TILE)*sy, 3,0,Math.PI*2); ctx.fill(); ctx.stroke();
   ctx.restore();
+}
+
+// ---------- Туман: местность и карта открываются по мере приближения и больше не закрываются ----------
+const FOG_R = 7.5;
+const fogs = new WeakMap();
+let fogTmp = null, fogTmpG = null, fogPat = null, fogTex = null;
+function getFog(L){
+  let F = fogs.get(L);
+  if(!F){
+    const W = L.width, H = L.height;
+    F = { W, H, data:new Float32Array(W*H), cv:document.createElement('canvas'), dirty:true };
+    F.cv.width = W; F.cv.height = H; F.g = F.cv.getContext('2d'); F.img = F.g.createImageData(W,H);
+    if(typeof L.fog==='string' && L.fog.length===W*H) for(let i=0;i<W*H;i++) F.data[i] = (L.fog.charCodeAt(i)-48)/9;
+    fogs.set(L,F);
+  }
+  return F;
+}
+function fogString(L){
+  const F = fogs.get(L); if(!F) return typeof L.fog==='string' ? L.fog : null;
+  let out = ''; for(let i=0;i<F.data.length;i++) out += String.fromCharCode(48+Math.round(F.data[i]*9));
+  return out;
+}
+function updateFog(){
+  const F = getFog(loc), px = (player.x+player.w/2)/TILE, py = (player.y+player.h/2)/TILE, r = Math.ceil(FOG_R);
+  for(let y=Math.max(0,Math.floor(py)-r); y<=Math.min(F.H-1,Math.floor(py)+r); y++)
+    for(let x=Math.max(0,Math.floor(px)-r); x<=Math.min(F.W-1,Math.floor(px)+r); x++){
+      const v = clamp((FOG_R-Math.hypot(x+0.5-px,y+0.5-py))/3,0,1), i = y*F.W+x;
+      if(v>F.data[i]+0.01){ F.data[i] = v; F.dirty = true; }
+    }
+}
+const FOG_TINT = { 1:'rgba(8,8,14,0.5)', 2:'rgba(8,10,18,0.5)', 3:'rgba(14,6,26,0.5)', 4:'rgba(34,6,2,0.5)', 5:'rgba(236,206,150,0.3)', 6:'rgba(236,246,255,0.3)' };
+function drawFog(camX,camY){
+  const W = canvas.width, H = canvas.height, F = getFog(loc);
+  if(!fogTex){
+    fogTex = document.createElement('canvas'); fogTex.width = fogTex.height = 256;
+    const g = fogTex.getContext('2d'); g.fillStyle = 'rgb(140,152,168)'; g.fillRect(0,0,256,256);
+    let sd = 7; const rr = ()=>{ sd = (sd*1664525+1013904223)>>>0; return sd/4294967296; };
+    for(let i=0;i<46;i++){
+      const x = rr()*256, y = rr()*256, r = 26+rr()*48, light = rr()<0.6;
+      for(const ox of [-256,0,256]) for(const oy of [-256,0,256]){
+        const gr = g.createRadialGradient(x+ox,y+oy,2,x+ox,y+oy,r);
+        gr.addColorStop(0, light ? 'rgba(214,223,233,0.55)' : 'rgba(96,108,126,0.5)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+        g.fillStyle = gr; g.fillRect(x+ox-r,y+oy-r,r*2,r*2);
+      }
+    }
+  }
+  if(!fogTmp || fogTmp.width!==W || fogTmp.height!==H){
+    fogTmp = document.createElement('canvas'); fogTmp.width = W; fogTmp.height = H; fogTmpG = fogTmp.getContext('2d'); fogPat = fogTmpG.createPattern(fogTex,'repeat');
+  }
+  if(F.dirty){
+    const d = F.img.data;
+    for(let i=0;i<F.data.length;i++){ d[i*4+3] = Math.round((1-F.data[i])*0.97*255); }
+    F.g.putImageData(F.img,0,0); F.dirty = false;
+  }
+  const g = fogTmpG, now = Date.now()/1000;
+  g.globalCompositeOperation = 'source-over'; g.clearRect(0,0,W,H);
+  const ox = -(camX*0.5) + now*7, oy = -(camY*0.5) + now*3;
+  g.setTransform(1,0,0,1,ox%256,oy%256); g.fillStyle = fogPat; g.fillRect(-256,-256,W+512,H+512); g.setTransform(1,0,0,1,0,0);
+  g.globalCompositeOperation = 'source-atop'; g.fillStyle = FOG_TINT[loc.level||0] || 'rgba(0,0,0,0)'; g.fillRect(0,0,W,H);
+  g.globalCompositeOperation = 'destination-in'; g.imageSmoothingEnabled = true;
+  g.drawImage(F.cv, 0,0,F.W,F.H, -camX,-camY, F.W*TILE, F.H*TILE);
+  g.globalCompositeOperation = 'source-over';
+  ctx.drawImage(fogTmp,0,0);
 }
 
 // ---------- День, ночь и погода ----------
@@ -3066,7 +3156,7 @@ function enterPlaying(){
   clearFx();
   hasActiveGame = true;
   gameState='playing';
-  startScreenEl.classList.add('hidden');
+  startScreenEl.classList.add('hidden'); savesScreen.classList.add('hidden');
   document.getElementById('deathScreen').classList.add('hidden');
   document.getElementById('winScreen').classList.add('hidden');
   document.getElementById('shopScreen').classList.add('hidden');
@@ -3099,16 +3189,20 @@ function resumeGame(){
 }
 
 // ---------- Сохранение ----------
-const SAVE_KEY = 'eldoria_save_v1';
+const SAVE_KEY = 'eldoria_save_v1';                      // автосохранение
+const SLOT_KEYS = ['eldoria_slot_1','eldoria_slot_2','eldoria_slot_3'];   // ручные слоты
 try{ localStorage.setItem('__eldoria_t','1'); localStorage.removeItem('__eldoria_t'); storageOK=true; }catch(e){ storageOK=false; }
 const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','weapon','owned','armor','ownedArmor','quest','questsDone'];
-const continueBtn = document.getElementById('continueBtn');
+const savesBtn = document.getElementById('savesBtn');
 const loadBtn = document.getElementById('loadBtn');
 const saveInfoEl = document.getElementById('saveInfo');
+const savesScreen = document.getElementById('savesScreen');
+const savesList = document.getElementById('savesList');
 
 function packLoc(L){
   const o={};
-  for(const k in L){ if(k==='boss') continue; o[k] = (k==='grid') ? L.grid.map(r=>r.join('')) : L[k]; }
+  for(const k in L){ if(k==='boss' || k==='fog') continue; o[k] = (k==='grid') ? L.grid.map(r=>r.join('')) : L[k]; }
+  const f = fogString(L); if(f) o.fog = f;
   return o;
 }
 function unpackLoc(o){
@@ -3117,44 +3211,51 @@ function unpackLoc(o){
   if(L.type==='dungeon') L.boss = L.enemies.find(e=>BOSS_TYPES.includes(e.type)) || null;
   return L;
 }
-function getSaveInfo(){
+function getSaveInfo(key){
   if(!storageOK) return null;
   try{
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(key || SAVE_KEY);
     if(!raw) return null;
     const d = JSON.parse(raw);
     return (d && d.v===1 && d.player && d.world) ? d : null;
   }catch(e){ return null; }
 }
+function buildSaveData(){
+  if(!hasActiveGame || gameState==='dead' || gameState==='won' || player.hp<=0) return null;
+  const data = { v:1, t:Date.now(), locId:currentLocId, locName:getLocName(loc), player:{}, world:{}, env:packEnv() };
+  for(const k of PLAYER_KEYS) data.player[k] = player[k];
+  for(const id of Object.keys(world)) data.world[id] = packLoc(world[id]);
+  return data;
+}
 function saveGame(){
-  if(!storageOK || !hasActiveGame || gameState==='dead' || gameState==='won' || player.hp<=0) return false;
-  try{
-    const data = { v:1, t:Date.now(), locId:currentLocId, locName:getLocName(loc), player:{}, world:{}, env:packEnv() };
-    for(const k of PLAYER_KEYS) data.player[k] = player[k];
-    for(const id of Object.keys(world)) data.world[id] = packLoc(world[id]);
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-    saveFlash = 1500;
-    return true;
-  }catch(e){ return false; }
+  if(!storageOK) return false;
+  const data = buildSaveData(); if(!data) return false;
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(data)); saveFlash = 1500; return true; }catch(e){ return false; }
+}
+function saveToSlot(n){
+  if(!storageOK) return false;
+  const data = buildSaveData(); if(!data) return false;
+  try{ localStorage.setItem(SLOT_KEYS[n], JSON.stringify(data)); return true; }catch(e){ return false; }
 }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function latestSaveKey(){
+  let best = null, bt = -1;
+  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ const i = getSaveInfo(k); if(i && i.t>bt){ bt = i.t; best = k; } }
+  return best;
+}
+function fmtSave(info){
+  const when = new Date(info.t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  return `Уровень ${info.player.level} • Золото ${info.player.gold} • ${info.locName} • ${when}`;
+}
 function refreshSaveUI(){
-  const info = getSaveInfo();
-  continueBtn.classList.toggle('hidden', !info);
-  loadBtn.classList.toggle('hidden', !info);
-  if(info){
-    const when = new Date(info.t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    saveInfoEl.textContent = `Сохранение: уровень ${info.player.level} • золото ${info.player.gold} • ${info.locName} • ${when}`;
-    saveInfoEl.classList.remove('hidden');
-  } else if(!storageOK){
+  loadBtn.classList.toggle('hidden', !latestSaveKey());
+  if(!storageOK){
     saveInfoEl.textContent = 'Сохранение недоступно в этом браузере (возможно, включён приватный режим).';
     saveInfoEl.classList.remove('hidden');
-  } else {
-    saveInfoEl.classList.add('hidden');
-  }
+  } else saveInfoEl.classList.add('hidden');
 }
-function loadGame(){
-  const d = getSaveInfo();
+function loadGame(key){
+  const d = getSaveInfo(key);
   if(!d) return false;
   try{
     const w = {};
@@ -3180,6 +3281,39 @@ function loadGame(){
     return false;
   }
 }
+
+// ---------- Меню «Сохранения» ----------
+function saveRow(title, desc, buttons){
+  const row = document.createElement('div'); row.className = 'shopItem'; row.style.flexWrap = 'wrap';
+  const info = document.createElement('div'); info.className = 'shopInfo'; info.style.flex = '1 1 100%';
+  const nm = document.createElement('b'); nm.textContent = title;
+  const ds = document.createElement('span'); ds.textContent = desc;
+  info.append(nm, ds);
+  const box = document.createElement('div'); box.className = 'shopBtns'; box.style.flexWrap = 'wrap'; box.style.flex = '1 1 100%'; box.style.justifyContent = 'flex-end';
+  buttons.forEach(b=>box.appendChild(b));
+  row.append(info, box); savesList.appendChild(row);
+}
+function renderSaves(msg){
+  const last = latestSaveKey(), li = last ? getSaveInfo(last) : null;
+  document.getElementById('savesLast').textContent = li ? 'Последнее сохранение: '+fmtSave(li) : 'Сохранений пока нет.';
+  document.getElementById('savesMsg').textContent = msg || '';
+  savesList.innerHTML = '';
+  const ai = getSaveInfo(SAVE_KEY);
+  saveRow('Автосохранение', ai ? fmtSave(ai) : 'Пусто. Появится само при переходах, в лавке и по ходу игры.',
+    [shopButton('Загрузить', ()=>{ loadGame(SAVE_KEY); }, !ai)]);
+  SLOT_KEYS.forEach((key,n)=>{
+    const info = getSaveInfo(key), btns = [];
+    btns.push(shopButton('Загрузить', ()=>{ loadGame(key); }, !info));
+    btns.push(shopButton(info ? 'Записать' : 'Сохранить сюда', ()=>{
+      if(info && !confirm('Перезаписать слот '+(n+1)+'?')) return;
+      renderSaves(saveToSlot(n) ? 'Игра сохранена в слот '+(n+1)+'.' : 'Не удалось сохранить (нет места или хранилище недоступно).');
+    }, !hasActiveGame));
+    if(info) btns.push(shopButton('Удалить', ()=>{ if(!confirm('Удалить слот '+(n+1)+'?')) return; try{ localStorage.removeItem(key); }catch(e){} renderSaves('Слот '+(n+1)+' удалён.'); }));
+    saveRow('Слот '+(n+1), info ? fmtSave(info) : (hasActiveGame ? 'Пусто' : 'Пусто. Начните или загрузите игру, чтобы сохранять сюда.'), btns);
+  });
+}
+function openSaves(){ startScreenEl.classList.add('hidden'); renderSaves(''); savesScreen.classList.remove('hidden'); }
+function closeSaves(){ savesScreen.classList.add('hidden'); startScreenEl.classList.remove('hidden'); refreshSaveUI(); }
 // периодическое автосохранение — только когда рядом нет врагов (чтобы не сохраниться посреди боя)
 setInterval(()=>{
   if(gameState!=='playing') return;
@@ -3364,11 +3498,12 @@ document.addEventListener('fullscreenchange', ()=>{ updateFsButton(); setTimeout
 document.addEventListener('webkitfullscreenchange', ()=>{ updateFsButton(); setTimeout(resizeCanvas,100); });
 
 document.getElementById('startBtn').addEventListener('click', ()=>{
-  if(getSaveInfo() && !confirm('Начать новую игру? Старое сохранение будет перезаписано, как только вы продвинетесь.')) return;
+  if(getSaveInfo() && !confirm('Начать новую игру? Автосохранение будет перезаписано, как только вы продвинетесь (ручные слоты останутся).')) return;
   beginNewGame();
 });
-continueBtn.addEventListener('click', loadGame);
-loadBtn.addEventListener('click', loadGame);
+savesBtn.addEventListener('click', openSaves);
+document.getElementById('savesBack').addEventListener('click', closeSaves);
+loadBtn.addEventListener('click', ()=>{ loadGame(latestSaveKey()); });
 refreshSaveUI();
 document.getElementById('restartBtn').addEventListener('click', beginNewGame);
 document.getElementById('restartBtn2').addEventListener('click', beginNewGame);
