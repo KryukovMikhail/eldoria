@@ -157,11 +157,11 @@
   <div id="startScreen" class="overlay">
     <h2>Легенды Эльдории</h2>
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
-    сражайтесь с волками, скелетами и слизнями, собирайте золото и зелья.
-    Путь лежит через цепочку мест, и между каждыми двумя из них стоит отдельное <b>логово с боссом</b>: Лес → Логово Костяного Короля → Пещера теней → Логово Паучьей Королевы → Бездна Теней → Логово Повелителя Тьмы → Огненные недра → Логово Повелителя Пламени → Пустыня → Логово Фараона → Ледяной край → Логово Ледяного Короля → Кладбище → Логово Повелителя Мёртвых → Джунгли → Логово Древнего Хранителя → Средневековый город → Логово Чёрного Маршала → Заброшенный дом → Логово Призрачного Хозяина. Проход дальше открывается, когда босс повержен. Днём и ночью, в дождь, туман и метель вас ждут новые враги. В углу карты стоит <b>торговая лавка</b>: покупайте и продавайте оружие, броню и зелья. Есть и <b>Город Эльдор</b> — с трактиром, лавкой алхимика и рынком; его ворота стоят где-то на поверхности. Игра сохраняется автоматически.</p>
+    сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
+    Путь лежит через цепочку мест, и между каждыми двумя из них стоит отдельное <b>логово с боссом</b>: Лес → Логово Костяного Короля → Пещера теней → Логово Паучьей Королевы → Бездна Теней → Логово Повелителя Тьмы → Огненные недра → Логово Повелителя Пламени → Пустыня → Логово Фараона → Ледяной край → Логово Ледяного Короля → Кладбище → Логово Повелителя Мёртвых → Джунгли → Логово Древнего Хранителя → Средневековый город → Логово Чёрного Маршала → Заброшенный дом → Логово Призрачного Хозяина. Проход дальше открывается, когда босс повержен. Днём и ночью, в дождь, туман и метель вас ждут новые враги. В углу карты стоит <b>торговая лавка</b>: покупайте и продавайте оружие, броню и зелья. Есть и <b>Город Эльдор</b> — с трактиром, лавкой алхимика и рынком; его ворота стоят где-то на поверхности. Ищите <b>тайные места</b>: сундуки, ключи к запертым сундукам и скрытые пещеры (они появляются на карте, когда вы подходите близко). На поверхности можно встретить странствующего торговца, лекаря — и попасть в засаду. Игра сохраняется автоматически.</p>
     <p style="font-size:13px">Карта и местность скрыты туманом: он рассеивается, когда вы подходите. Торговые лавки есть в углу карты, в Пустыне Миражей, Ледяном крае, на кладбище и в джунглях.</p>
-    <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака (удерживайте — мощный удар) &nbsp;|&nbsp; <b>E</b> — выпить зелье &nbsp;|&nbsp; <b>1–4</b> — эликсиры &nbsp;|&nbsp; <b>ESC</b> — меню<br><b>Shift</b> — рывок &nbsp;|&nbsp; <b>Q</b> — вихрь &nbsp;|&nbsp; <b>R</b> — щит &nbsp;|&nbsp; <b>I</b> — герой (навыки и снаряжение)</p>
-    <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Зелья лечат 30 HP, уровень повышает здоровье и урон. Чем ближе враг, тем сильнее удар.</p>
+    <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака (удерживайте — мощный удар) &nbsp;|&nbsp; <b>E</b> — выпить эликсир здоровья &nbsp;|&nbsp; <b>1</b> — большой эликсир, <b>2–4</b> — зелья (скорость, сила, стойкость) &nbsp;|&nbsp; <b>ESC</b> — меню<br><b>Shift</b> — рывок &nbsp;|&nbsp; <b>Q</b> — вихрь &nbsp;|&nbsp; <b>R</b> — щит &nbsp;|&nbsp; <b>I</b> — герой (навыки и снаряжение)</p>
+    <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Эликсиры лечат 30 HP, уровень повышает здоровье и урон. Чем ближе враг, тем сильнее удар.</p>
     <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
     <div id="saveInfo" class="hidden" style="font-size:12px;color:#a89d78"></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><b style="font-size:13px">Сложность</b><div class="shopTabs" id="diffBtns"></div><div id="diffDesc" style="font-size:12px;color:#a89d78"></div></div>
@@ -204,6 +204,12 @@
     <p id="savesMsg" style="min-height:18px"></p>
     <div id="savesList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
     <button class="startBtn" id="savesBack">Назад</button>
+  </div>
+
+  <div id="dialogScreen" class="overlay hidden">
+    <h2 id="dlgTitle"></h2>
+    <div id="dlgText" style="max-width:560px;text-align:left;font-size:15px;line-height:1.55"></div>
+    <button class="startBtn" id="dlgBtn">Дальше</button>
   </div>
 
   <div id="winScreen" class="overlay hidden">
@@ -318,7 +324,7 @@ function generateOverworld(){
   const items=[];
   for(let i=0;i<22;i++){
     const p=findFloor(grid,W,H,'.',3,cx,cy);
-    items.push(makeItem(Math.random()<0.17?'potion':'gold', p.x*TILE+10, p.y*TILE+10));
+    const pt = pickupType(0.17); if(pt) items.push(makeItem(pt, p.x*TILE+10, p.y*TILE+10));
   }
 
   const ow = {
@@ -386,7 +392,7 @@ function generateDungeonOnce(level){
   for(let i=1;i<rooms.length-1;i++){
     if(Math.random()<0.5){
       const r=rooms[i];
-      items.push(makeItem(Math.random()<0.2?'potion':'gold', r.cx*TILE+10+rnd(-8,8), r.cy*TILE+10+rnd(-8,8)));
+      const pt = pickupType(0.2); if(pt) items.push(makeItem(pt, r.cx*TILE+10+rnd(-8,8), r.cy*TILE+10+rnd(-8,8)));
     }
   }
   const lastRoom = rooms[rooms.length-1];
@@ -482,7 +488,7 @@ function generateField(level, biome){
   const enemies=[], items=[];
   for(let i=0;i<36;i++){ const c=take(c=>dEnt(c)>=12 && dArena(c)>=8); enemies.push(makeEnemy(roster[rnd(0,roster.length-1)], c[0]*TILE+3, c[1]*TILE+3, level)); }
   for(let i=0;i<3;i++){ const c=take(c=>dArena(c)>=8 && dArena(c)<=12); enemies.push(makeEnemy(roster[rnd(0,roster.length-1)], c[0]*TILE+3, c[1]*TILE+3, level)); }
-  for(let i=0;i<18;i++){ const c=take(c=>dEnt(c)>=5); items.push(makeItem(Math.random()<0.2?'potion':'gold', c[0]*TILE+10, c[1]*TILE+10)); }
+  for(let i=0;i<18;i++){ const c=take(c=>dEnt(c)>=5); const pt = pickupType(0.2); if(pt) items.push(makeItem(pt, c[0]*TILE+10, c[1]*TILE+10)); }
   grid[my][ax] = 'v';                                   // проход к логову следующего босса — всегда открыт
   return { type:'dungeon', level, biome, grid, width:W, height:H, enemies, items, boss:null, shop:fs.shop, merchant:fs.merchant,
     portal:{tx:ax, ty:my, open:true},
@@ -660,6 +666,8 @@ function makeEnemy(type,x,y,level=1){
   if(base.erratic) e.erratic = true;
   return e;
 }
+// на карте золота стало заметно меньше: потион выпадает как раньше, золото — лишь в части точек
+function pickupType(pPotion){ return Math.random()<pPotion ? 'potion' : Math.random()<0.4 ? 'gold' : null; }
 function makeItem(type,x,y){
   return { type, x, y, w:16, h:16, value: type==='gold'? rnd(3,10) : 1 };
 }
@@ -703,7 +711,7 @@ function playerDamage(){ return Math.round(player.atk * WEAPONS[player.weapon].m
 
 // ---------- Эликсиры ----------
 const ELIX = {
-  big:  {name:'Большое зелье здоровья', price:55, sell:22, col:'#e0508a', col2:'#ffb0d0', desc:'Мгновенно лечит 80 HP.'},
+  big:  {name:'Большой эликсир здоровья', price:55, sell:22, col:'#e0508a', col2:'#ffb0d0', desc:'Мгновенно лечит 80 HP.'},
   speed:{name:'Зелье скорости',    price:45, sell:18, dur:20000, col:'#34c8f0', col2:'#c0f4ff', desc:'+40% к скорости на 20 с, снимает замедление паутиной.'},
   might:{name:'Зелье силы',        price:50, sell:20, dur:25000, col:'#ff9a2a', col2:'#ffe4a8', desc:'+50% к урону на 25 с.'},
   guard:{name:'Зелье стойкости',   price:50, sell:20, dur:25000, col:'#8a7aff', col2:'#d8d0ff', desc:'Получаемый урон вдвое меньше на 25 с.'}
@@ -734,7 +742,7 @@ function useElixir(k){
   if(k==='big'){
     if(player.hp>=player.maxHp){ addNote('Здоровье уже полное', '#e0c96a'); return false; }
     player.hp = Math.min(player.maxHp, player.hp+80);
-    addNote('Выпито большое зелье здоровья (+80 HP)', '#7fe07f');
+    addNote('Выпит большой эликсир здоровья (+80 HP)', '#7fe07f');
   } else {
     player.buff[k] = d.dur;
     if(k==='speed') player.slowT = 0;
@@ -745,7 +753,7 @@ function useElixir(k){
   return true;
 }
 function elixTick(dt){
-  for(const k of ['speed','might','guard']) if(player.buff[k]>0){ player.buff[k] = Math.max(0, player.buff[k]-dt*1000); if(player.buff[k]===0) addNote('Действие эликсира закончилось: '+ELIX[k].name.toLowerCase(), '#a89d78'); }
+  for(const k of ['speed','might','guard']) if(player.buff[k]>0){ player.buff[k] = Math.max(0, player.buff[k]-dt*1000); if(player.buff[k]===0) addNote('Действие зелья закончилось: '+ELIX[k].name.toLowerCase(), '#a89d78'); }
   player.slowT = Math.max(0, (player.slowT||0)-dt*1000);
   ELIX_KEYS.forEach((k,i)=>{
     const on = keys['Digit'+(i+1)] || keys['Numpad'+(i+1)];
@@ -766,7 +774,7 @@ function maybeDropElixir(e){
 }
 function elixLayout(){
   const list = ELIX_KEYS.filter(k=> player.elix[k]>0 || (k!=='big' && player.buff[k]>0));
-  return list.map((k,i)=>({k, x:UI.l+8, y:UI.t+184+i*40, w:36, h:36}));
+  return list.map((k,i)=>({k, x:UI.l+8, y:UI.t+202+i*40, w:36, h:36}));
 }
 function drawElixHUD(){
   const L = elixLayout();
@@ -1144,11 +1152,347 @@ function genLoc(id){
 function buildWorld(ow){
   const w = { overworld: ow || generateOverworld() };
   for(const id of CHAIN) w[id] = genLoc(id);
+  ensureSecrets(w);
   return w;
 }
+// ======================= Сюжет, тайники и мини-события =======================
+const STORY_INTRO = [
+  'Эльдория погружается во тьму. Призрачный Хозяин — когда-то страж Поместья — похитил Сердце Эльдории, древний камень, хранивший свет королевства, и заперся в Заброшенном доме на краю мира.',
+  'Десять его слуг-стражей запечатали путь: у каждого своё логово, и пока страж жив, врата вглубь закрыты. Первый из них — Костяной Король — засел в пещере на поверхности.',
+  'Вы — последний, кто решился идти за светом. Закупитесь у торговца, наберитесь сил в бою и ищите тайные места: говорят, где-то в лесу прячется пещера старца, который знает о Хозяине больше всех.'
+];
+const LAIR_ORDER = ['lair1','lair2','lair3','lair4','lair5','lair6','lair7','lair8','lair9','lair10'];
+function storyStage(){
+  let n = 0;
+  for(const id of LAIR_ORDER){
+    const L = world[id]; if(!L) break;
+    const dead = L.portal ? L.portal.open : !!(L.boss && L.boss.hp<=0);
+    if(dead) n++; else break;
+  }
+  return n;
+}
+const STORY_TIPS = [
+  'Путь начинается в пещере на поверхности. Костяной Король силён — сперва наберись опыта и купи броню.',
+  'Король пал — отлично! Идите дальше, в Пещеру теней: там прячется Паучья Королева. Берегите зелье скорости, её паутина замедляет.',
+  'Паучья Королева повержена. Впереди Бездна Теней и Повелитель Тьмы — щит хорошо гасит его удары.',
+  'Тьма отступает. Дальше — Огненные недра: без зелья стойкости там тяжело.',
+  'Повелитель Пламени пал. Пустыня Миражей ждёт — берите побольше эликсиров, лавка там есть.',
+  'Фараон повержен. Ледяной край холоден и опасен — ищите лавку у входа.',
+  'Ледяной Король побеждён. Кладбище — вотчина Повелителя Мёртвых, он не любит живых.',
+  'Повелитель Мёртвых сгинул. Джунгли хранят Древнего Хранителя — он не злодей, но Хозяин его околдовал.',
+  'Хранитель освобождён. Теперь Средневековый город, где правит Чёрный Маршал. Берегитесь стрелков.',
+  'Маршал пал. Остался Заброшенный дом — и сам Призрачный Хозяин. Заберите Сердце!',
+  'Вы прошли весь путь. Остался последний шаг — Сердце Поместья.'
+];
+const STORY_LORE = [
+  'Костяной Король был владыкой, что продал душу Хозяину ради вечной жизни. Его кости — его сила: бейте, пока не рассыплется, и не стойте на месте — он бьёт по площади.',
+  'Паучья Королева сплела сети на пути в Бездну. Её плевки замедляют — пользуйтесь рывком и зельем скорости.',
+  'Повелитель Тьмы питается страхом. В Бездне темно, но враги там боятся света факелов — держитесь вместе с тропой.',
+  'В Огненных недрах живёт Повелитель Пламени. Лава непроходима, а его огненные шары больно жгут — щит и зелье стойкости спасают.',
+  'Фараон Песков стережёт пустыню. Песок слепит и режет, бейте издали и берегите здоровье.',
+  'Ледяной Король заморозил целый край. Белые волки ходят стаями — не дайте себя окружить.',
+  'Повелитель Мёртвых поднимает павших. Убивайте помощников быстро, пока не набрались числом.',
+  'Древний Хранитель — дух леса, которого Хозяин околдовал. Когда падёт — лес снова вздохнёт свободно.',
+  'Чёрный Маршал — командир войска, что некогда осадило Эльдор. Город давно мёртв, а его солдаты всё ещё несут караул.',
+  'Заброшенный дом — последний оплот Хозяина. Говорят, Сердце бьётся там, где холоднее всего.',
+  'Вы победили почти всех. Ступайте — свет Эльдории ждёт вас.'
+];
+const LAIR_TAUNT = {
+  lair1:'Костяной Король: «Ещё один глупец пришёл умереть…»',
+  lair2:'Паучья Королева: «Вы запутались в моих сетях…»',
+  lair3:'Повелитель Тьмы: «Свет здесь долго не живёт.»',
+  lair4:'Повелитель Пламени: «Сгори!»',
+  lair5:'Фараон Песков: «Пески поглотят вас, как и многих до вас.»',
+  lair6:'Ледяной Король: «Холод — мой вечный друг.»',
+  lair7:'Повелитель Мёртвых: «Ещё один в мою армию…»',
+  lair8:'Древний Хранитель: «Хозяин… велел… не пускать…»',
+  lair9:'Чёрный Маршал: «Город мой. Преклонись или умри.»',
+  lair10:'Призрачный Хозяин: «Добро пожаловать в мой дом, гость. Останься навсегда.»'
+};
+function goalText(){
+  const st = storyStage();
+  if(st>=LAIR_ORDER.length) return 'Цель: заберите Сердце Поместья';
+  return 'Цель: '+LAIR[LAIR_ORDER[st]].title;
+}
+
+// ---------- окно диалога ----------
+const dialogScreen = document.getElementById('dialogScreen'), dlgTitle = document.getElementById('dlgTitle'), dlgText = document.getElementById('dlgText'), dlgBtn = document.getElementById('dlgBtn');
+let dlgPages = [], dlgIdx = 0, dlgLast = 'Закрыть', dlgDone = null;
+function renderDialogPage(){
+  dlgText.textContent = dlgPages[dlgIdx];
+  dlgBtn.textContent = dlgIdx < dlgPages.length-1 ? 'Дальше' : dlgLast;
+}
+function showDialog(title, pages, lastBtn, done){
+  dlgPages = pages.slice(); dlgIdx = 0; dlgLast = lastBtn || 'Закрыть'; dlgDone = done || null;
+  for(const k in keys) keys[k] = false;
+  gameState = 'dialog'; dlgTitle.textContent = title; renderDialogPage();
+  dialogScreen.classList.remove('hidden'); SFX.play('shopOpen');
+}
+dlgBtn.addEventListener('click', ()=>{
+  if(dlgIdx < dlgPages.length-1){ dlgIdx++; renderDialogPage(); return; }
+  dialogScreen.classList.add('hidden');
+  if(gameState==='dialog') gameState = 'playing';
+  const f = dlgDone; dlgDone = null; if(f) f();
+});
+function newGameWithIntro(){ beginNewGame(); showDialog('Легенды Эльдории', STORY_INTRO, 'В путь!'); }
+
+// ---------- ключи и сундуки ----------
+let chestLoot = [];
+function mkChest(tx, ty, locked){ return {type:'chest', x:tx*TILE+4, y:ty*TILE+8, w:24, h:20, locked:!!locked, open:false}; }
+function openChest(it){
+  it.open = true; SFX.play('levelup');
+  const lv = loc.level||1, mul = it.locked ? 2.2 : 1;
+  const gold = Math.round(rnd(25,60)*(1+lv*0.4)*mul);
+  player.gold += gold;
+  const parts = ['+'+gold+' золота'];
+  const spot = ()=>({x:it.x+4+rnd(-26,26), y:it.y+26+rnd(0,12), w:16, h:16});
+  if(Math.random() < (it.locked ? 1 : 0.5)){ chestLoot.push(Object.assign(spot(), {type:'potion', value:1})); parts.push('эликсир'); }
+  if(Math.random() < (it.locked ? 0.8 : 0.35)){ chestLoot.push(Object.assign(spot(), {type:'elixir', kind:ELIX_KEYS[rnd(1,3)], value:1})); parts.push('зелье'); }
+  if(Math.random() < (it.locked ? 1 : 0.2)){ chestLoot.push(Object.assign(spot(), {type:'gear', gear:makeGear(loc.level||0, it.locked ? 1 : undefined)})); parts.push('снаряжение'); }
+  addNote('📦 Сундук открыт: '+parts.join(', '), '#ffd34a');
+}
+function placeSecrets(L){
+  L.secrets = true;
+  const W = L.width, H = L.height, T = TILE;
+  const sx = Math.floor(L.spawn.x/T), sy = Math.floor(L.spawn.y/T);
+  const bad = L.type==='overworld' ? '~^#SB' : '#LSB';
+  const seen = floodFrom(L.grid, sx, sy, bad);
+  const open8 = (x,y)=>{ for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const t = L.grid[y+dy] && L.grid[y+dy][x+dx]; if(!t || bad.includes(t) || 'v<>D'.includes(t)) return false; } return true; };
+  const far = (x,y,p,d)=> !p || Math.hypot(x-p.tx,y-p.ty)>=d;
+  const cells = [];
+  for(let y=3;y<H-4;y++) for(let x=3;x<W-4;x++){
+    if(L.grid[y][x]!=='.' || !seen[x+y*W] || !open8(x,y) || Math.hypot(x-sx,y-sy)<12) continue;
+    if(!far(x,y,L.portal,6) || !far(x,y,L.shop,7) || !far(x,y,L.exit,8)) continue;
+    if(L.entrances && L.entrances.some(e=>Math.hypot(x-e.tx,y-e.ty)<8)) continue;
+    cells.push([x,y]);
+  }
+  const used = [];
+  const pick = (minD, from)=>{
+    let c = [];
+    for(const sp of [8,4]){ c = cells.filter(c=> used.every(u=>Math.hypot(c[0]-u[0],c[1]-u[1])>=sp) && (!from || Math.hypot(c[0]-from[0],c[1]-from[1])>=minD)); if(c.length) break; }
+    if(!c.length) return null; const p = c[rnd(0,c.length-1)]; used.push(p); return p;
+  };
+  const nFree = L.type==='overworld' ? 4 : 2;
+  for(let i=0;i<nFree;i++){ const p = pick(); if(p) L.items.push(mkChest(p[0],p[1],false)); }
+  const lp = pick(18,[sx,sy]) || pick(10,[sx,sy]) || pick(0);
+  if(lp){
+    L.items.push(mkChest(lp[0],lp[1],true));
+    const kp = pick(14,lp) || pick(8,lp) || pick(0,lp);
+    if(!kp){ const lc = L.items.find(i=>i.type==='chest' && i.locked); if(lc) lc.locked = false; }
+    else {
+      L.items.push({type:'key', x:kp[0]*T+8, y:kp[1]*T+8, w:16, h:16, value:1});
+      const roster = LEVEL_ROSTER[L.type==='overworld' ? 0 : (L.level||1)] || ['wolf'];
+      for(const dx of [-2,2]){ const gx = kp[0]+dx, gy = kp[1]; if(L.grid[gy] && L.grid[gy][gx]==='.') L.enemies.push(makeEnemy(roster[rnd(0,roster.length-1)], gx*T+3, gy*T+3, L.level||1)); }
+    }
+  }
+}
+function generateSecret(id){
+  const sage = id==='secret1', W = sage ? 17 : 23, H = sage ? 12 : 15, T = TILE;
+  const grid = makeGrid(W,H,'#');
+  for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++) grid[y][x] = '.';
+  const ex = sage ? 8 : 11;
+  grid[H-2][ex] = '<';
+  const L = { type:'dungeon', level: sage ? 1 : 2, title: sage ? 'Пещера старца' : 'Забытый тайник', secrets:true, noRespawn:true, grid, width:W, height:H,
+    enemies:[], items:[], boss:null, portal:null, spawn:{x:ex*T+5, y:(H-3)*T}, exit:{tx:ex, ty:H-2} };
+  if(sage){
+    L.safe = true; L.nofog = true; L.fog = '9'.repeat(W*H);
+    L.items.push(mkChest(3,3,false), mkChest(13,3,false));
+    L.sage = {x:8*T+5, y:3*T, w:22, h:26, met:false};
+  } else {
+    for(const [x,y] of [[6,8],[16,8]]) grid[y][x] = '#';
+    L.items.push(mkChest(4,2,false), mkChest(11,2,true), mkChest(18,2,false));
+    L.items.push({type:'key', x:11*T+8, y:6*T+8, w:16, h:16, value:1});
+    for(const [t,x,y] of [['skeleton',8,5],['skeleton',14,5],['zombie',11,4]]) L.enemies.push(makeEnemy(t, x*T+3, y*T+3, 2));
+  }
+  return L;
+}
+function placeSecretEntrance(ow, id){
+  const grid = ow.grid, W = ow.width, H = ow.height, cx = W>>1, cy = H>>1;
+  const seen = floodFrom(grid, cx, cy, '~^#SB');
+  let p = null;
+  for(let t=0; t<900 && !p; t++){
+    const x = rnd(8,W-9), y = rnd(8,H-9);
+    if(grid[y][x]!=='.' || !seen[x+y*W] || !seen[x+(y+2)*W]) continue;
+    if(ow.entrances.some(e=>Math.hypot(x-e.tx,y-e.ty)<(t<450?30:14))) continue;
+    if(ow.shop && Math.hypot(x-ow.shop.tx,y-ow.shop.ty)<16) continue;
+    if(Math.hypot(x-cx,y-cy)<16) continue;
+    p = {x,y};
+  }
+  if(!p) return;
+  ow.entrances.push({tx:p.x, ty:p.y, dungeon:id, hidden:true, found:false, back:{x:p.x*TILE, y:(p.y+2)*TILE}});
+}
+function ensureSecrets(w){
+  const ow = w.overworld;
+  for(const id of ['secret1','secret2']){
+    if(!w[id]) w[id] = generateSecret(id);
+    if(ow && !ow.entrances.some(e=>e.dungeon===id)) placeSecretEntrance(ow, id);
+  }
+  for(const id of ['overworld', ...CHAIN]){ const L = w[id]; if(L && !L.secrets && !LAIR[id]) placeSecrets(L); }
+}
+
+// ---------- мини-события на поверхности ----------
+const ev = {timer:50, npcs:[], ambush:null};
+let evShopLock = false, shopMode = null, sageLock = false;
+function eventsReset(){ ev.timer = 45+Math.random()*40; ev.npcs = []; ev.ambush = null; evShopLock = false; shopMode = null; sageLock = false; }
+function pickEventSpot(){
+  const ptx = Math.floor((player.x+player.w/2)/TILE), pty = Math.floor((player.y+player.h/2)/TILE);
+  const D = bfsDist(ptx, pty, 70), W = loc.width, c = [];
+  for(let y=4;y<loc.height-4;y++) for(let x=4;x<W-4;x++){
+    const d = D[x+y*W]; if(d<20 || d>60 || loc.grid[y][x]!=='.') continue;
+    let ok = true; for(let dy=-1;dy<=1&&ok;dy++) for(let dx=-1;dx<=1;dx++) if('~^#SB'.includes(loc.grid[y+dy][x+dx])){ ok = false; break; }
+    if(!ok) continue;
+    if(loc.entrances.some(e=>Math.hypot(x-e.tx,y-e.ty)<9) || (loc.shop && Math.hypot(x-loc.shop.tx,y-loc.shop.ty)<8)) continue;
+    c.push([x,y]);
+  }
+  return c.length ? c[rnd(0,c.length-1)] : null;
+}
+function spawnAmbush(){
+  const pl = player.level, pool = pl<6 ? ['goblin'] : pl<12 ? ['goblin','skeleton','wolf'] : ['darkknight','skeleton','goblin'];
+  const n = 3 + (pl>=10?1:0) + (pl>=18?1:0), lv = Math.min(4, 1+Math.floor(pl/5));
+  const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
+  if(loc.entrances.some(e=>Math.hypot(pcx/TILE-e.tx, pcy/TILE-e.ty)<14)) return false;
+  let made = 0;
+  for(let t=0; t<90 && made<n; t++){
+    const a = Math.random()*6.283, d = (5+Math.random()*2.5)*TILE, x = pcx+Math.cos(a)*d-12, y = pcy+Math.sin(a)*d-12;
+    if(isBlocked(loc, x, y, 24, 24)) continue;
+    const e = makeEnemy(pool[rnd(0,pool.length-1)], x, y, lv); e.aggro = 480; e.ambush = true; e.gold = Math.round(e.gold*2.5)+4;
+    loc.enemies.push(e); made++;
+    burst(x+12, y+12, 8, {colors:['#3a6a2a','#6a8a4a','#ffffff'], sp:60, up:20, g:-20, life:400, size:2.4});
+  }
+  if(made<2) return false;
+  ev.ambush = {n:made}; addNote('⚠ Засада! Разбойники выскочили из зарослей!', '#ff6a4a'); SFX.play('hit'); shakeT = Math.max(shakeT, 300);
+  return true;
+}
+function spawnEvent(){
+  const r = Math.random();
+  if(r<0.4){ if(!ev.ambush) spawnAmbush(); return; }
+  if(ev.npcs.length) return;
+  const spot = pickEventSpot(); if(!spot) return;
+  const kind = r<0.7 ? 'caravan' : 'healer';
+  ev.npcs.push({kind, x:spot[0]*TILE+2, y:spot[1]*TILE+2, w:28, h:28, ttl: kind==='caravan' ? 240000 : 180000, used:false});
+  addNote(kind==='caravan' ? '🛒 Неподалёку остановился странствующий торговец — он отмечен на карте' : '✚ Неподалёку бродит странствующий лекарь — он отмечен на карте', '#ffd34a');
+}
+function eventsTick(dt){
+  const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
+  if(loc.sage){                                                    // старец
+    const sg = loc.sage, d = Math.hypot(pcx-(sg.x+sg.w/2), pcy-(sg.y+sg.h/2));
+    if(d>140) sageLock = false;
+    else if(d<70 && !sageLock){
+      sageLock = true; const st = Math.min(10, storyStage());
+      if(!sg.met){
+        sg.met = true;
+        showDialog('Старец', [
+          'Я ждал тебя, путник. Тьма пришла из Заброшенного дома на краю мира: там Призрачный Хозяин прячет Сердце Эльдории.',
+          'Десять стражей держат его врата. Каждый из них падёт, если знать его слабость — заходи ко мне, я подскажу.',
+          'Возьми это: ключ и большой эликсир. Ключи открывают запертые сундуки — их разбросано немало по всему свету.',
+          STORY_LORE[st]
+        ], 'Спасибо', ()=>{ player.vkeys++; player.elix.big = Math.min(ELIX_MAX, player.elix.big+1); addNote('Старец дал вам ключ и большой эликсир', '#ffd34a'); saveGame(); });
+      } else showDialog('Старец', [STORY_LORE[st]], 'Спасибо');
+      return;
+    }
+  }
+  if(currentLocId!=='overworld') return;
+  for(const n of ev.npcs) n.ttl -= dt*1000;
+  ev.npcs = ev.npcs.filter(n=>n.ttl>0);
+  if(ev.ambush && !loc.enemies.some(e=>e.ambush && e.hp>0)){
+    ev.ambush = null; const g = Math.round(30+player.level*6); player.gold += g;
+    addNote('⚔ Засада отбита! +'+g+' золота за разбойников', '#7fe07f'); SFX.play('coin');
+  }
+  ev.timer -= dt;
+  if(ev.timer<=0){ ev.timer = 70+Math.random()*70; spawnEvent(); }
+  for(const n of ev.npcs){
+    const d = Math.hypot(pcx-(n.x+n.w/2), pcy-(n.y+n.h/2));
+    if(n.kind==='healer' && !n.used && d<50){
+      n.used = true; n.ttl = Math.min(n.ttl, 8000);
+      if(player.hp<player.maxHp || player.slowT>0){ player.hp = player.maxHp; player.slowT = 0; SFX.play('levelup'); addNote('✚ Странствующий лекарь исцелил вас: здоровье восстановлено', '#7fe07f'); }
+      else { player.elix.big = Math.min(ELIX_MAX, player.elix.big+1); addNote('✚ Лекарь: «Вы здоровы — возьмите про запас». +большой эликсир', '#7fe07f'); SFX.play('pickup'); }
+      burst(n.x+14, n.y+10, 16, {colors:['#7fe0a0','#ffffff'], sp:70, up:50, g:-30, life:700, size:2.6});
+    }
+    if(n.kind==='caravan'){
+      if(d>115) evShopLock = false;
+      else if(d<70 && !evShopLock){ shopMode = 'caravan'; openShop(); return; }
+    }
+  }
+}
+function drawEvents(camX, camY){
+  if(currentLocId!=='overworld') return;
+  const now = Date.now()/1000;
+  for(const n of ev.npcs){
+    const sx = n.x-camX, sy = n.y-camY; if(!onScreen(sx-30,sy-40,90,80)) continue;
+    const cx = sx+14, cy = sy+14, bob = Math.sin(now*2+n.x)*1.2;
+    ctx.save(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#1a0e06'; ctx.lineJoin = 'round';
+    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ell(cx,cy+15,18,4.4); ctx.fill();
+    if(n.kind==='caravan'){
+      ctx.fillStyle = '#7a4a22'; rrect(cx-21,cy-3,34,13,2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e8dcc0'; ctx.beginPath(); ctx.moveTo(cx-19,cy-3); ctx.quadraticCurveTo(cx-18,cy-24,cx-4,cy-24); ctx.quadraticCurveTo(cx+11,cy-24,cx+11,cy-3); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(170,60,50,0.8)'; ctx.lineWidth = 2; for(const x of [-12,-5,2,8]){ ctx.beginPath(); ctx.moveTo(cx+x,cy-3); ctx.lineTo(cx+x*0.9,cy-21); ctx.stroke(); }
+      ctx.lineWidth = 1.2; ctx.strokeStyle = '#1a0e06';
+      for(const x of [-12,6]){ ctx.fillStyle = '#4a3016'; circ(cx+x,cy+11,5.6); ctx.fill(); ctx.stroke(); ctx.strokeStyle = '#a07840'; ctx.beginPath(); ctx.moveTo(cx+x-5,cy+11); ctx.lineTo(cx+x+5,cy+11); ctx.moveTo(cx+x,cy+6); ctx.lineTo(cx+x,cy+16); ctx.stroke(); ctx.strokeStyle = '#1a0e06'; }
+      ctx.fillStyle = '#3a6a8a'; rrect(cx+15,cy-7+bob*0.4,9,17,3); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e8c9a0'; circ(cx+19.5,cy-11+bob*0.4,4.4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#8a2a2a'; ctx.beginPath(); ctx.moveTo(cx+14,cy-12+bob*0.4); ctx.lineTo(cx+19.5,cy-20+bob*0.4); ctx.lineTo(cx+25,cy-12+bob*0.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else {
+      const gl = ctx.createRadialGradient(cx,cy-4,2,cx,cy-4,26); gl.addColorStop(0,'rgba(140,255,190,'+(n.used?0.15:0.35)+')'); gl.addColorStop(1,'rgba(140,255,190,0)'); ctx.fillStyle = gl; circ(cx,cy-4,26); ctx.fill();
+      ctx.translate(0,bob);
+      ctx.fillStyle = '#eef4ec'; ctx.beginPath(); ctx.moveTo(cx-6,cy-6); ctx.lineTo(cx+6,cy-6); ctx.lineTo(cx+10,cy+13); ctx.lineTo(cx-10,cy+13); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#4aa86a'; ctx.fillRect(cx-1.4,cy-4,2.8,14); ctx.fillRect(cx-5,cy+1,10,2.8);
+      ctx.fillStyle = '#e8c9a0'; circ(cx,cy-11,5); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#eef4ec'; ctx.beginPath(); ctx.arc(cx,cy-12,6.4,Math.PI,0); ctx.lineTo(cx+6.4,cy-8); ctx.lineTo(cx-6.4,cy-8); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#6a4a22'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx+13,cy+14); ctx.lineTo(cx+13,cy-12); ctx.stroke();
+      ctx.fillStyle = '#7fffb0'; circ(cx+13,cy-14,3.4); ctx.fill();
+    }
+    ctx.restore();
+    if(!n.used){ ctx.fillStyle = '#ffd34a'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('!', cx, sy-14+Math.sin(now*4)*2); ctx.textAlign = 'left'; }
+  }
+}
+function drawSage(camX, camY){
+  const sg = loc.sage; if(!sg) return;
+  const sx = sg.x-camX, sy = sg.y-camY, cx = sx+11, now = Date.now()/1000;
+  ctx.save(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#1a0e06'; ctx.lineJoin = 'round';
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ell(cx,sy+26,11,3.4); ctx.fill();
+  const gl = ctx.createRadialGradient(cx,sy+12,2,cx,sy+12,40); gl.addColorStop(0,'rgba(190,150,255,0.28)'); gl.addColorStop(1,'rgba(190,150,255,0)'); ctx.fillStyle = gl; circ(cx,sy+12,40); ctx.fill();
+  ctx.fillStyle = '#5a4a8a'; ctx.beginPath(); ctx.moveTo(cx-6,sy+6); ctx.lineTo(cx+6,sy+6); ctx.lineTo(cx+11,sy+26); ctx.lineTo(cx-11,sy+26); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#8a7ac0'; ctx.fillRect(cx-6,sy+14,12,3);
+  ctx.fillStyle = '#e8c9a0'; circ(cx,sy+3,5.2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#f2f2f2'; ctx.beginPath(); ctx.moveTo(cx-4.6,sy+4); ctx.quadraticCurveTo(cx,sy+17,cx+4.6,sy+4); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#5a4a8a'; ctx.beginPath(); ctx.moveTo(cx-7,sy+1); ctx.lineTo(cx,sy-12); ctx.lineTo(cx+7,sy+1); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = '#6a4a22'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx+14,sy+27); ctx.lineTo(cx+14,sy-8); ctx.stroke();
+  ctx.fillStyle = 'rgba(190,150,255,'+(0.6+0.3*Math.sin(now*3))+')'; circ(cx+14,sy-10,3.6); ctx.fill();
+  ctx.restore();
+  if(!sg.met || storyStage()>=0){ ctx.fillStyle = '#ffd34a'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(sg.met ? '…' : '!', cx, sy-18+Math.sin(now*4)*2); ctx.textAlign = 'left'; }
+}
+function drawLootChest(sx, sy, it){
+  const x = sx-4, y = sy-8;
+  ctx.save(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#1a0e06';
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ell(x+17,y+29,13,4); ctx.fill();
+  const body = it.locked ? '#5a4a52' : '#7a4a22', lid = it.locked ? '#6e5a66' : '#8a5a2a', band = it.locked ? '#c0c8d8' : '#c8962a';
+  ctx.fillStyle = body; rrect(x+3,y+13,26,15,2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = band; ctx.fillRect(x+3,y+18,26,3);
+  if(it.open){
+    ctx.fillStyle = '#5a3416'; ctx.beginPath(); ctx.moveTo(x+3,y+13); ctx.lineTo(x+6,y+2); ctx.lineTo(x+26,y+2); ctx.lineTo(x+29,y+13); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1a0e06'; ctx.fillRect(x+5,y+14,22,5);
+  } else {
+    ctx.fillStyle = lid; rrect(x+3,y+5,26,10,5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = band; ctx.fillRect(x+3,y+9,26,3);
+    if(it.locked){ ctx.fillStyle = '#e8c040'; rrect(x+12,y+12,8,8,1.5); ctx.fill(); ctx.stroke(); ctx.strokeStyle = '#e8c040'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x+16,y+12,3.4,Math.PI,0); ctx.stroke(); }
+    else { ctx.fillStyle = band; ctx.fillRect(x+14,y+12,4,6); }
+    const p = 0.5+0.5*Math.sin(Date.now()/320); ctx.fillStyle = (it.locked ? 'rgba(160,200,255,' : 'rgba(255,230,120,')+(0.18+0.2*p)+')'; ctx.beginPath(); ctx.arc(x+16,y+14,18,0,6.283); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawKeyItem(sx, sy){
+  const t = Date.now()/1000, bob = Math.sin(t*3+sx*0.05)*1.6, cx = sx+8, cy = sy+8+bob;
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ell(cx,sy+15,6,2.2); ctx.fill();
+  const gl = ctx.createRadialGradient(cx,cy,1,cx,cy,16); gl.addColorStop(0,'rgba(255,230,110,0.7)'); gl.addColorStop(1,'rgba(255,230,110,0)'); ctx.fillStyle = gl; circ(cx,cy,16); ctx.fill();
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(-0.6); ctx.lineWidth = 1.4; ctx.strokeStyle = '#4a3208'; ctx.fillStyle = '#ffd34a';
+  ctx.beginPath(); ctx.arc(-4,0,3.6,0,6.283); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#3a2a06'; circ(-4,0,1.3); ctx.fill();
+  ctx.fillStyle = '#ffd34a'; ctx.fillRect(-0.6,-1.2,10,2.4); ctx.strokeRect(-0.6,-1.2,10,2.4); ctx.fillRect(6,1.2,2,3.2); ctx.fillRect(3,1.2,2,2.4);
+  ctx.restore();
+}
+
 function resetGame(){
   world = buildWorld();
-  Object.assign(world, makeTownSet()); folk = []; folkLoc = null; bedLock = false; restFade = 0;
+  Object.assign(world, makeTownSet()); eventsReset(); folk = []; folkLoc = null; bedLock = false; restFade = 0;
   currentLocId = 'overworld';
   loc = world.overworld;
   player.x = loc.spawn.x; player.y = loc.spawn.y;
@@ -1167,6 +1511,7 @@ function ensureWorldExtras(){
   if(!world.town || !world.house1 || !world.house2) Object.assign(world, makeTownSet());
   if(world.overworld && !world.overworld.entrances.some(en=>en.dungeon==='town')) placeTownGate(world.overworld, world.overworld.entrances[0]);
   for(const id of CHAIN) if(!world[id]) world[id] = genLoc(id);
+  ensureSecrets(world);
 }
 
 const CHAIN = ['lair1','dungeon1','lair2','dungeon3','lair3','lava','lair4','desert','lair5','ice','lair6','grave','lair7','jungle','lair8','city','lair9','manor','lair10'];
@@ -1194,6 +1539,7 @@ const BACK_MSG = {};
 for(const id of CHAIN){ if(LAIR[id]) ENTER_MSG[id] = '⚔ '+LAIR[id].title+': здесь вас ждёт могучий враг'; BACK_MSG[id] = 'Вы возвращаетесь: '+LOC_NAME[id]; }
 const PORTAL_KIND = { lair1:'dungeon1', dungeon1:'dungeon2', lair2:'abyss', dungeon3:'dungeon2', lair3:'lavaGate', lava:'dungeon2', lair4:'tomb', desert:'dungeon2', lair5:'iceGate', ice:'dungeon2',
   lair6:'graveGate', grave:'dungeon2', lair7:'jungleGate', jungle:'dungeon2', lair8:'cityGate', city:'dungeon2', lair9:'manorGate', manor:'dungeon2' };
+ENTER_MSG.secret1 = 'Вы входите в Пещеру старца...'; ENTER_MSG.secret2 = 'Вы спускаетесь в Забытый тайник...';
 const BOSS_TYPES = ['boss','shadowlord','lavalord','pharaoh','frostking','lich','treant','spiderqueen','warlord','phantom'];
 const BOSS_LABEL = { boss:'КОСТЯНОЙ КОРОЛЬ', shadowlord:'ПОВЕЛИТЕЛЬ ТЬМЫ', lavalord:'ПОВЕЛИТЕЛЬ ПЛАМЕНИ', pharaoh:'ФАРАОН ПЕСКОВ', frostking:'ЛЕДЯНОЙ КОРОЛЬ', lich:'ПОВЕЛИТЕЛЬ МЕРТВЫХ', treant:'ДРЕВНИЙ ХРАНИТЕЛЬ', spiderqueen:'ПАУЧЬЯ КОРОЛЕВА', warlord:'ЧЁРНЫЙ МАРШАЛ', phantom:'ПРИЗРАЧНЫЙ ХОЗЯИН' };
 const BOSS_NOTE = {
@@ -1216,6 +1562,7 @@ function goTo(locId, x, y, message){
   transitionCooldown = 700;
   clearFx(); SFX.play('portal');
   if(message) addNote(message);
+  if(LAIR[locId] && loc.boss && loc.boss.hp>0 && LAIR_TAUNT[locId]) addNote(LAIR_TAUNT[locId], '#ff9f4a');
   saveGame(); // контрольная точка при каждом переходе
 }
 
@@ -1523,9 +1870,9 @@ function update(dt){
     potionKeyLatch = true;
     if(player.potions>0 && player.hp<player.maxHp){
       player.potions--; player.hp = Math.min(player.maxHp, player.hp+30);
-      addNote('Выпито зелье здоровья (+30 HP)', '#7fe07f'); SFX.play('drink');
+      addNote('Выпит эликсир здоровья (+30 HP)', '#7fe07f'); SFX.play('drink');
     } else if(player.potions<=0){
-      addNote('Нет зелий здоровья!', '#e07f7f'); SFX.play('deny');
+      addNote('Нет эликсиров здоровья!', '#e07f7f'); SFX.play('deny');
     }
   }
   if(!keys['KeyE']) potionKeyLatch = false;
@@ -1556,7 +1903,7 @@ function update(dt){
     e.lookX = dx/(dist||1); e.lookY = dy/(dist||1);
     if(e.w>=30) unstick(e);
     if(dist < e.aggro*nightAggro && !(safeZone && !BOSS_TYPES.includes(e.type))){
-      let nx=dx/(dist||1), ny=dy/(dist||1), spd=e.speed*(e.slow>0?0.5:1);
+      let nx=dx/(dist||1), ny=dy/(dist||1), spd=e.speed*(e.slow>0?0.5:1)*diffMul('spd');
       e.losT = (e.losT||0) - dt;
       if(e.losT<=0){ e.losT = 0.15+Math.random()*0.1; e.los = hasLOS(e.x+e.w/2, e.y+e.h/2, player.x+player.w/2, player.y+player.h/2); }
       if(!e.los){ const fd = flowDir(e); if(fd){ nx = fd[0]; ny = fd[1]; } }                // стена на пути — обходим по полю расстояний
@@ -1579,14 +1926,22 @@ function update(dt){
   // предметы
   const curLoc = loc;
   let teleported = false;
+  chestLoot.length = 0;
   curLoc.items = curLoc.items.filter(it=>{
     if(overlap(it, {x:player.x,y:player.y,w:player.w,h:player.h})){
+      if(it.type==='chest'){
+        if(it.open) return true;
+        if(it.locked && !(player.vkeys>0)){ if(fullInvNoticeTimer<=0){ addNote('🔒 Сундук заперт — нужен ключ', '#e0a03a'); fullInvNoticeTimer = 1500; SFX.play('deny'); } return true; }
+        if(it.locked) player.vkeys--;
+        openChest(it); return true;
+      }
+      if(it.type==='key'){ player.vkeys++; addNote('🗝 Найден ключ — он откроет запертый сундук', '#ffd34a'); SFX.play('pickup'); return false; }
       if(it.type==='potion'){
         if(player.potions<8){
-          player.potions++; addNote('Подобрано зелье здоровья', '#7fe07f'); SFX.play('pickup');
+          player.potions++; addNote('Подобран эликсир здоровья', '#7fe07f'); SFX.play('pickup');
           return false;
         } else {
-          if(fullInvNoticeTimer<=0){ addNote('Инвентарь полон! (макс. 8 зелий)', '#e0a03a'); fullInvNoticeTimer=1500; }
+          if(fullInvNoticeTimer<=0){ addNote('Инвентарь полон! (макс. 8 эликсиров)', '#e0a03a'); fullInvNoticeTimer=1500; }
           return true;
         }
       }
@@ -1598,21 +1953,26 @@ function update(dt){
       }
       else if(it.type==='elixir'){
         if(player.elix[it.kind]<ELIX_MAX){ player.elix[it.kind]++; addNote('⚗ Найдено: '+ELIX[it.kind].name.toLowerCase(), ELIX[it.kind].col); SFX.play('pickup'); return false; }
-        if(fullInvNoticeTimer<=0){ addNote('Достаточно таких эликсиров (макс. '+ELIX_MAX+')', '#e0a03a'); fullInvNoticeTimer = 1500; }
+        if(fullInvNoticeTimer<=0){ addNote('Достаточно таких (макс. '+ELIX_MAX+')', '#e0a03a'); fullInvNoticeTimer = 1500; }
         return true;
       }
       else if(it.type==='treasure'){ onWin(); return false; }
     }
     return true;
   });
+  if(chestLoot.length){ curLoc.items.push(...chestLoot); chestLoot.length = 0; saveGame(); }
   if(teleported) return; // не обрабатываем переходы карты в том же кадре после телепортации
 
   // переходы между локациями
   const centerTX = Math.floor((player.x+player.w/2)/TILE);
   const centerTY = Math.floor((player.y+player.h/2)/TILE);
+  if(loc.type==='overworld') for(const en of loc.entrances) if(en.hidden && !en.found && Math.hypot(player.x+player.w/2-(en.tx+0.5)*TILE, player.y+player.h/2-(en.ty+0.5)*TILE) < 4.4*TILE){
+    en.found = true; addNote('✦ Вы нашли скрытую пещеру! Она отмечена на карте', '#ffd34a'); SFX.play('levelup');
+  }
   if(transitionCooldown<=0){
     if(loc.type==='overworld'){
       for(const en of loc.entrances){
+        if(en.hidden && !en.found) continue;
         if(en.tx===centerTX && en.ty===centerTY){
           const d = world[en.dungeon];
           goTo(en.dungeon, d.spawn.x, d.spawn.y, en.dungeon==='town' ? 'Вы входите в Город Эльдор' : ENTER_MSG[en.dungeon] || 'Вы входите в пещеру...');
@@ -1643,6 +2003,7 @@ function update(dt){
   }
 
   placesTick(dt);
+  eventsTick(dt); if(gameState!=='playing') return;
   // торговец: лавка открывается, когда игрок подходит вплотную
   if(loc.merchant){
     const m=loc.merchant;
@@ -1673,7 +2034,7 @@ function onWin(){
   gameState='won';
   clearSave(); refreshSaveUI();
   document.getElementById('winStats').textContent =
-    `Вы изгнали Призрачного Хозяина, забрали Сердце Поместья и победили всех десятерых боссов! Уровень: ${player.level}  •  Золото: ${player.gold}`;
+    `Вы изгнали Призрачного Хозяина, забрали Сердце Поместья и победили всех десятерых боссов — свет вернулся в Эльдорию! Уровень: ${player.level}  •  Золото: ${player.gold}`;
   document.getElementById('winScreen').classList.remove('hidden');
   menuBtn.classList.add('hidden');
   touchControls.classList.add('hidden');
@@ -2964,7 +3325,7 @@ function drawCaveAt(kind,tcx,tcy,SC){
 // входы в пещеры на поверхности (рисуются поверх игрока: за холмом герой скрывается)
 function drawCaves(camX,camY){
   if(!loc.entrances) return;
-  for(const en of loc.entrances) drawCaveAt(en.dungeon==='lair1' ? 'dungeon2' : en.dungeon, en.tx*TILE+TILE/2-camX, en.ty*TILE+TILE/2-camY, 1.3);
+  for(const en of loc.entrances) if(!(en.hidden && !en.found)) drawCaveAt(en.dungeon==='lair1' ? 'dungeon2' : en.dungeon, en.tx*TILE+TILE/2-camX, en.ty*TILE+TILE/2-camY, 1.3);
 }
 // пещера в пещере: открывается после победы над Костяным Королём
 function drawPortalCave(camX,camY){
@@ -3725,7 +4086,9 @@ function draw(){
   // предметы
   for(const it of loc.items){
     const sx=it.x-camX, sy=it.y-camY;
-    if(it.type==='potion'){ ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(sx+8,sy+15,6,2.2,0,0,Math.PI*2); ctx.fill();
+    if(it.type==='chest'){ drawLootChest(sx,sy,it); }
+    else if(it.type==='key'){ drawKeyItem(sx,sy); }
+    else if(it.type==='potion'){ ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(sx+8,sy+15,6,2.2,0,0,Math.PI*2); ctx.fill();
       drawPotionIcon(sx+8, sy+7+Math.sin(Date.now()/380+it.x)*1.3, 1.05, true); }
     else if(it.type==='gold'){ drawCoinPile(sx+8, sy+8, it.value); }
     else if(it.type==='gear'){ drawGearItem(sx,sy,it.gear); }
@@ -3747,7 +4110,7 @@ function draw(){
     }
   }
 
-  drawChest(camX, camY); drawFolk(camX, camY);
+  drawChest(camX, camY); drawFolk(camX, camY); drawSage(camX, camY); drawEvents(camX, camY);
   // торговец и прилавок
   if(loc.merchant){ drawStallBack(camX, camY); drawMerchant(loc.merchant, camX, camY); drawStallFront(camX, camY); }
 
@@ -3807,7 +4170,7 @@ function draw(){
 const LEVEL_NAMES = {1:'Пещера теней', 2:'Логово Костяного Короля', 3:'Бездна Теней', 4:'Огненные недра', 5:'Пустыня Миражей', 6:'Ледяной край', 7:'Мрачное кладбище', 8:'Загадочные джунгли', 9:'Город Эльдор', 10:'Дом', 11:'Средневековый город', 12:'Заброшенный дом'};
 function getLocName(l){
   if(l.title) return l.title;
-  if(l.type==='overworld') return 'Оверворлд';
+  if(l.type==='overworld') return 'Лес';
   return LEVEL_NAMES[l.level] || 'Подземелье';
 }
 
@@ -3816,8 +4179,8 @@ function drawHUD(){
   ctx.textAlign='left';
   // панель
   ctx.fillStyle='rgba(10,8,4,0.65)';
-  ctx.fillRect(8,8,230,168);
-  ctx.strokeStyle='#5c4415'; ctx.strokeRect(8,8,230,168);
+  ctx.fillRect(8,8,230,186);
+  ctx.strokeStyle='#5c4415'; ctx.strokeRect(8,8,230,186);
 
   ctx.fillStyle='#f0e6c8'; ctx.font='bold 13px sans-serif';
   ctx.fillText(`Уровень ${player.level}`, 16, 24);
@@ -3827,6 +4190,7 @@ function drawHUD(){
   ctx.fillStyle='#fff'; ctx.font='10px sans-serif'; ctx.textAlign='center';
   ctx.fillText(`${Math.ceil(player.hp)}/${player.maxHp}`, 16+75, 39);
   ctx.textAlign='left';
+  if(player.vkeys>0){ ctx.fillStyle='#ffd34a'; ctx.font='bold 12px sans-serif'; ctx.fillText('🗝 '+player.vkeys, 176, 40); ctx.fillStyle='#f0e6c8'; }
 
   drawHPBar(16,46,150,7, player.xp/player.xpNext, '#5aa7e0');
 
@@ -3834,7 +4198,7 @@ function drawHUD(){
   ctx.fillStyle='#e0c23a'; ctx.font='12px sans-serif';
   ctx.fillText(`Золото: ${player.gold}`, 32, 68);
   ctx.fillStyle='#e05a5a';
-  ctx.fillText(`Зелья: ${player.potions}`, 146, 68);
+  ctx.fillText(`Эликсиры: ${player.potions}`, 146, 68);
 
   // Инвентарь — слоты с зельями здоровья
   ctx.fillStyle='#cfc7a8'; ctx.font='11px sans-serif';
@@ -3864,6 +4228,8 @@ function drawHUD(){
     ctx.fillStyle = player.quest.done ? '#7fe07f' : '#e0c96a';
     ctx.fillText(player.quest.done ? '✔ «'+qd.name+'» — сдать торговцу' : '📜 '+qd.name+' '+player.quest.progress+'/'+qd.target, 16, 164);
   }
+  { ctx.font='italic 11px sans-serif'; ctx.fillStyle='#d8b86a'; let gt = '➤ '+goalText(); while(gt.length>8 && ctx.measureText(gt).width>212) gt = gt.slice(0,-2);
+    ctx.fillText(gt, 16, 184); }
 
   ctx.restore();
 
@@ -3875,7 +4241,7 @@ function drawHUD(){
   const Lb = mmRight + 8, Rb = canvas.width - UI.r - 260;
   const fits = (Rb-Lb) >= 270;                      // иначе — под верхним рядом
   const cxA = fits ? (Lb+Rb)/2 : canvas.width/2;
-  const by0 = fits ? UI.t+8 : UI.t+184, ny0 = fits ? UI.t+40 : UI.t+212;
+  const by0 = fits ? UI.t+8 : UI.t+202, ny0 = fits ? UI.t+40 : UI.t+230;
   ctx.textAlign='center';
   ctx.fillStyle='rgba(10,8,4,0.55)'; ctx.fillRect(cxA-bw/2, by0, bw, 22);
   ctx.fillStyle='#e8c873'; ctx.fillText(locName2, cxA, by0+16);
@@ -3927,10 +4293,23 @@ function drawMinimap(){
     ctx.fillStyle='#e02a2a'; ctx.strokeStyle='#4a0c0c'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.arc(mx+(loc.shop.tx+0.5)*sx, my+(loc.shop.ty+0.5)*sy, 3.4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
   }
+  for(const it of loc.items){                                           // найденные сундуки и ключи
+    if((it.type!=='chest' || it.open) && it.type!=='key') continue;
+    const tx = Math.floor((it.x+it.w/2)/TILE), ty = Math.floor((it.y+it.h/2)/TILE);
+    if(!(F.data[ty*F.W+tx]>0.5)) continue;
+    ctx.fillStyle = it.type==='key' ? '#ffe04a' : it.locked ? '#9ab4e8' : '#e8a840'; ctx.strokeStyle='#2a1a06'; ctx.lineWidth=1;
+    ctx.fillRect(mx+tx*sx-2, my+ty*sy-2, 5, 5); ctx.strokeRect(mx+tx*sx-2, my+ty*sy-2, 5, 5);
+  }
+  if(currentLocId==='overworld') for(const n of ev.npcs){
+    const pulse = 0.6+0.4*Math.sin(Date.now()/300);
+    ctx.globalAlpha = pulse; ctx.fillStyle = n.kind==='caravan' ? '#ff9a2a' : '#5aff9a'; ctx.strokeStyle='#1a1006';
+    ctx.beginPath(); ctx.moveTo(mx+(n.x/TILE)*sx, my+(n.y/TILE)*sy-5); ctx.lineTo(mx+(n.x/TILE)*sx+5, my+(n.y/TILE)*sy); ctx.lineTo(mx+(n.x/TILE)*sx, my+(n.y/TILE)*sy+5); ctx.lineTo(mx+(n.x/TILE)*sx-5, my+(n.y/TILE)*sy); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 0.95;
+  }
   if(loc.entrances){
     for(const e of loc.entrances){
-      if(F.data[e.ty*F.W+e.tx]<=0.5) continue;
-      ctx.fillStyle = e.dungeon==='town' ? '#e8c040' : '#8b5a2b'; ctx.strokeStyle='#2e1a08'; ctx.lineWidth=1;
+      if(e.hidden && !e.found) continue;
+      if(F.data[e.ty*F.W+e.tx]<=0.5 && !e.hidden) continue;
+      ctx.fillStyle = e.dungeon==='town' ? '#e8c040' : e.hidden ? '#b06aff' : '#8b5a2b'; ctx.strokeStyle='#2e1a08'; ctx.lineWidth=1;
       ctx.beginPath(); ctx.arc(mx+(e.tx+0.5)*sx, my+(e.ty+0.5)*sy, 3, 0, Math.PI*2); ctx.fill(); ctx.stroke();
     }
   }
@@ -4139,7 +4518,7 @@ function drawDayNight(camX,camY){
     if(loc.merchant){ lamp = {x:loc.merchant.x+11-camX, y:loc.merchant.y+4-camY}; hole(lamp.x,lamp.y,125,0.9); }
     if(loc.lamps) for(const l of loc.lamps){ const lx = (l.tx+0.5)*TILE-camX, ly = l.ty*TILE-camY; if(lx>-120&&ly>-120&&lx<W+120&&ly<H+120) hole(lx,ly,105,0.85); }
     if(loc.houses) for(const h of loc.houses){ const hx = (h.x+3.5)*TILE-camX, hy = (h.y+3)*TILE-camY; if(hx>-100&&hy>-100&&hx<W+100&&hy<H+100) hole(hx,hy,78,0.6); }
-    if(loc.entrances) for(const en of loc.entrances){ const ex = en.tx*TILE+16-camX, ey = en.ty*TILE+16-camY; if(ex>-90&&ey>-90&&ex<W+90&&ey<H+90) hole(ex,ey,75,0.6); }
+    if(loc.entrances) for(const en of loc.entrances){ if(en.hidden && !en.found) continue; const ex = en.tx*TILE+16-camX, ey = en.ty*TILE+16-camY; if(ex>-90&&ey>-90&&ex<W+90&&ey<H+90) hole(ex,ey,75,0.6); }
     g.globalCompositeOperation = 'source-over';
     ctx.drawImage(lightCv,0,0);
     ctx.globalCompositeOperation = 'lighter';
@@ -4238,7 +4617,7 @@ const SKILLS = {
 };
 const SKILL_MAX = 3;
 function resetHero(){
-  player.sp = 0; player.skills = {dash:0,spin:0,shield:0,might:0};
+  player.sp = 0; player.vkeys = 0; player.skills = {dash:0,spin:0,shield:0,might:0};
   player.gear = {helm:null,ring:null,amulet:null}; player.bag = []; player.wLvl = {}; player.ench = {};
   player.cd = {dash:0,spin:0,shield:0}; player.shield = 0; player.dashT = 0; player.dvx = 0; player.dvy = 0; player.spinFx = 0; player.spinR = 0; player.vamp = 0;
   player.elix = {big:0,speed:0,might:0,guard:0}; player.buff = {speed:0,might:0,guard:0}; player.slowT = 0;
@@ -4584,10 +4963,10 @@ function renderForge(){
 // ======================= Бой, мир, сложность, звук (v2) =======================
 // ---------- Сложность ----------
 const DIFFS = {
-  easy:   {name:'Лёгкая',     dmg:0.6,  hp:0.75, reward:0.9,  desc:'Враги слабее и бьют мягче.'},
-  normal: {name:'Нормальная', dmg:1,    hp:1,    reward:1,    desc:'Задуманный баланс.'},
-  hard:   {name:'Трудная',    dmg:1.35, hp:1.4,  reward:1.25, desc:'Враги крепче и бьют сильнее, награда выше.'},
-  nightmare:{name:'Кошмар',   dmg:1.8,  hp:2,    reward:1.6,  desc:'Для тех, кому мало. Враги почти вдвое крепче и опаснее.'}
+  easy:   {name:'Лёгкая',     dmg:0.6,  hp:0.75, reward:0.9,  spd:1,    desc:'Враги слабее и бьют мягче.'},
+  normal: {name:'Нормальная', dmg:1,    hp:1,    reward:1,    spd:1,    desc:'Задуманный баланс.'},
+  hard:   {name:'Трудная',    dmg:1.8,  hp:1.6,  reward:1.3,  spd:1.06, desc:'Враги крепче, быстрее и бьют почти вдвое сильнее, награда выше.'},
+  nightmare:{name:'Кошмар',   dmg:3,    hp:3.2,  reward:1.9,  spd:1.16, desc:'Для тех, кому мало. Враги втрое крепче, быстрее и бьют в три раза сильнее — ошибки не прощаются.'}
 };
 let difficulty = 'normal';
 try{ const d = localStorage.getItem('eldoria_diff'); if(DIFFS[d]) difficulty = d; }catch(e){}
@@ -4725,7 +5104,7 @@ const respawnTimers = new WeakMap();
 let respawnAcc = 0;
 function respawnTick(dt){
   respawnAcc += dt; if(respawnAcc<1) return; respawnAcc = 0;
-  if(loc.safe) return;
+  if(loc.safe || loc.noRespawn) return;
   const alive = loc.enemies.filter(e=>e.hp>0 && !BOSS_TYPES.includes(e.type) && !e.minion).length;
   if(alive>0){ respawnTimers.delete(loc); return; }
   let t = respawnTimers.get(loc);
@@ -4781,7 +5160,7 @@ renderDiff();
 const SAVE_KEY = 'eldoria_save_v1';                      // автосохранение
 const SLOT_KEYS = ['eldoria_slot_1','eldoria_slot_2','eldoria_slot_3'];   // ручные слоты
 try{ localStorage.setItem('__eldoria_t','1'); localStorage.removeItem('__eldoria_t'); storageOK=true; }catch(e){ storageOK=false; }
-const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix'];
+const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix'];
 const savesBtn = document.getElementById('savesBtn');
 const loadBtn = document.getElementById('loadBtn');
 const saveInfoEl = document.getElementById('saveInfo');
@@ -4856,7 +5235,7 @@ function loadGame(key){
       for(const en of w.overworld.entrances) if(en.dungeon==='dungeon1') en.dungeon = 'lair1';
     }
     if(!w.overworld || (!legacy && !w[d.locId])) throw new Error('bad save');
-    world = w; ensureWorldExtras();
+    world = w; ensureWorldExtras(); eventsReset();
     let relocate = false;
     if(legacy || !world[d.locId]){ d.locId = 'overworld'; relocate = true; }
     currentLocId = d.locId; loc = world[currentLocId];
@@ -4938,22 +5317,23 @@ const shopScreen = document.getElementById('shopScreen');
 const shopList = document.getElementById('shopList');
 const shopTabsEl = document.getElementById('shopTabs');
 let shopTab = 'weapons';
-const SHOP_TABS = [['weapons','⚔ Оружие'],['armor','🛡 Броня'],['potions','✚ Зелья'],['elixirs','⚗ Эликсиры'],['quests','📜 Задания'],['forge','🔨 Кузнец']];
-function shopTabsNow(){ return currentLocId==='house2' ? SHOP_TABS.filter(t=>t[0]==='potions'||t[0]==='elixirs') : SHOP_TABS; }
-function shopMul(){ return currentLocId==='house2' ? 0.8 : 1; }
+const SHOP_TABS = [['weapons','⚔ Оружие'],['armor','🛡 Броня'],['potions','✚ Эликсиры'],['elixirs','⚗ Зелья'],['quests','📜 Задания'],['forge','🔨 Кузнец']];
+function shopKind(){ return currentLocId==='house2' ? 'alch' : shopMode==='caravan' ? 'caravan' : null; }
+function shopTabsNow(){ return shopKind() ? SHOP_TABS.filter(t=>t[0]==='potions'||t[0]==='elixirs') : SHOP_TABS; }
+function shopMul(){ const k = shopKind(); return k==='alch' ? 0.8 : k==='caravan' ? 0.75 : 1; }
 function openShop(msg){
   SFX.play('shopOpen');
   for(const k in keys) keys[k]=false;
   gameState='shop';
   if(!shopTabsNow().some(t=>t[0]===shopTab)) shopTab = shopTabsNow()[0][0];
-  if(currentLocId==='house2' && !msg) shopTab = 'elixirs';
-  renderShop(msg || (currentLocId==='house2' ? 'Добро пожаловать в мою лавку! Для вас — скидка 20%.' : 'Добро пожаловать, путник! Оружие, броня и зелья — всё у меня.'));
+  if(shopKind() && !msg) shopTab = 'elixirs';
+  renderShop(msg || (shopKind()==='alch' ? 'Добро пожаловать в мою лавку! Для вас — скидка 20%.' : shopKind()==='caravan' ? 'Странствующий торговец: «Редкая удача, путник! Для вас — скидка 25% на эликсиры и зелья.»' : 'Торговец: «'+STORY_TIPS[Math.min(10,storyStage())]+'»'));
   shopScreen.classList.remove('hidden');
 }
 function closeShop(){
   shopScreen.classList.add('hidden');
   gameState='playing';
-  shopLock=true;
+  shopLock=true; evShopLock = shopMode==='caravan'; shopMode = null;
   saveGame();
 }
 function shopRow(title, desc, buttons){
@@ -5015,7 +5395,7 @@ function renderQuests(){
           player.gold += d.gold; player.potions = Math.min(POTION_MAX, player.potions + d.potions);
           player.quest = null; player.questsDone[id] = true;
           addNote('📜 Награда: +'+d.gold+' золота', '#e0c96a'); SFX.play('levelup'); saveGame();
-          renderShop('Задание «'+d.name+'» выполнено: +'+d.gold+' золота'+(d.potions?' и зелья':'')+'.');
+          renderShop('Задание «'+d.name+'» выполнено: +'+d.gold+' золота'+(d.potions?' и эликсиры':'')+'.');
         });
       } else btn = shopButton('В процессе '+act.progress+'/'+d.target, null, true);
       extraBtn = shopButton('Отменить', ()=>{ player.quest = null; saveGame(); renderShop('Задание «'+d.name+'» отменено. Можно взять другое.'); });
@@ -5026,8 +5406,21 @@ function renderQuests(){
     shopRow(d.name, d.desc+' '+reward+extra, extraBtn ? [btn, extraBtn] : [btn]);
   }
 }
+function elixShopRow(k){
+      const d = ELIX[k], price = Math.round(d.price*shopMul());
+      const buy = shopButton(`Купить — ${price} ◆`, ()=>{
+        if(player.elix[k]>=ELIX_MAX){ renderShop(`Максимум этого вида: ${ELIX_MAX}.`); return; }
+        if(player.gold<price){ renderShop(`Не хватает золота: нужно ${price}, у вас ${player.gold}.`); return; }
+        player.gold -= price; player.elix[k]++; saveGame(); renderShop(d.name+' куплено.');
+      });
+      const sell = shopButton(`Продать — ${d.sell} ◆`, ()=>{
+        if(!(player.elix[k]>0)){ renderShop('У вас нет таких для продажи.'); return; }
+        player.elix[k]--; player.gold += d.sell; saveGame(); renderShop(d.name+' продано.');
+      });
+      shopRow(d.name, `${d.desc} У вас: ${player.elix[k]}/${ELIX_MAX}. Горячая клавиша: ${ELIX_KEYS.indexOf(k)+1}.`, [buy, sell]);
+    }
 function renderShop(msg){
-  if(msg){ if(/Не хватает|нет зелий|нет эликсиров|полон|максимум/i.test(msg)) SFX.play('deny'); else if(/куплен|продан|улучшен|зачаров/i.test(msg)) SFX.play('buy'); }
+  if(msg){ if(/Не хватает|нет зелий|нет эликсиров|нет эликсиров здоровья|полон|максимум/i.test(msg)) SFX.play('deny'); else if(/куплен|продан|улучшен|зачаров/i.test(msg)) SFX.play('buy'); }
   document.getElementById('shopMsg').textContent = msg || '';
   document.getElementById('shopGold').textContent = '◆ Золото: ' + player.gold;
   shopTabsEl.innerHTML='';
@@ -5047,31 +5440,20 @@ function renderShop(msg){
   } else if(shopTab==='forge'){
     renderForge();
   } else if(shopTab==='elixirs'){
-    for(const k of ELIX_KEYS){
-      const d = ELIX[k], price = Math.round(d.price*shopMul());
-      const buy = shopButton(`Купить — ${price} ◆`, ()=>{
-        if(player.elix[k]>=ELIX_MAX){ renderShop(`Максимум эликсиров этого вида: ${ELIX_MAX}.`); return; }
-        if(player.gold<price){ renderShop(`Не хватает золота: нужно ${price}, у вас ${player.gold}.`); return; }
-        player.gold -= price; player.elix[k]++; saveGame(); renderShop(d.name+' куплено.');
-      });
-      const sell = shopButton(`Продать — ${d.sell} ◆`, ()=>{
-        if(!(player.elix[k]>0)){ renderShop('У вас нет эликсиров для продажи.'); return; }
-        player.elix[k]--; player.gold += d.sell; saveGame(); renderShop(d.name+' продано.');
-      });
-      shopRow(d.name, `${d.desc} У вас: ${player.elix[k]}/${ELIX_MAX}. Горячая клавиша: ${ELIX_KEYS.indexOf(k)+1}.`, [buy, sell]);
-    }
+    for(const k of ELIX_KEYS.filter(k=>k!=='big')) elixShopRow(k);
   } else {
     const PB = Math.round(POTION_BUY*shopMul());
     const buy = shopButton(`Купить — ${PB} ◆`, ()=>{
-      if(player.potions>=POTION_MAX){ renderShop(`В инвентаре максимум зелий (${POTION_MAX}).`); return; }
+      if(player.potions>=POTION_MAX){ renderShop(`В инвентаре максимум эликсиров (${POTION_MAX}).`); return; }
       if(player.gold<PB){ renderShop(`Не хватает золота: нужно ${PB}, у вас ${player.gold}.`); return; }
-      player.gold-=PB; player.potions++; saveGame(); renderShop('Зелье здоровья куплено.');
+      player.gold-=PB; player.potions++; saveGame(); renderShop('Эликсир здоровья куплен.');
     }, false);
     const sell = shopButton(`Продать — ${POTION_SELL} ◆`, ()=>{
-      if(player.potions<=0){ renderShop('У вас нет зелий на продажу.'); return; }
-      player.potions--; player.gold+=POTION_SELL; saveGame(); renderShop('Зелье продано.');
+      if(player.potions<=0){ renderShop('У вас нет эликсиров на продажу.'); return; }
+      player.potions--; player.gold+=POTION_SELL; saveGame(); renderShop('Эликсир продан.');
     }, false);
-    shopRow('Зелье здоровья', `Лечит 30 HP. У вас: ${player.potions}/${POTION_MAX}. Скупаю по ${POTION_SELL} ◆.`, [buy, sell]);
+    shopRow('Эликсир здоровья', `Лечит 30 HP. У вас: ${player.potions}/${POTION_MAX}. Скупаю по ${POTION_SELL} ◆.`, [buy, sell]);
+    elixShopRow('big');
   }
 }
 document.getElementById('shopClose').addEventListener('click', closeShop);
@@ -5131,14 +5513,14 @@ document.addEventListener('webkitfullscreenchange', ()=>{ updateFsButton(); setT
 
 document.getElementById('startBtn').addEventListener('click', ()=>{
   if(getSaveInfo() && !confirm('Начать новую игру? Автосохранение будет перезаписано, как только вы продвинетесь (ручные слоты останутся).')) return;
-  beginNewGame();
+  newGameWithIntro();
 });
 savesBtn.addEventListener('click', openSaves);
 document.getElementById('savesBack').addEventListener('click', closeSaves);
 loadBtn.addEventListener('click', ()=>{ loadGame(latestSaveKey()); });
 refreshSaveUI();
-document.getElementById('restartBtn').addEventListener('click', beginNewGame);
-document.getElementById('restartBtn2').addEventListener('click', beginNewGame);
+document.getElementById('restartBtn').addEventListener('click', newGameWithIntro);
+document.getElementById('restartBtn2').addEventListener('click', newGameWithIntro);
 resumeBtn.addEventListener('click', resumeGame);
 menuBtn.addEventListener('click', exitToMenu);
 window.addEventListener('keydown', e=>{
