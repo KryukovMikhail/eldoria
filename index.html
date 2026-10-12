@@ -156,12 +156,13 @@
   </div>
 
   <div id="startScreen" class="overlay">
+    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.029</div>
     <h2>Легенды Эльдории</h2>
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
-    Путь лежит через цепочку мест, и между каждыми двумя из них стоит отдельное <b>логово с боссом</b>: Лес → Логово Костяного Короля → Пещера теней → Логово Паучьей Королевы → Бездна Теней → Логово Повелителя Тьмы → Огненные недра → Логово Повелителя Пламени → Пустыня → Логово Фараона → Ледяной край → Логово Ледяного Короля → Кладбище → Логово Повелителя Мёртвых → Джунгли → Логово Древнего Хранителя → Средневековый город → Логово Чёрного Маршала → Заброшенный дом → Логово Призрачного Хозяина. Проход дальше открывается, когда босс повержен. Днём и ночью, в дождь, туман и метель вас ждут новые враги. В углу карты стоит <b>торговая лавка</b>: покупайте и продавайте оружие, броню и зелья. Есть и <b>Город Эльдор</b> — с трактиром, лавкой алхимика и рынком; его ворота стоят где-то на поверхности. Ищите <b>тайные места</b>: сундуки, ключи к запертым сундукам и скрытые пещеры (они появляются на карте, когда вы подходите близко). На поверхности можно встретить странствующего торговца, лекаря — и попасть в засаду. Игра сохраняется автоматически.</p>
-    <p style="font-size:13px">Карта и местность скрыты туманом: он рассеивается, когда вы подходите. Торговые лавки есть в углу карты, в Пустыне Миражей, Ледяном крае, на кладбище и в джунглях.</p>
-    <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака (удерживайте — мощный удар) &nbsp;|&nbsp; <b>E</b> — выпить эликсир здоровья &nbsp;|&nbsp; <b>1</b> — большой эликсир, <b>2–4</b> — зелья (скорость, сила, стойкость) &nbsp;|&nbsp; <b>ESC</b> — меню<br><b>Shift</b> — рывок &nbsp;|&nbsp; <b>Q</b> — вихрь &nbsp;|&nbsp; <b>R</b> — щит &nbsp;|&nbsp; <b>I</b> — герой (навыки и снаряжение)</p>
+    Путь лежит через цепочку мест, и между каждыми двумя из них стоит отдельное <b>логово с боссом</b>. Проход дальше открывается, когда босс повержен. Днём и ночью, в дождь, туман и метель вас ждут новые враги. В углу карты стоит <b>торговая лавка</b>: покупайте и продавайте оружие, броню и зелья. Есть и <b>Город Лиссарен</b> — с трактиром, лавкой «Дымный Тигель» и рынком; его ворота стоят где-то на поверхности. Ищите <b>тайные места</b>: сундуки, ключи к запертым сундукам и скрытые пещеры (они появляются на карте, когда вы подходите близко). На поверхности можно встретить караванщика Хазима, целительницу Айлун — и попасть в засаду. Игра сохраняется автоматически.</p>
+    <p style="font-size:13px">Карта и местность скрыты туманом: он рассеивается, когда вы подходите. Торговые лавки есть в углу карты, в Пустоши Зарахаб, Крае Белого Эха, на Погосте и в Дебрях.</p>
+    <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака (удерживайте — мощный удар) &nbsp;|&nbsp; <b>E</b> — выпить эликсир здоровья &nbsp;|&nbsp; <b>1</b> — большой эликсир, <b>2–5</b> — зелья (скорость, сила, стойкость, водоход) &nbsp;|&nbsp; <b>ESC</b> — меню<br><b>Shift</b> — рывок &nbsp;|&nbsp; <b>Q</b> — вихрь &nbsp;|&nbsp; <b>R</b> — щит &nbsp;|&nbsp; <b>I</b> — герой (навыки и снаряжение)</p>
     <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Эликсиры лечат 30 HP, уровень повышает здоровье и урон. Чем ближе враг, тем сильнее удар.</p>
     <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
     <div id="saveInfo" class="hidden" style="font-size:12px;color:#a89d78"></div>
@@ -324,6 +325,7 @@ function generateOverworld(){
   for(let t=0; !farShop(e1) && t<100; t++) e1 = findFloor(grid,W,H,'.',30,cx,cy);
   clearArea(grid,e1.x,e1.y,2,'.');
   grid[e1.y][e1.x]='>';
+  { const seenE = floodFrom(grid,cx,cy,'~^#SB'); if(!seenE[e1.x+(e1.y+2)*W]) carveRoad(grid,e1.x,e1.y+2,cx,cy); }   // вход не должен оказаться на острове посреди озера
   const enemies=[];
   for(let i=0;i<58;i++){
     let p=findFloor(grid,W,H,'.',9,cx,cy);
@@ -369,7 +371,7 @@ function generateDungeonOnce(level){
   { let far=1, best=-1;
     for(let i=1;i<rooms.length;i++){ const d=Math.hypot(rooms[i].cx-rooms[0].cx, rooms[i].cy-rooms[0].cy); if(d>best){ best=d; far=i; } }
     const t=rooms[far]; rooms[far]=rooms[rooms.length-1]; rooms[rooms.length-1]=t; }
-  // коридоры шириной 2 клетки, чтобы крупные враги (Костяной Король) могли проходить
+  // коридоры шириной 2 клетки, чтобы крупные враги (Мортракс) могли проходить
   for(let i=1;i<rooms.length;i++){
     const a=rooms[i-1], b=rooms[i];
     if(Math.random()<0.5){
@@ -405,7 +407,7 @@ function generateDungeonOnce(level){
   // боссы теперь живут в отдельных логовах между уровнями; здесь в глубине всегда открыт проход к следующему логову
   const boss=null, portal = {tx:lastRoom.cx, ty:lastRoom.cy, open:true};
   grid[lastRoom.cy][lastRoom.cx] = 'v';
-  if(level===4) addLavaPools(grid, rooms);
+  if(level===4) addLavaPools(grid, rooms, [[entrance.cx,entrance.cy+1],[lastRoom.cx,lastRoom.cy+1]]);
 
   return {
     type:'dungeon', level, grid, width:W, height:H, enemies, items, boss, portal,
@@ -415,7 +417,9 @@ function generateDungeonOnce(level){
 }
 
 // лавовые озёра в комнатах: непроходимы, но все комнаты должны оставаться достижимыми
-function addLavaPools(grid, rooms){
+function addLavaPools(grid, rooms, keep){
+  keep = keep||[];
+  const nearKeep = (x,y)=> keep.some(k=>Math.hypot(x-k[0],y-k[1])<4);
   const H = grid.length, W = grid[0].length;
   const reachable = ()=>{
     const seen = makeGrid(W,H,false), q = [[rooms[0].cx, rooms[0].cy]]; seen[rooms[0].cy][rooms[0].cx] = true;
@@ -443,6 +447,7 @@ function addLavaPools(grid, rooms){
       for(const [x,y] of cells){
         if(x<1||y<1||x>=W-1||y>=H-1||grid[y][x]!=='.') continue;
         if(Math.abs(x-r.cx)<=1 && Math.abs(y-r.cy)<=1) continue;
+        if(nearKeep(x,y)) continue;
         grid[y][x] = 'L'; changed.push([x,y]);
       }
       if(changed.length && !reachable()) for(const [x,y] of changed) grid[y][x] = '.';
@@ -511,7 +516,7 @@ function generateDungeon(level){
   return L;
 }
 
-// ---------- Город Эльдор и дома внутри ----------
+// ---------- Город Лиссарен и дома внутри ----------
 function floodFrom(grid, sx, sy, bad){
   const H = grid.length, W = grid[0].length, seen = new Uint8Array(W*H), q = [sx+sy*W]; seen[q[0]] = 1;
   for(let h=0; h<q.length; h++){
@@ -574,7 +579,7 @@ function generateTown(){
   const doors = [];
   for(const h of houses){
     for(let y=h.y;y<h.y+4;y++) for(let x=h.x;x<h.x+6;x++) grid[y][x] = '#';
-    if(h.to){ grid[h.y+3][h.x+3] = 'D'; doors.push({tx:h.x+3, ty:h.y+3, to:h.to, msg:h.kind==='inn' ? 'Вы входите в трактир «Усталый путник»' : 'Вы входите в лавку алхимика'}); }
+    if(h.to){ grid[h.y+3][h.x+3] = 'D'; doors.push({tx:h.x+3, ty:h.y+3, to:h.to, msg:h.kind==='inn' ? 'Вы входите в трактир «Дремлющий Грифон»' : 'Вы входите в лавку «Дымный Тигель»'}); }
   }
   const fs = fieldShop(grid, 23, 15);
   const props = [{k:'fountain', tx:13, ty:14, w:2, h:2}, {k:'well', tx:31, ty:14, w:2, h:2}];
@@ -591,14 +596,14 @@ function generateTown(){
     grid[y][x] = '#'; trees.push({tx:x, ty:y});
   }
   const lamps = [[3,11],[12,8],[20,11],[26,11],[34,8],[43,11],[20,26],[26,26],[3,26],[43,26],[21,30],[25,30]].map(([tx,ty])=>({tx,ty}));
-  return { type:'dungeon', level:9, biome:'town', title:'Город Эльдор', safe:true, nofog:true, fog:'9'.repeat(W*H),
+  return { type:'dungeon', level:9, biome:'town', title:'Город Лиссарен', safe:true, nofog:true, fog:'9'.repeat(W*H),
     grid, width:W, height:H, enemies:[], items:[], shop:fs.shop, merchant:fs.merchant, houses, doors, props, trees, lamps, portal:null,
     spawn:{x:23*TILE+5, y:30*TILE}, exit:{tx:23, ty:H-1} };
 }
 function generateHouse(kind){
   const W = 14, H = 11, grid = makeGrid(W,H,'.');
   for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(x===0||y===0||x===W-1||y===H-1) grid[y][x] = '#';
-  const L = { type:'dungeon', level:10, biome:'house', kind, title: kind==='inn' ? 'Трактир «Усталый путник»' : 'Лавка алхимика', safe:true, nofog:true, fog:'9'.repeat(W*H),
+  const L = { type:'dungeon', level:10, biome:'house', kind, title: kind==='inn' ? 'Трактир «Дремлющий Грифон»' : 'Лавка «Дымный Тигель»', safe:true, nofog:true, fog:'9'.repeat(W*H),
     grid, width:W, height:H, enemies:[], items:[], furn:[], portal:null, spawn:{x:7*TILE+5, y:7*TILE}, exit:{tx:7, ty:H-2} };
   const F = (k,tx,ty,w,h,block)=>{ L.furn.push({k,tx,ty,w,h}); if(block!==false) for(let y=ty;y<ty+h;y++) for(let x=tx;x<tx+w;x++) grid[y][x] = 'B'; };
   if(kind==='inn'){
@@ -636,15 +641,15 @@ const ENEMY_BASE = {
     zombie: {hp:70,  dmg:12, speed:36,  xp:28, gold:6, color:'#5a6b4a', size:24, aggro:140},
     darkknight:{hp:88,dmg:17,speed:58,  xp:46, gold:10,color:'#2f323f', size:25, aggro:190},
     imp:    {hp:34,  dmg:10, speed:70,  xp:36, gold:9, color:'#c7352a', size:20, aggro:230, shoot:{kind:'fire',cd:2200,speed:150,range:220,n:1,keep:true}},
-    lavaslime:{hp:50,dmg:12, speed:42,  xp:34, gold:8, color:'#e0561a', size:22, aggro:130},
+    lavaslime:{hp:50,dmg:12, speed:42,  xp:34, gold:8, color:'#e0561a', size:22, aggro:130, inflict:{kind:'burn',ms:2800,chance:0.5}},
     golem:  {hp:100, dmg:17, speed:36,  xp:50, gold:12,color:'#5c5560', size:30, aggro:150},
     lavalord:{hp:560,dmg:24, speed:60,  xp:520,gold:260,color:'#ff6a1a', size:42, aggro:340, shoot:{kind:'fire',cd:1700,speed:170,range:300,n:3}},
-    scorpion:{hp:46, dmg:13, speed:80,  xp:38, gold:9, color:'#b8742e', size:24, aggro:170},
+    scorpion:{hp:46, dmg:13, speed:80,  xp:38, gold:9, color:'#b8742e', size:24, aggro:170, inflict:{kind:'poison',ms:3000,chance:0.5}},
     mummy:  {hp:84,  dmg:15, speed:40,  xp:48, gold:12,color:'#e0d6b0', size:24, aggro:150},
-    cobra:  {hp:38,  dmg:18, speed:86,  xp:44, gold:10,color:'#8a9a30', size:22, aggro:170},
+    cobra:  {hp:38,  dmg:18, speed:86,  xp:44, gold:10,color:'#8a9a30', size:22, aggro:170, inflict:{kind:'poison',ms:4000,chance:0.7}},
     pharaoh:{hp:700, dmg:26, speed:58,  xp:760,gold:340,color:'#d8a824', size:40, aggro:340, shoot:{kind:'sand',cd:2100,speed:150,range:280,n:2}},
     icewolf:{hp:56,  dmg:13, speed:92,  xp:42, gold:10,color:'#b4cbe0', size:24, aggro:200},
-    yeti:   {hp:120, dmg:19, speed:50,  xp:60, gold:14,color:'#f2f8fc', size:30, aggro:160},
+    yeti:   {hp:120, dmg:19, speed:50,  xp:60, gold:14,color:'#f2f8fc', size:30, aggro:160, inflict:{kind:'freeze',ms:1000,chance:0.35}},
     frostwraith:{hp:64,dmg:13,speed:66, xp:56, gold:12,color:'#9fd8f0', size:24, aggro:230, shoot:{kind:'ice',cd:2400,speed:140,range:220,n:1,keep:true}},
     ghoul:  {hp:96,  dmg:21, speed:74,  xp:70, gold:16,color:'#7d8a70', size:24, aggro:200},
     banshee:{hp:70,  dmg:16, speed:62,  xp:72, gold:16,color:'#7fd8a8', size:24, aggro:240, shoot:{kind:'wail',cd:2300,speed:135,range:230,n:1,keep:true}},
@@ -669,6 +674,11 @@ const ENEMY_BASE = {
     skelarcher:{hp:68,dmg:17,speed:56,  xp:68, gold:15,color:'#d8d3bd', size:24, aggro:240, shoot:{kind:'arrow',cd:2300,speed:220,range:260,n:1,keep:true}},
     hunter: {hp:104, dmg:22, speed:64,  xp:92, gold:21,color:'#3f6a2a', size:24, aggro:240, shoot:{kind:'dart',cd:2100,speed:230,range:250,n:1,keep:true}},
     crossbowman:{hp:112,dmg:26,speed:58,xp:106,gold:25,color:'#7a7f8c', size:25, aggro:260, shoot:{kind:'bolt',cd:2400,speed:250,range:290,n:1,keep:true}},
+    frostmite:{hp:62, dmg:13, speed:86, xp:54, gold:12,color:'#bfeaff', size:22, aggro:200, inflict:{kind:'freeze',ms:1300,chance:0.6}},
+    cinderhound:{hp:78,dmg:16,speed:104,xp:54, gold:12,color:'#c2461e', size:24, aggro:230, inflict:{kind:'burn',ms:3600,chance:0.7}},
+    pyromancer:{hp:62,dmg:15, speed:58, xp:58, gold:14,color:'#ff6a2a', size:24, aggro:260, shoot:{kind:'fire',cd:2500,speed:160,range:260,n:2,keep:true}},
+    blizzardmage:{hp:78,dmg:16,speed:56,xp:78, gold:17,color:'#7ab8f0', size:24, aggro:260, shoot:{kind:'ice',cd:2700,speed:150,range:260,n:1,keep:true}},
+    venomtoad:{hp:98, dmg:18, speed:54, xp:92, gold:20,color:'#5a9a2a', size:24, aggro:190, inflict:{kind:'poison',ms:4500,chance:0.8}, shoot:{kind:'spore',cd:3000,speed:130,range:200,n:1,keep:true}},
     cursedbook:{hp:92,dmg:22,speed:72,  xp:112,gold:27,color:'#6a2a8a', size:22, aggro:240, erratic:true, shoot:{kind:'curse',cd:2200,speed:150,range:230,n:1,keep:true}},
 };
 function makeEnemy(type,x,y,level=1){
@@ -681,6 +691,7 @@ function makeEnemy(type,x,y,level=1){
   };
   if(base.shoot) e.shoot = base.shoot;
   if(base.erratic) e.erratic = true;
+  if(base.inflict) e.inflict = base.inflict;
   return e;
 }
 // на карте золота стало заметно меньше: потион выпадает как раньше, золото — лишь в части точек
@@ -703,7 +714,7 @@ const WEAPONS = {
 const WEAPON_SFX = { sword:'swing', spear:'spear', axe:'axe', bow:'bow', crossbow:'crossbow', musket:'musket' };
 // оружие открывается постепенно: число побеждённых стражей-боссов, нужное для покупки
 const WEAPON_UNLOCK = { sword:0, spear:1, bow:2, axe:3, crossbow:5, musket:7 };
-const BOSS_NAME_BY_STAGE = ['Костяной Король','Паучья Королева','Повелитель Тьмы','Повелитель Пламени','Фараон Песков','Ледяной Король','Повелитель Мёртвых','Древний Хранитель','Чёрный Маршал','Призрачный Хозяин'];
+const BOSS_NAME_BY_STAGE = ['Мортракс','Шелиба','Ноктурн','Игнаррок','Хар-Атеп','Криомир','Морвейн','Ольхарон','Вархаал','Эфирий'];
 function weaponUnlocked(id){ return (WEAPON_UNLOCK[id]||0) <= storyStage(); }
 function weaponLockText(id){ const n = WEAPON_UNLOCK[id]||0; return '🔒 После победы над стражем №'+n+': '+BOSS_NAME_BY_STAGE[n-1]; }
 
@@ -725,7 +736,8 @@ const player = {
   codex:{e:{},a:{},k:{}}, weapon:'sword', owned:{sword:true}, armor:'none', ownedArmor:{none:true},
   quest:null, questsDone:{},
   sp:0, skills:{dash:0,spin:0,shield:0,might:0}, gear:{helm:null,ring:null,amulet:null}, bag:[], wLvl:{}, ench:{}, cd:{dash:0,spin:0,shield:0}, shield:0, dashT:0, dvx:0, dvy:0, spinFx:0, spinR:0, vamp:0,
-  elix:{big:0,speed:0,might:0,guard:0}, buff:{speed:0,might:0,guard:0}, slowT:0
+  elix:{big:0,speed:0,might:0,guard:0,swim:0}, buff:{speed:0,might:0,guard:0,swim:0}, slowT:0, boots:false,
+  fx:{freeze:0,freezeImm:0,burn:0,burnDps:0,poison:0,poisonDps:0,acc:0}
 };
 function incomingDamage(d){
   const red = Math.min(0.85, ARMORS[player.armor].reduce + gearStat('def')/100);
@@ -738,10 +750,11 @@ const ELIX = {
   big:  {name:'Большой эликсир здоровья', price:55, sell:22, col:'#e0508a', col2:'#ffb0d0', desc:'Мгновенно лечит 80 HP.'},
   speed:{name:'Зелье скорости',    price:45, sell:18, dur:20000, col:'#34c8f0', col2:'#c0f4ff', desc:'+40% к скорости на 20 с, снимает замедление паутиной.'},
   might:{name:'Зелье силы',        price:50, sell:20, dur:25000, col:'#ff9a2a', col2:'#ffe4a8', desc:'+50% к урону на 25 с.'},
+  swim: {name:'Зелье водохода',    price:60, sell:24, dur:40000, col:'#27c9b8', col2:'#b8fff0', desc:'Позволяет ходить по воде 40 с (вода замедляет). Тушит горение.'},
   guard:{name:'Зелье стойкости',   price:50, sell:20, dur:25000, col:'#8a7aff', col2:'#d8d0ff', desc:'Получаемый урон вдвое меньше на 25 с.'}
 };
-const ELIX_KEYS = ['big','speed','might','guard'], ELIX_MAX = 5;
-const elixLatch = {big:false, speed:false, might:false, guard:false};
+const ELIX_KEYS = ['big','speed','might','guard','swim'], ELIX_MAX = 5;
+const elixLatch = {big:false, speed:false, might:false, guard:false, swim:false};
 function drawElixirIcon(cx,cy,sc,kind,glow){
   const d = ELIX[kind];
   ctx.save(); ctx.translate(cx,cy); ctx.scale(sc,sc);
@@ -756,6 +769,7 @@ function drawElixirIcon(cx,cy,sc,kind,glow){
   if(kind==='big'){ ctx.fillRect(-0.7,0.6,1.4,3.8); ctx.fillRect(-1.9,1.8,3.8,1.4); }
   else if(kind==='speed'){ ctx.beginPath(); ctx.moveTo(1.4,-0.2); ctx.lineTo(-1.6,2.9); ctx.lineTo(0.2,2.9); ctx.lineTo(-1,5.6); ctx.lineTo(2,2.2); ctx.lineTo(0.2,2.2); ctx.closePath(); ctx.fill(); }
   else if(kind==='might'){ ctx.beginPath(); ctx.moveTo(0,-0.2); ctx.lineTo(1.2,1.8); ctx.lineTo(3.2,2.4); ctx.lineTo(1.2,3.2); ctx.lineTo(0,5.2); ctx.lineTo(-1.2,3.2); ctx.lineTo(-3.2,2.4); ctx.lineTo(-1.2,1.8); ctx.closePath(); ctx.fill(); }
+  else if(kind==='swim'){ ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2; for(const yy of [1.4,3.4,5.2]){ ctx.beginPath(); ctx.moveTo(-3,yy); ctx.quadraticCurveTo(-1.5,yy-1.4,0,yy); ctx.quadraticCurveTo(1.5,yy+1.4,3,yy); ctx.stroke(); } }
   else { ctx.beginPath(); ctx.moveTo(-2.4,0.6); ctx.lineTo(2.4,0.6); ctx.lineTo(2.4,3); ctx.quadraticCurveTo(2.4,4.8,0,5.7); ctx.quadraticCurveTo(-2.4,4.8,-2.4,3); ctx.closePath(); ctx.fill(); }
   ctx.restore();
 }
@@ -764,9 +778,10 @@ function useElixir(k){
   const d = ELIX[k];
   if(!(player.elix[k]>0)){ addNote('Нет: '+d.name.toLowerCase(), '#e07f7f'); SFX.play('deny'); return false; }
   if(k==='big'){
-    if(player.hp>=player.maxHp){ addNote('Здоровье уже полное', '#e0c96a'); return false; }
+    if(player.hp>=player.maxHp && !(player.fx.burn>0 || player.fx.poison>0)){ addNote('Здоровье уже полное', '#e0c96a'); return false; }
     player.hp = Math.min(player.maxHp, player.hp+80);
     addNote('Выпит большой эликсир здоровья (+80 HP)', '#7fe07f');
+    if(player.fx.burn>0 || player.fx.poison>0){ player.fx.burn = 0; player.fx.poison = 0; addNote('Эликсир снял горение и яд', '#7fe07f'); }
   } else {
     player.buff[k] = d.dur;
     if(k==='speed') player.slowT = 0;
@@ -777,13 +792,116 @@ function useElixir(k){
   return true;
 }
 function elixTick(dt){
-  for(const k of ['speed','might','guard']) if(player.buff[k]>0){ player.buff[k] = Math.max(0, player.buff[k]-dt*1000); if(player.buff[k]===0) addNote('Действие зелья закончилось: '+ELIX[k].name.toLowerCase(), '#a89d78'); }
+  for(const k of ['speed','might','guard','swim']) if(player.buff[k]>0){ player.buff[k] = Math.max(0, player.buff[k]-dt*1000); if(player.buff[k]===0) addNote('Действие зелья закончилось: '+ELIX[k].name.toLowerCase(), '#a89d78'); }
   player.slowT = Math.max(0, (player.slowT||0)-dt*1000);
   ELIX_KEYS.forEach((k,i)=>{
     const on = keys['Digit'+(i+1)] || keys['Numpad'+(i+1)];
     if(on && !elixLatch[k]){ elixLatch[k] = true; useElixir(k); }
     if(!on) elixLatch[k] = false;
   });
+}
+
+// ---------- Спасение из непроходимой клетки (лава, вода после окончания зелья) ----------
+function rescuePlayer(){
+  if(player.dashT>0 || loc.type==='overworld' && swimOn()) return;
+  if(!isBlocked(loc, player.x, player.y, player.w, player.h)) return;
+  const wasWater = onWater();
+  const cx = Math.floor((player.x+player.w/2)/TILE), cy = Math.floor((player.y+player.h/2)/TILE);
+  for(let r=1;r<=18;r++){
+    let best = null, bd = 1e9;
+    for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++){
+      if(Math.max(Math.abs(dx),Math.abs(dy))!==r) continue;
+      const tx = cx+dx, ty = cy+dy; if(tx<1||ty<1||tx>=loc.width-1||ty>=loc.height-1) continue;
+      const x = tx*TILE+(TILE-player.w)/2, y = ty*TILE+(TILE-player.h)/2;
+      if(isBlocked(loc,x,y,player.w,player.h)) continue;
+      const d = dx*dx+dy*dy; if(d<bd){ bd = d; best = [x,y]; }
+    }
+    if(best){ player.x = best[0]; player.y = best[1]; addNote(wasWater ? '🌊 Вас вынесло на берег' : '✦ Вас вынесло на твёрдую землю', '#9fd8ff'); return; }
+  }
+}
+// ---------- Статусы: заморозка, горение, яд ----------
+const STATUS_INFO = {
+  freeze:{n:'Заморозка', icon:'❄', col:'#9fe0ff'},
+  burn:  {n:'Горение',   icon:'🔥', col:'#ff8a2a'},
+  poison:{n:'Яд',        icon:'☠', col:'#8aff4a'}
+};
+const SHOT_FX = { fire:['burn',3400,0.6], ice:['freeze',1100,0.5], spore:['poison',4200,0.6] };
+function statusImmune(){ return player.shield>0 || player.dashT>0 || player.buff.guard>0; }
+function inflictStatus(kind, ms, baseDmg){
+  if(statusImmune() || gameState!=='playing') return false;
+  const f = player.fx;
+  if(kind==='freeze'){
+    if(f.freeze>0 || f.freezeImm>0) return false;
+    f.freeze = ms; f.freezeImm = 2200; player.dashT = 0; addNote('❄ Вы заморожены и не можете двигаться!', '#9fe0ff'); SFX.play('hit');
+  } else if(kind==='burn'){
+    if(onWater()) return false;
+    if(!(f.burn>0)) addNote('🔥 Вы горите — здоровье убывает!', '#ff8a2a');
+    f.burn = ms; f.burnDps = Math.max(2, Math.round(incomingDamage(baseDmg)*0.3));
+  } else if(kind==='poison'){
+    if(!(f.poison>0)) addNote('☠ Вы отравлены — здоровье убывает!', '#8aff4a');
+    f.poison = ms; f.poisonDps = Math.max(1, Math.round(incomingDamage(baseDmg)*0.18));
+  }
+  return true;
+}
+function statusTick(dt){
+  const f = player.fx; if(!f) return;
+  const ms = dt*1000;
+  if(f.freeze>0){ f.freeze = Math.max(0,f.freeze-ms); if(f.freeze===0) addNote('Лёд растаял — вы снова можете двигаться', '#a89d78'); }
+  else f.freezeImm = Math.max(0,f.freezeImm-ms);
+  if(f.burn>0 && onWater()){ f.burn = 0; addNote('💧 Вода потушила огонь', '#9fd8ff'); }
+  if(f.burn>0 || f.poison>0){
+    let dps = 0;
+    if(f.burn>0){ f.burn = Math.max(0,f.burn-ms); dps += f.burnDps; }
+    if(f.poison>0){ f.poison = Math.max(0,f.poison-ms); dps += f.poisonDps; }
+    f.acc += dps*dt;
+    while(f.acc>=1){
+      f.acc -= 1;
+      if(f.burn>0 || player.hp>1){ player.hp -= 1; player.hitFlash = Math.max(player.hitFlash,90); }
+      if(player.hp<=0){ player.hp = 0; onPlayerDeath(); return; }
+    }
+    if(f.burn>0 && Math.random()<dt*14) burst(player.x+player.w/2+rnd(-6,6), player.y+4, 1, {colors:['#ff9a2a','#ffd34a','#ff4a1a'], sp:20, up:30, g:-90, life:420, size:2.4});
+    if(f.poison>0 && Math.random()<dt*7) burst(player.x+player.w/2+rnd(-6,6), player.y+8, 1, {colors:['#8aff4a','#4a9a1a'], sp:14, up:14, g:-40, life:500, size:2});
+  }
+}
+function drawStatusFx(sx,sy){
+  const f = player.fx; if(!f) return;
+  const cx = sx+player.w/2, cy = sy+player.h/2, t = Date.now()/1000;
+  if(f.freeze>0){
+    ctx.fillStyle = 'rgba(150,215,255,0.5)'; ctx.strokeStyle = 'rgba(230,248,255,0.95)'; ctx.lineWidth = 1.6;
+    rrect(cx-13,cy-16,26,34,5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(cx-9,cy-12,4,12); ctx.fillRect(cx-9,cy+3,2.4,5);
+  }
+  if(f.burn>0){
+    for(let i=0;i<3;i++){ const ph = t*9+i*2.1, x = cx-8+i*8, h = 9+3*Math.sin(ph);
+      ctx.fillStyle = 'rgba(255,120,30,0.85)'; ctx.beginPath(); ctx.moveTo(x-4,cy-4); ctx.quadraticCurveTo(x-3,cy-4-h,x,cy-8-h); ctx.quadraticCurveTo(x+3,cy-4-h*0.6,x+4,cy-4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,220,90,0.9)'; ctx.beginPath(); ctx.moveTo(x-2,cy-4); ctx.quadraticCurveTo(x,cy-4-h*0.7,x+2,cy-4); ctx.closePath(); ctx.fill(); }
+  }
+  if(f.poison>0){
+    for(let i=0;i<3;i++){ const ph = (t*0.9+i/3)%1; ctx.fillStyle = 'rgba(140,255,80,'+(0.7*(1-ph))+')'; ctx.beginPath(); ctx.arc(cx-7+i*7+Math.sin(t*3+i)*2, cy-6-ph*20, 2.4, 0, 6.283); ctx.fill(); }
+    ctx.strokeStyle = 'rgba(120,230,60,0.45)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.ellipse(cx,cy+2,14,17,0,0,6.283); ctx.stroke();
+  }
+  if(swimOn() && onWater()){
+    ctx.fillStyle = 'rgba(46,150,200,0.55)'; ctx.beginPath(); ctx.ellipse(cx,cy+8,13,8,0,0,6.283); ctx.fill();
+    ctx.strokeStyle = 'rgba(220,250,255,0.8)'; ctx.lineWidth = 1.2;
+    for(let i=0;i<2;i++){ const p = (t*1.2+i*0.5)%1; ctx.globalAlpha = 1-p; ctx.beginPath(); ctx.ellipse(cx,cy+9,10+p*12,5+p*5,0,0,6.283); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+  }
+}
+function drawStatusHUD(){
+  const f = player.fx; if(!f) return;
+  let y = UI.t+184+(player.slowT>0?24:0);
+  for(const k of ['freeze','burn','poison']){
+    if(!(f[k]>0)) continue;
+    const I = STATUS_INFO[k], w = 112;
+    ctx.fillStyle = 'rgba(20,20,30,0.8)'; ctx.fillRect(UI.l+52,y,w,20); ctx.strokeStyle = I.col; ctx.lineWidth = 1; ctx.strokeRect(UI.l+52.5,y+0.5,w-1,19);
+    ctx.fillStyle = I.col; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(I.icon+' '+I.n+' '+(f[k]/1000).toFixed(1), UI.l+58, y+14);
+    y += 24;
+  }
+  if(player.buff.swim>0){
+    const w = 112; ctx.fillStyle = 'rgba(10,40,40,0.8)'; ctx.fillRect(UI.l+52,y,w,20); ctx.strokeStyle = '#27c9b8'; ctx.lineWidth = 1; ctx.strokeRect(UI.l+52.5,y+0.5,w-1,19);
+    const blink = player.buff.swim<6000 && Math.floor(Date.now()/250)%2===0;
+    ctx.fillStyle = blink ? '#ff8a6a' : '#27c9b8'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('🌊 Водоход '+(player.buff.swim/1000).toFixed(0)+' с', UI.l+58, y+14);
+  }
 }
 function applyWebSlow(){
   if(player.shield>0 || player.dashT>0) return;
@@ -794,7 +912,7 @@ function maybeDropElixir(e){
   if(e.minion) return;
   const boss = BOSS_TYPES.includes(e.type);
   if(!boss && Math.random()>0.045) return;
-  loc.items.push({type:'elixir', kind:ELIX_KEYS[rnd(0,3)], x:e.x+e.w/2-8+rnd(-6,6), y:e.y+e.h/2-8, w:16, h:16, value:1});
+  loc.items.push({type:'elixir', kind:ELIX_KEYS[rnd(0,4)], x:e.x+e.w/2-8+rnd(-6,6), y:e.y+e.h/2-8, w:16, h:16, value:1});
 }
 function elixLayout(){
   const list = ELIX_KEYS.filter(k=> player.elix[k]>0 || (k!=='big' && player.buff[k]>0));
@@ -812,6 +930,7 @@ function drawElixHUD(){
     ctx.textAlign = 'left'; ctx.fillStyle = '#e8c873'; ctx.font = 'bold 9px sans-serif'; ctx.fillText(String(ELIX_KEYS.indexOf(s.k)+1), s.x+3, s.y+10);
     if(act){ ctx.fillStyle = d.col; ctx.fillRect(s.x, s.y+s.h-3, s.w*player.buff[s.k]/d.dur, 3); }
   }
+  drawStatusHUD();
   if(player.slowT>0){
     const y = UI.t+184, w = 112;
     ctx.fillStyle = 'rgba(40,40,56,0.8)'; ctx.fillRect(UI.l+52,y,w,20); ctx.strokeStyle = '#a8a8c0'; ctx.lineWidth = 1; ctx.strokeRect(UI.l+52.5,y+0.5,w-1,19);
@@ -1204,9 +1323,9 @@ function buildWorld(ow){
 }
 // ======================= Сюжет, тайники и мини-события =======================
 const STORY_INTRO = [
-  'Эльдория погружается во тьму. Призрачный Хозяин — когда-то страж Поместья — похитил Сердце Эльдории, древний камень, хранивший свет королевства, и заперся в Заброшенном доме на краю мира.',
-  'Десять его слуг-стражей запечатали путь: у каждого своё логово, и пока страж жив, врата вглубь закрыты. Первый из них — Костяной Король — засел в пещере на поверхности.',
-  'Вы — последний, кто решился идти за светом. Закупитесь у торговца, наберитесь сил в бою и ищите тайные места: говорят, где-то в лесу прячется пещера старца, который знает о Хозяине больше всех.'
+  'Эльдория погружается во тьму. Эфирий — когда-то страж Обители — похитил Сердце Эльдории, древний камень, хранивший свет королевства, и заперся в Обители Пустых Зеркал на краю мира.',
+  'Десять его слуг-стражей запечатали путь: у каждого своё логово, и пока страж жив, врата вглубь закрыты. Первый из них — Мортракс — засел в пещере на поверхности.',
+  'Вы — последний, кто решился идти за светом. Закупитесь у торговца, наберитесь сил в бою и ищите тайные места: говорят, где-то в лесу прячется грот мудреца Орбина, который знает об Эфирии больше всех.'
 ];
 const LAIR_ORDER = ['lair1','lair2','lair3','lair4','lair5','lair6','lair7','lair8','lair9','lair10'];
 function storyStage(){
@@ -1219,46 +1338,46 @@ function storyStage(){
   return n;
 }
 const STORY_TIPS = [
-  'Путь начинается в пещере на поверхности. Костяной Король силён — сперва наберись опыта и купи броню.',
-  'Король пал — отлично! Идите дальше, в Пещеру теней: там прячется Паучья Королева. Берегите зелье скорости, её паутина замедляет.',
-  'Паучья Королева повержена. Впереди Бездна Теней и Повелитель Тьмы — щит хорошо гасит его удары.',
-  'Тьма отступает. Дальше — Огненные недра: без зелья стойкости там тяжело.',
-  'Повелитель Пламени пал. Пустыня Миражей ждёт — берите побольше эликсиров, лавка там есть.',
-  'Фараон повержен. Ледяной край холоден и опасен — ищите лавку у входа.',
-  'Ледяной Король побеждён. Кладбище — вотчина Повелителя Мёртвых, он не любит живых.',
-  'Повелитель Мёртвых сгинул. Джунгли хранят Древнего Хранителя — он не злодей, но Хозяин его околдовал.',
-  'Хранитель освобождён. Теперь Средневековый город, где правит Чёрный Маршал. Берегитесь стрелков.',
-  'Маршал пал. Остался Заброшенный дом — и сам Призрачный Хозяин. Заберите Сердце!',
-  'Вы прошли весь путь. Остался последний шаг — Сердце Поместья.'
+  'Путь начинается в пещере на поверхности. Мортракс силён — сперва наберись опыта и купи броню.',
+  'Мортракс пал — отлично! Идите дальше, в Грот Шорохов: там прячется Шелиба. Берегите зелье скорости, её паутина замедляет.',
+  'Шелиба повержена. Впереди Провал Безмолвия и Ноктурн — щит хорошо гасит его удары.',
+  'Тьма отступает. Дальше — Кузни Гхарраш: без зелья стойкости там тяжело.',
+  'Игнаррок пал. Пустошь Зарахаб ждёт — берите побольше эликсиров, лавка там есть.',
+  'Хар-Атеп повержен. Край Белого Эха холоден и опасен — ищите лавку у входа.',
+  'Криомир побеждён. Погост — вотчина Морвейна, он не любит живых.',
+  'Морвейн сгинул. Дебри Ксилотара хранят Ольхарона — он не злодей, но Эфирий его околдовал.',
+  'Ольхарон освобождён. Теперь Град Вельмор, где правит Вархаал. Берегитесь стрелков.',
+  'Вархаал пал. Остались Обитель Пустых Зеркал — и сам Эфирий. Заберите Сердце!',
+  'Вы прошли весь путь. Остался последний шаг — Сердце Эльдории.'
 ];
 const STORY_LORE = [
-  'Костяной Король был владыкой, что продал душу Хозяину ради вечной жизни. Его кости — его сила: бейте, пока не рассыплется, и не стойте на месте — он бьёт по площади.',
-  'Паучья Королева сплела сети на пути в Бездну. Её плевки замедляют — пользуйтесь рывком и зельем скорости.',
-  'Повелитель Тьмы питается страхом. В Бездне темно, но враги там боятся света факелов — держитесь вместе с тропой.',
-  'В Огненных недрах живёт Повелитель Пламени. Лава непроходима, а его огненные шары больно жгут — щит и зелье стойкости спасают.',
-  'Фараон Песков стережёт пустыню. Песок слепит и режет, бейте издали и берегите здоровье.',
-  'Ледяной Король заморозил целый край. Белые волки ходят стаями — не дайте себя окружить.',
-  'Повелитель Мёртвых поднимает павших. Убивайте помощников быстро, пока не набрались числом.',
-  'Древний Хранитель — дух леса, которого Хозяин околдовал. Когда падёт — лес снова вздохнёт свободно.',
-  'Чёрный Маршал — командир войска, что некогда осадило Эльдор. Город давно мёртв, а его солдаты всё ещё несут караул.',
-  'Заброшенный дом — последний оплот Хозяина. Говорят, Сердце бьётся там, где холоднее всего.',
+  'Мортракс был владыкой, что продал душу Эфирию ради вечной жизни. Его кости — его сила: бейте, пока не рассыплется, и не стойте на месте — он бьёт по площади.',
+  'Шелиба сплела сети на пути в Провал. Её плевки замедляют — пользуйтесь рывком и зельем скорости.',
+  'Ноктурн питается страхом. В Провале темно, но враги там боятся света факелов — держитесь вместе с тропой.',
+  'В Кузнях Гхарраш живёт Игнаррок. Лава непроходима, а его огненные шары больно жгут — щит и зелье стойкости спасают.',
+  'Хар-Атеп стережёт Пустошь. Песок слепит и режет, бейте издали и берегите здоровье.',
+  'Криомир заморозил целый край. Белые волки ходят стаями — не дайте себя окружить.',
+  'Морвейн поднимает павших. Убивайте помощников быстро, пока не набрались числом.',
+  'Ольхарон — дух леса, которого Эфирий околдовал. Когда падёт — лес снова вздохнёт свободно.',
+  'Вархаал — командир войска, что некогда осадило Лиссарен. Город давно мёртв, а его солдаты всё ещё несут караул.',
+  'Обитель Пустых Зеркал — последний оплот Эфирия. Говорят, Сердце бьётся там, где холоднее всего.',
   'Вы победили почти всех. Ступайте — свет Эльдории ждёт вас.'
 ];
 const LAIR_TAUNT = {
-  lair1:'Костяной Король: «Ещё один глупец пришёл умереть…»',
-  lair2:'Паучья Королева: «Вы запутались в моих сетях…»',
-  lair3:'Повелитель Тьмы: «Свет здесь долго не живёт.»',
-  lair4:'Повелитель Пламени: «Сгори!»',
-  lair5:'Фараон Песков: «Пески поглотят вас, как и многих до вас.»',
-  lair6:'Ледяной Король: «Холод — мой вечный друг.»',
-  lair7:'Повелитель Мёртвых: «Ещё один в мою армию…»',
-  lair8:'Древний Хранитель: «Хозяин… велел… не пускать…»',
-  lair9:'Чёрный Маршал: «Город мой. Преклонись или умри.»',
-  lair10:'Призрачный Хозяин: «Добро пожаловать в мой дом, гость. Останься навсегда.»'
+  lair1:'Мортракс: «Ещё один глупец пришёл умереть…»',
+  lair2:'Шелиба: «Вы запутались в моих сетях…»',
+  lair3:'Ноктурн: «Свет здесь долго не живёт.»',
+  lair4:'Игнаррок: «Сгори!»',
+  lair5:'Хар-Атеп: «Пески поглотят вас, как и многих до вас.»',
+  lair6:'Криомир: «Холод — мой вечный друг.»',
+  lair7:'Морвейн: «Ещё один в мою армию…»',
+  lair8:'Ольхарон: «Эфирий… велел… не пускать…»',
+  lair9:'Вархаал: «Город мой. Преклонись или умри.»',
+  lair10:'Эфирий: «Добро пожаловать в мой дом, гость. Останься навсегда.»'
 };
 function goalText(){
   const st = storyStage();
-  if(st>=LAIR_ORDER.length) return 'Цель: заберите Сердце Поместья';
+  if(st>=LAIR_ORDER.length) return 'Цель: заберите Сердце Эльдории';
   return 'Цель: '+LAIR[LAIR_ORDER[st]].title;
 }
 
@@ -1294,7 +1413,7 @@ function openChest(it){
   const parts = ['+'+gold+' золота'];
   const spot = ()=>({x:it.x+4+rnd(-26,26), y:it.y+26+rnd(0,12), w:16, h:16});
   if(Math.random() < (it.locked ? 1 : 0.5)){ chestLoot.push(Object.assign(spot(), {type:'potion', value:1})); parts.push('эликсир'); }
-  if(Math.random() < (it.locked ? 0.8 : 0.35)){ chestLoot.push(Object.assign(spot(), {type:'elixir', kind:ELIX_KEYS[rnd(1,3)], value:1})); parts.push('зелье'); }
+  if(Math.random() < (it.locked ? 0.8 : 0.35)){ chestLoot.push(Object.assign(spot(), {type:'elixir', kind:ELIX_KEYS[rnd(1,4)], value:1})); parts.push('зелье'); }
   if(Math.random() < (it.locked ? 1 : 0.2)){ chestLoot.push(Object.assign(spot(), {type:'gear', gear:makeGear(loc.level||0, it.locked ? 1 : undefined)})); parts.push('снаряжение'); }
   addNote('📦 Сундук открыт: '+parts.join(', '), '#ffd34a');
 }
@@ -1339,7 +1458,7 @@ function generateSecret(id){
   for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++) grid[y][x] = '.';
   const ex = sage ? 8 : 11;
   grid[H-2][ex] = '<';
-  const L = { type:'dungeon', level: sage ? 1 : 2, title: sage ? 'Пещера старца' : 'Забытый тайник', secrets:true, noRespawn:true, grid, width:W, height:H,
+  const L = { type:'dungeon', level: sage ? 1 : 2, title: sage ? 'Грот Мудреца Орбина' : 'Тайник Забытых Эхо', secrets:true, noRespawn:true, grid, width:W, height:H,
     enemies:[], items:[], boss:null, portal:null, spawn:{x:ex*T+5, y:(H-3)*T}, exit:{tx:ex, ty:H-2} };
   if(sage){
     L.safe = true; L.nofog = true; L.fog = '9'.repeat(W*H);
@@ -1388,16 +1507,17 @@ function pickEventSpot(){
     const d = D[x+y*W]; if(d<20 || d>60 || loc.grid[y][x]!=='.') continue;
     let ok = true; for(let dy=-1;dy<=1&&ok;dy++) for(let dx=-1;dx<=1;dx++) if('~^#SB'.includes(loc.grid[y+dy][x+dx])){ ok = false; break; }
     if(!ok) continue;
-    if(loc.entrances.some(e=>Math.hypot(x-e.tx,y-e.ty)<9) || (loc.shop && Math.hypot(x-loc.shop.tx,y-loc.shop.ty)<8)) continue;
+    if((loc.entrances||[]).some(e=>Math.hypot(x-e.tx,y-e.ty)<9) || (loc.shop && Math.hypot(x-loc.shop.tx,y-loc.shop.ty)<8) || (loc.exit && Math.hypot(x-loc.exit.tx,y-loc.exit.ty)<9) || (loc.portal && Math.hypot(x-loc.portal.tx,y-loc.portal.ty)<8)) continue;
     c.push([x,y]);
   }
   return c.length ? c[rnd(0,c.length-1)] : null;
 }
 function spawnAmbush(){
-  const pl = player.level, pool = pl<6 ? ['goblin'] : pl<12 ? ['goblin','skeleton','wolf'] : ['darkknight','skeleton','goblin'];
+  const pl = player.level, pool = pl<8 ? ['bandit','bandit','boar'] : pl<14 ? ['bandit','bandit','wolf','boar'] : ['bandit','bandit','darkknight'];
   const n = 3 + (pl>=10?1:0) + (pl>=18?1:0), lv = Math.min(4, 1+Math.floor(pl/5));
   const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
-  if(loc.entrances.some(e=>Math.hypot(pcx/TILE-e.tx, pcy/TILE-e.ty)<14)) return false;
+  if((loc.entrances||[]).some(e=>Math.hypot(pcx/TILE-e.tx, pcy/TILE-e.ty)<14)) return false;
+  if(loc.exit && Math.hypot(pcx/TILE-loc.exit.tx, pcy/TILE-loc.exit.ty)<12) return false;
   let made = 0;
   for(let t=0; t<90 && made<n; t++){
     const a = Math.random()*6.283, d = (5+Math.random()*2.5)*TILE, x = pcx+Math.cos(a)*d-12, y = pcy+Math.sin(a)*d-12;
@@ -1407,17 +1527,58 @@ function spawnAmbush(){
     burst(x+12, y+12, 8, {colors:['#3a6a2a','#6a8a4a','#ffffff'], sp:60, up:20, g:-20, life:400, size:2.4});
   }
   if(made<2) return false;
-  ev.ambush = {n:made}; addNote('⚠ Засада! Разбойники выскочили из зарослей!', '#ff6a4a'); SFX.play('hit'); shakeT = Math.max(shakeT, 300);
+  ev.ambush = {n:made, done:'⚔ Засада отбита! +%g золота за разбойников'}; addNote('⚠ Засада! Разбойники выскочили из зарослей!', '#ff6a4a'); SFX.play('hit'); shakeT = Math.max(shakeT, 300);
+  return true;
+}
+// события по локациям: что может случиться на поверхности и на открытых уровнях
+const HORDES = {
+  boars:   {types:['boar'],               n:[6,9], text:'🐗 Из чащи выбежало стадо кабанов!',        done:'🐗 Стадо кабанов разбежалось! +%g золота'},
+  wolves:  {types:['wolf'],               n:[5,7], text:'🐺 Волчья стая учуяла вас!',               done:'🐺 Стая отбита! +%g золота'},
+  scorp:   {types:['scorpion'],           n:[6,8], text:'🦂 Из-под песка полезли скорпионы!',        done:'🦂 Нашествие отбито! +%g золота'},
+  vultures:{types:['vulture'],            n:[4,5], text:'🦅 Над вами закружила стая грифов!',        done:'🦅 Грифы разлетелись! +%g золота'},
+  icewolves:{types:['icewolf'],           n:[5,6], text:'🐺 Метельная стая выскочила из снега!',     done:'🐺 Метельная стая отбита! +%g золота'},
+  spirits: {types:['banshee','ghoul'],    n:[4,5], text:'👻 Из тумана выплыла призрачная процессия!', done:'👻 Процессия рассеялась! +%g золота'},
+  panthers:{types:['panther'],            n:[3,4], text:'🐆 Стая пантер вышла на охоту!',            done:'🐆 Охота пантер сорвана! +%g золота'},
+  patrol:  {types:['crossbowman','darkknight'], n:[4,5], text:'⚔ Тёмный дозор перекрыл улицу!',      done:'⚔ Дозор разбит! +%g золота'}
+};
+const EVENT_TABLE = {
+  overworld:[['ambush',3],['boars',3],['wolves',2],['caravan',3],['healer',2]],
+  desert:   [['caravan',4],['scorp',3],['vultures',3],['healer',1]],
+  ice:      [['icewolves',3],['caravan',3],['healer',1]],
+  grave:    [['spirits',3],['healer',2],['caravan',2]],
+  jungle:   [['panthers',3],['caravan',3],['healer',2]],
+  city:     [['patrol',3],['caravan',3],['healer',2]]
+};
+function spawnHorde(key){
+  const H = HORDES[key]; if(!H) return false;
+  const pcx = player.x+player.w/2, pcy = player.y+player.h/2, n = rnd(H.n[0],H.n[1]);
+  if((loc.entrances||[]).some(e=>Math.hypot(pcx/TILE-e.tx, pcy/TILE-e.ty)<12)) return false;
+  if(loc.exit && Math.hypot(pcx/TILE-loc.exit.tx, pcy/TILE-loc.exit.ty)<12) return false;
+  const lv = Math.min(4, 1+Math.floor(player.level/5)) + (currentLocId==='overworld' ? 0 : Math.max(0,(loc.level||1)-1));
+  let made = 0;
+  for(let t=0; t<120 && made<n; t++){
+    const a = Math.random()*6.283, d = (6+Math.random()*3.5)*TILE, x = pcx+Math.cos(a)*d-12, y = pcy+Math.sin(a)*d-12;
+    if(isBlocked(loc, x, y, 24, 24)) continue;
+    const e = makeEnemy(H.types[rnd(0,H.types.length-1)], x, y, lv); e.aggro = 560; e.ambush = true; e.gold = Math.round(e.gold*1.8)+3;
+    loc.enemies.push(e); made++;
+    burst(x+12, y+12, 6, {colors:['#6a6a50','#a09a7a','#ffffff'], sp:50, up:20, g:-20, life:400, size:2.2});
+  }
+  if(made<2) return false;
+  ev.ambush = {n:made, done:H.done}; addNote(H.text, '#ff8a4a'); SFX.play('hit'); shakeT = Math.max(shakeT, 260);
   return true;
 }
 function spawnEvent(){
-  const r = Math.random();
-  if(r<0.4){ if(!ev.ambush) spawnAmbush(); return; }
-  if(ev.npcs.length) return;
+  const tab = EVENT_TABLE[currentLocId]; if(!tab) return;
+  const tot = tab.reduce((a,e)=>a+e[1],0); let r = Math.random()*tot, key = tab[0][0];
+  for(const [k,w] of tab){ if(r<w){ key = k; break; } r -= w; }
+  if(key==='ambush'){ if(!ev.ambush) spawnAmbush(); return; }
+  if(HORDES[key]){ if(!ev.ambush) spawnHorde(key); return; }
+  if(ev.npcs.some(n=>n.loc===currentLocId)) return;
   const spot = pickEventSpot(); if(!spot) return;
-  const kind = r<0.7 ? 'caravan' : 'healer';
-  ev.npcs.push({kind, x:spot[0]*TILE+2, y:spot[1]*TILE+2, w:28, h:28, ttl: kind==='caravan' ? 240000 : 180000, used:false});
-  addNote(kind==='caravan' ? '🛒 Неподалёку остановился странствующий торговец — он отмечен на карте' : '✚ Неподалёку бродит странствующий лекарь — он отмечен на карте', '#ffd34a');
+  const kind = key;
+  ev.npcs.push({kind, loc:currentLocId, x:spot[0]*TILE+2, y:spot[1]*TILE+2, w:28, h:28, ttl: kind==='caravan' ? 240000 : 180000, used:false});
+  const mapped = currentLocId==='overworld';
+  addNote(kind==='caravan' ? (currentLocId==='desert' ? '🐪 В песках остановился караван — там продают сапоги-скороходы' : '🛒 Неподалёку остановился Караванщик Хазим'+(mapped?' — он отмечен на карте':'')) : '✚ Неподалёку бродит целительница Айлун'+(mapped?' — он отмечен на карте':''), '#ffd34a');
 }
 function eventsTick(dt){
   const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
@@ -1428,30 +1589,31 @@ function eventsTick(dt){
       sageLock = true; const st = Math.min(10, storyStage());
       if(!sg.met){
         sg.met = true;
-        showDialog('Старец', [
-          'Я ждал тебя, путник. Тьма пришла из Заброшенного дома на краю мира: там Призрачный Хозяин прячет Сердце Эльдории.',
+        showDialog('Мудрец Орбин', [
+          'Я ждал тебя, путник. Тьма пришла из Обители Пустых Зеркал на краю мира: там Эфирий прячет Сердце Эльдории.',
           'Десять стражей держат его врата. Каждый из них падёт, если знать его слабость — заходи ко мне, я подскажу.',
           'Возьми это: ключ и большой эликсир. Ключи открывают запертые сундуки — их разбросано немало по всему свету.',
           STORY_LORE[st]
-        ], 'Спасибо', ()=>{ player.vkeys++; player.elix.big = Math.min(ELIX_MAX, player.elix.big+1); addNote('Старец дал вам ключ и большой эликсир', '#ffd34a'); saveGame(); });
-      } else showDialog('Старец', [STORY_LORE[st]], 'Спасибо');
+        ], 'Спасибо', ()=>{ player.vkeys++; player.elix.big = Math.min(ELIX_MAX, player.elix.big+1); addNote('Мудрец Орбин дал вам ключ и большой эликсир', '#ffd34a'); saveGame(); });
+      } else showDialog('Мудрец Орбин', [STORY_LORE[st]], 'Спасибо');
       return;
     }
   }
-  if(currentLocId!=='overworld') return;
-  for(const n of ev.npcs) n.ttl -= dt*1000;
+  if(!EVENT_TABLE[currentLocId] || loc.safe) return;
+  for(const n of ev.npcs) if(n.loc===currentLocId) n.ttl -= dt*1000;
   ev.npcs = ev.npcs.filter(n=>n.ttl>0);
   if(ev.ambush && !loc.enemies.some(e=>e.ambush && e.hp>0)){
-    ev.ambush = null; const g = Math.round(30+player.level*6); player.gold += g;
-    addNote('⚔ Засада отбита! +'+g+' золота за разбойников', '#7fe07f'); SFX.play('coin');
+    const g = Math.round((30+player.level*6)*Math.max(1,(ev.ambush.n||3)/3)); const msg = (ev.ambush.done||'⚔ Засада отбита! +%g золота').replace('%g', g); ev.ambush = null; player.gold += g;
+    addNote(msg, '#7fe07f'); SFX.play('coin');
   }
   ev.timer -= dt;
   if(ev.timer<=0){ ev.timer = 70+Math.random()*70; spawnEvent(); }
   for(const n of ev.npcs){
+    if(n.loc!==currentLocId) continue;
     const d = Math.hypot(pcx-(n.x+n.w/2), pcy-(n.y+n.h/2));
     if(n.kind==='healer' && !n.used && d<50){
       n.used = true; n.ttl = Math.min(n.ttl, 8000);
-      if(player.hp<player.maxHp || player.slowT>0){ player.hp = player.maxHp; player.slowT = 0; SFX.play('levelup'); addNote('✚ Странствующий лекарь исцелил вас: здоровье восстановлено', '#7fe07f'); }
+      if(player.hp<player.maxHp || player.slowT>0 || player.fx.burn>0 || player.fx.poison>0){ player.hp = player.maxHp; player.slowT = 0; player.fx.burn = 0; player.fx.poison = 0; player.fx.freeze = 0; SFX.play('levelup'); addNote('✚ Целительница Айлун исцелила вас: здоровье восстановлено', '#7fe07f'); }
       else { player.elix.big = Math.min(ELIX_MAX, player.elix.big+1); addNote('✚ Лекарь: «Вы здоровы — возьмите про запас». +большой эликсир', '#7fe07f'); SFX.play('pickup'); }
       burst(n.x+14, n.y+10, 16, {colors:['#7fe0a0','#ffffff'], sp:70, up:50, g:-30, life:700, size:2.6});
     }
@@ -1462,14 +1624,28 @@ function eventsTick(dt){
   }
 }
 function drawEvents(camX, camY){
-  if(currentLocId!=='overworld') return;
+  if(!EVENT_TABLE[currentLocId]) return;
   const now = Date.now()/1000;
   for(const n of ev.npcs){
+    if(n.loc!==currentLocId) continue;
     const sx = n.x-camX, sy = n.y-camY; if(!onScreen(sx-30,sy-40,90,80)) continue;
     const cx = sx+14, cy = sy+14, bob = Math.sin(now*2+n.x)*1.2;
     ctx.save(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#1a0e06'; ctx.lineJoin = 'round';
     ctx.fillStyle = 'rgba(0,0,0,0.25)'; ell(cx,cy+15,18,4.4); ctx.fill();
-    if(n.kind==='caravan'){
+    if(n.kind==='caravan' && n.loc==='desert'){
+      const w2 = Math.sin(now*2+n.x)*1.2;
+      ctx.fillStyle = '#b8864a'; ell(cx-4,cy+2,17,8.5); ctx.fill(); ctx.stroke();
+      for(const hx of [-9,3]){ ctx.fillStyle = '#c8965a'; ell(cx+hx,cy-7,5.4,6.4); ctx.fill(); ctx.stroke(); }
+      ctx.fillStyle = '#a02a2a'; rrect(cx-14,cy-6,22,5,2); ctx.fill(); ctx.stroke(); ctx.fillStyle='#e8c040'; ctx.fillRect(cx-14,cy-4,22,1.4);
+      ctx.fillStyle = '#b8864a'; ctx.beginPath(); ctx.moveTo(cx+10,cy-2); ctx.quadraticCurveTo(cx+18,cy-12,cx+17,cy-17+w2); ctx.lineTo(cx+21,cy-16+w2); ctx.quadraticCurveTo(cx+22,cy-6,cx+14,cy+2); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#c8965a'; ell(cx+22,cy-16+w2,4.6,3.2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#1a0e06'; circ(cx+21,cy-17+w2,0.9); ctx.fill();
+      ctx.strokeStyle = '#7a5a30'; ctx.lineWidth = 2.4; for(const lx of [-14,-9,4,9]){ ctx.beginPath(); ctx.moveTo(cx+lx,cy+8); ctx.lineTo(cx+lx+(lx<0?-1:1)*Math.sin(now*3+lx)*1.4,cy+17); ctx.stroke(); }
+      ctx.lineWidth = 1.2; ctx.strokeStyle = '#1a0e06';
+      ctx.fillStyle = '#3a6a8a'; rrect(cx-21,cy-2+w2*0.3,8,16,3); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e8c9a0'; circ(cx-17,cy-6+w2*0.3,4.2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e8e0cc'; ctx.beginPath(); ctx.arc(cx-17,cy-7+w2*0.3,5.4,Math.PI,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if(n.kind==='caravan'){
       ctx.fillStyle = '#7a4a22'; rrect(cx-21,cy-3,34,13,2); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#e8dcc0'; ctx.beginPath(); ctx.moveTo(cx-19,cy-3); ctx.quadraticCurveTo(cx-18,cy-24,cx-4,cy-24); ctx.quadraticCurveTo(cx+11,cy-24,cx+11,cy-3); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.strokeStyle = 'rgba(170,60,50,0.8)'; ctx.lineWidth = 2; for(const x of [-12,-5,2,8]){ ctx.beginPath(); ctx.moveTo(cx+x,cy-3); ctx.lineTo(cx+x*0.9,cy-21); ctx.stroke(); }
@@ -1553,21 +1729,21 @@ function resetGame(){
   resetEnv();
 }
 
-// старые сохранения: достраиваем новые уровни и спуск из Бездны
+// старые сохранения: достраиваем новые уровни и спуск из Провала
 
 // ======================= Новые места: дом в лесу, пирамида, склепы и др. =======================
 // look: house/pyramid/cave/crypt/temple — отдельное строение на открытой карте; arch — потайная дверь в стене подземелья
 const POI_DEFS = [
-  {id:'poi_cabin',   parent:'overworld', look:'house',   w:5, h:4, wall:'#b08a5a', roof:'#6a3a22', trim:'#3a2210', title:'Дом в лесу',        msg:'Вы входите в уютный дом в лесу', cabin:true},
-  {id:'poi_nest',    parent:'dungeon1',  look:'arch',    glow:'#dfeeff', title:'Паучье гнездо',    msg:'Вы пробираетесь в паучье гнездо…'},
-  {id:'poi_grotto',  parent:'dungeon3',  look:'arch',    glow:'#c88aff', title:'Кристальный грот', msg:'Вы входите в Кристальный грот'},
-  {id:'poi_forge',   parent:'lava',      look:'arch',    glow:'#ff8a2a', title:'Огненная кузница', msg:'Вы входите в заброшенную Огненную кузницу'},
-  {id:'poi_pyramid', parent:'desert',    look:'pyramid', w:7, h:5, title:'Пирамида в песках',     msg:'Вы входите в Пирамиду в песках', size:42, rooms:8},
-  {id:'poi_icecave', parent:'ice',       look:'cave',    w:5, h:3, glow:'#9fe0ff', rock:'#7a9ab8', title:'Ледяная пещера', msg:'Вы входите в Ледяную пещеру'},
-  {id:'poi_crypt',   parent:'grave',     look:'crypt',   w:4, h:3, title:'Склеп',                 msg:'Вы спускаетесь в склеп…'},
-  {id:'poi_temple',  parent:'jungle',    look:'temple',  w:6, h:5, title:'Храм джунглей',         msg:'Вы входите в Храм джунглей'},
-  {id:'poi_prison',  parent:'city',      look:'house',   w:6, h:4, wall:'#8a8a92', roof:'#4a4a54', trim:'#1c1c22', bars:true, title:'Городская тюрьма', msg:'Вы входите в городскую тюрьму'},
-  {id:'poi_library', parent:'manor',     look:'arch',    glow:'#8affd8', title:'Тайная библиотека', msg:'Вы входите в Тайную библиотеку'}
+  {id:'poi_cabin',   parent:'overworld', look:'house',   w:5, h:4, wall:'#b08a5a', roof:'#6a3a22', trim:'#3a2210', title:'Хижина Мшистого Корня',        msg:'Вы входите в Хижину Мшистого Корня', cabin:true},
+  {id:'poi_nest',    parent:'dungeon1',  look:'arch',    glow:'#dfeeff', title:'Гнездо Шелибы',    msg:'Вы пробираетесь в Гнездо Шелибы…'},
+  {id:'poi_grotto',  parent:'dungeon3',  look:'arch',    glow:'#c88aff', title:'Грот Звенящих Кристаллов', msg:'Вы входите в Грот Звенящих Кристаллов'},
+  {id:'poi_forge',   parent:'lava',      look:'arch',    glow:'#ff8a2a', title:'Кузня Забытого Горна', msg:'Вы входите в заброшенную Кузню Забытого Горна'},
+  {id:'poi_pyramid', parent:'desert',    look:'pyramid', w:7, h:5, title:'Пирамида Хар-Нефет',     msg:'Вы входите в Пирамиду Хар-Нефет', size:42, rooms:8},
+  {id:'poi_icecave', parent:'ice',       look:'cave',    w:5, h:3, glow:'#9fe0ff', rock:'#7a9ab8', title:'Пещера Сизого Инея', msg:'Вы входите в Пещеру Сизого Инея'},
+  {id:'poi_crypt',   parent:'grave',     look:'crypt',   w:4, h:3, title:'Склеп Безымянных',                 msg:'Вы спускаетесь в склеп…'},
+  {id:'poi_temple',  parent:'jungle',    look:'temple',  w:6, h:5, title:'Храм Ксилотара',         msg:'Вы входите в Храм Ксилотара'},
+  {id:'poi_prison',  parent:'city',      look:'house',   w:6, h:4, wall:'#8a8a92', roof:'#4a4a54', trim:'#1c1c22', bars:true, title:'Тюрьма Вельмора', msg:'Вы входите в Тюрьму Вельмора'},
+  {id:'poi_library', parent:'manor',     look:'arch',    glow:'#8affd8', title:'Библиотека Шёпота', msg:'Вы входите в Библиотеку Шёпота'}
 ];
 function poiMask(look, w, h){          // какие клетки основания занимает строение (пирамида и храм сужаются кверху)
   const m = [];
@@ -1789,43 +1965,43 @@ function ensureWorldExtras(){
 
 const CHAIN = ['lair1','dungeon1','lair2','dungeon3','lair3','lava','lair4','desert','lair5','ice','lair6','grave','lair7','jungle','lair8','city','lair9','manor','lair10'];
 const LAIR = {
-  lair1: {boss:'boss',        level:1,  pal:2, title:'Логово Костяного Короля'},
-  lair2: {boss:'spiderqueen', level:2,  pal:2, title:'Логово Паучьей Королевы'},
-  lair3: {boss:'shadowlord',  level:3,  title:'Логово Повелителя Тьмы'},
-  lair4: {boss:'lavalord',    level:4,  title:'Логово Повелителя Пламени'},
-  lair5: {boss:'pharaoh',     level:5,  title:'Логово Фараона Песков'},
-  lair6: {boss:'frostking',   level:6,  title:'Логово Ледяного Короля'},
-  lair7: {boss:'lich',        level:7,  title:'Логово Повелителя Мёртвых'},
-  lair8: {boss:'treant',      level:8,  title:'Логово Древнего Хранителя'},
-  lair9: {boss:'warlord',     level:11, title:'Логово Чёрного Маршала'},
-  lair10:{boss:'phantom',     level:12, title:'Логово Призрачного Хозяина', last:true}
+  lair1: {boss:'boss',        level:1,  pal:2, title:'Логово Мортракса'},
+  lair2: {boss:'spiderqueen', level:2,  pal:2, title:'Логово Шелибы'},
+  lair3: {boss:'shadowlord',  level:3,  title:'Логово Ноктурна'},
+  lair4: {boss:'lavalord',    level:4,  title:'Логово Игнаррока'},
+  lair5: {boss:'pharaoh',     level:5,  title:'Логово Хар-Атепа'},
+  lair6: {boss:'frostking',   level:6,  title:'Логово Криомира'},
+  lair7: {boss:'lich',        level:7,  title:'Логово Морвейна'},
+  lair8: {boss:'treant',      level:8,  title:'Логово Ольхарона'},
+  lair9: {boss:'warlord',     level:11, title:'Логово Вархаала'},
+  lair10:{boss:'phantom',     level:12, title:'Логово Эфирия', last:true}
 };
 const NEXT_LOC = {}, PREV_LOC = {};
 CHAIN.forEach((id,i)=>{ if(i<CHAIN.length-1) NEXT_LOC[id] = CHAIN[i+1]; if(i>0) PREV_LOC[id] = CHAIN[i-1]; });
-const LOC_NAME = {dungeon1:'Пещера теней', dungeon3:'Бездна Теней', lava:'Огненные недра', desert:'Пустыня Миражей', ice:'Ледяной край', grave:'Мрачное кладбище', jungle:'Загадочные джунгли', city:'Средневековый город', manor:'Заброшенный дом'};
+const LOC_NAME = {dungeon1:'Грот Шорохов', dungeon3:'Провал Безмолвия', lava:'Кузни Гхарраш', desert:'Пустошь Зарахаб', ice:'Край Белого Эха', grave:'Погост Увядших Звёзд', jungle:'Дебри Ксилотара', city:'Град Вельмор', manor:'Обитель Пустых Зеркал'};
 for(const id in LAIR) LOC_NAME[id] = LAIR[id].title;
 const ENTER_MSG = {
-  dungeon1:'Вы проходите в Пещеру теней...', dungeon3:'Вы спускаетесь в Бездну Теней...', lava:'Жар обжигает лицо — вы в Огненных недрах!', desert:'Раскалённый ветер встречает вас: Пустыня Миражей',
-  ice:'Мороз пробирает до костей: Ледяной край', grave:'Холодный туман стелется над могилами: Мрачное кладбище', jungle:'Влажный воздух звенит от птиц: Загадочные джунгли',
-  city:'Гулкое эхо на брусчатке: Средневековый город, захваченный тенями', manor:'Скрип половиц и ледяной сквозняк: Заброшенный дом' };
+  dungeon1:'Вы проходите в Грот Шорохов...', dungeon3:'Вы спускаетесь в Провал Безмолвия...', lava:'Жар обжигает лицо — вы в Кузнях Гхарраш!', desert:'Раскалённый ветер встречает вас: Пустошь Зарахаб',
+  ice:'Мороз пробирает до костей: Край Белого Эха', grave:'Холодный туман стелется над могилами: Погост Увядших Звёзд', jungle:'Влажный воздух звенит от птиц: Дебри Ксилотара',
+  city:'Гулкое эхо на брусчатке: Град Вельмор, захваченный тенями', manor:'Скрип половиц и ледяной сквозняк: Обитель Пустых Зеркал' };
 const BACK_MSG = {};
 for(const id of CHAIN){ if(LAIR[id]) ENTER_MSG[id] = '⚔ '+LAIR[id].title+': здесь вас ждёт могучий враг'; BACK_MSG[id] = 'Вы возвращаетесь: '+LOC_NAME[id]; }
 const PORTAL_KIND = { lair1:'dungeon1', dungeon1:'dungeon2', lair2:'abyss', dungeon3:'dungeon2', lair3:'lavaGate', lava:'dungeon2', lair4:'tomb', desert:'dungeon2', lair5:'iceGate', ice:'dungeon2',
   lair6:'graveGate', grave:'dungeon2', lair7:'jungleGate', jungle:'dungeon2', lair8:'cityGate', city:'dungeon2', lair9:'manorGate', manor:'dungeon2' };
-ENTER_MSG.secret1 = 'Вы входите в Пещеру старца...'; ENTER_MSG.secret2 = 'Вы спускаетесь в Забытый тайник...';
+ENTER_MSG.secret1 = 'Вы входите в Грот Мудреца Орбина...'; ENTER_MSG.secret2 = 'Вы спускаетесь в Тайник Забытых Эхо...';
 const BOSS_TYPES = ['boss','shadowlord','lavalord','pharaoh','frostking','lich','treant','spiderqueen','warlord','phantom'];
-const BOSS_LABEL = { boss:'КОСТЯНОЙ КОРОЛЬ', shadowlord:'ПОВЕЛИТЕЛЬ ТЬМЫ', lavalord:'ПОВЕЛИТЕЛЬ ПЛАМЕНИ', pharaoh:'ФАРАОН ПЕСКОВ', frostking:'ЛЕДЯНОЙ КОРОЛЬ', lich:'ПОВЕЛИТЕЛЬ МЕРТВЫХ', treant:'ДРЕВНИЙ ХРАНИТЕЛЬ', spiderqueen:'ПАУЧЬЯ КОРОЛЕВА', warlord:'ЧЁРНЫЙ МАРШАЛ', phantom:'ПРИЗРАЧНЫЙ ХОЗЯИН' };
+const BOSS_LABEL = { boss:'МОРТРАКС', shadowlord:'НОКТУРН', lavalord:'ИГНАРРОК', pharaoh:'ХАР-АТЕП', frostking:'КРИОМИР', lich:'МОРВЕЙН', treant:'ОЛЬХАРОН', spiderqueen:'ШЕЛИБА', warlord:'ВАРХААЛ', phantom:'ЭФИРИЙ' };
 const BOSS_NOTE = {
-  boss:'☠ Костяной Король повержен! В глубине логова открылся проход в Пещеру теней.',
-  spiderqueen:'☠ Паучья Королева повержена! Паутина расступилась — открылся спуск в Бездну Теней.',
-  shadowlord:'☠ Повелитель Тьмы повержен! В его зале открылся спуск в Огненные недра.',
-  lavalord:'☠ Повелитель Пламени повержен! Открылся спуск в Пустыню Миражей.',
-  pharaoh:'☠ Фараон Песков повержен! Открылся путь в Ледяной край.',
-  frostking:'☠ Ледяной Король повержен! Открылся путь на Мрачное кладбище.',
-  lich:'☠ Повелитель Мёртвых повержен! Открылась тропа в Загадочные джунгли.',
-  treant:'☠ Древний Хранитель повержен! Открылась дорога в Средневековый город.',
-  warlord:'☠ Чёрный Маршал повержен! Открылась дверь в Заброшенный дом.',
-  phantom:'☠ Призрачный Хозяин повержен! Заберите Сердце Поместья, чтобы завершить поход.'
+  boss:'☠ Мортракс повержен! В глубине логова открылся проход в Грот Шорохов.',
+  spiderqueen:'☠ Шелиба повержена! Паутина расступилась — открылся спуск в Провал Безмолвия.',
+  shadowlord:'☠ Ноктурн повержен! В его зале открылся спуск в Кузни Гхарраш.',
+  lavalord:'☠ Игнаррок повержен! Открылся спуск в Пустошь Зарахаб.',
+  pharaoh:'☠ Хар-Атеп повержен! Открылся путь в Край Белого Эха.',
+  frostking:'☠ Криомир повержен! Открылся путь на Погост Увядших Звёзд.',
+  lich:'☠ Морвейн повержен! Открылась тропа в Дебри Ксилотара.',
+  treant:'☠ Ольхарон повержен! Открылась дорога в Град Вельмор.',
+  warlord:'☠ Вархаал повержен! Открылась дверь в Обитель Пустых Зеркал.',
+  phantom:'☠ Эфирий повержен! Заберите Сердце Эльдории, чтобы завершить поход.'
 };
 
 function goTo(locId, x, y, message){
@@ -1935,8 +2111,16 @@ const virtualMove = {x:0, y:0};
 function blockedTiles(locType){
   return locType==='overworld' ? new Set(['~','^','#','S','B']) : new Set(['#','L','S','B']);
 }
+const SWIM_SET = new Set(['^','#','S','B']);
+let _swimMove = false;
+function swimOn(){ return !!(player.buff && player.buff.swim>0) && loc.type==='overworld'; }
+function onWater(){
+  if(loc.type!=='overworld') return false;
+  const tx = Math.floor((player.x+player.w/2)/TILE), ty = Math.floor((player.y+player.h/2)/TILE);
+  return !!(loc.grid[ty] && loc.grid[ty][tx]==='~');
+}
 function isBlocked(gridInfo, x, y, w, h){
-  const blocked = blockedTiles(gridInfo.type);
+  const blocked = (_swimMove && gridInfo.type==='overworld') ? SWIM_SET : blockedTiles(gridInfo.type);
   const nx = Math.max(1,Math.ceil(w/14)), ny = Math.max(1,Math.ceil(h/14));     // крупные враги: проверяем и середины сторон, не только углы
   const hit = (px,py)=>{
     const tx = Math.floor(px/TILE), ty = Math.floor(py/TILE);
@@ -1948,6 +2132,10 @@ function isBlocked(gridInfo, x, y, w, h){
   return false;
 }
 function tryMove(entity, dx, dy, gridInfo){
+  _swimMove = entity===player && swimOn();
+  try{ tryMoveInner(entity, dx, dy, gridInfo); } finally { _swimMove = false; }
+}
+function tryMoveInner(entity, dx, dy, gridInfo){
   if(dx!==0){
     const nx = entity.x+dx;
     if(!isBlocked(gridInfo, nx, entity.y, entity.w, entity.h)) entity.x = nx;
@@ -1999,7 +2187,7 @@ function updateEnemyShots(dt){
       if(tx<0||ty<0||tx>=loc.width||ty>=loc.height) rm = true;
       else { const t = loc.grid[ty][tx]; if(t==='#'||t==='^'){ rm = true; hit = true; } }
     }
-    if(!rm && sh.x>player.x && sh.x<player.x+player.w && sh.y>player.y && sh.y<player.y+player.h){ hurtPlayer(sh.dmg); if(sh.kind==='web') applyWebSlow(); rm = true; hit = true; }
+    if(!rm && sh.x>player.x && sh.x<player.x+player.w && sh.y>player.y && sh.y<player.y+player.h){ const hurt = hurtPlayer(sh.dmg); if(sh.kind==='web') applyWebSlow(); else if(hurt && SHOT_FX[sh.kind] && Math.random()<SHOT_FX[sh.kind][2]) inflictStatus(SHOT_FX[sh.kind][0], SHOT_FX[sh.kind][1], sh.dmg); rm = true; hit = true; }
     if(hit) burst(sh.x, sh.y, 6, {colors:SHOT_COL[sh.kind], sp:70, up:10, g:60, life:320, size:1.8});
     if(rm) eshots.splice(i,1);
   }
@@ -2052,21 +2240,21 @@ const QUESTS = {
   wolves:    { name:'Волчья угроза',      desc:'Волки в округе пугают путников. Убейте 5 волков.',       type:'wolf',     target:5, gold:60,  potions:1 },
   slimes:    { name:'Слизь из пещер',     desc:'Слизни портят припасы в погребах. Убейте 6 слизней.',    type:'slime',    target:6, gold:70,  potions:1 },
   skeletons: { name:'Костяной дозор',     desc:'Скелеты бродят по подземельям. Убейте 6 скелетов.',      type:'skeleton', target:6, gold:130, potions:2 },
-  king:      { name:'Конец тирана',       desc:'Победите Костяного Короля в его логове.',                type:'boss',     target:1, gold:220, potions:2 },
-  wraiths:   { name:'Охота на призраков', desc:'В Бездне Теней бродят призраки. Убейте 5 призраков.',    type:'wraith',   target:5, gold:260, potions:3 },
+  king:      { name:'Конец тирана',       desc:'Победите Мортракса в его логове.',                type:'boss',     target:1, gold:220, potions:2 },
+  wraiths:   { name:'Охота на призраков', desc:'В Провале Безмолвия бродят призраки. Убейте 5 призраков.',    type:'wraith',   target:5, gold:260, potions:3 },
   bats:      { name:'Летучая напасть',    desc:'Летучие мыши тревожат путников. Убейте 6 мышей.',         type:'bat',      target:6, gold:80,  potions:1 },
   goblins:   { name:'Гоблинский налёт',   desc:'Гоблины грабят дороги. Убейте 5 гоблинов.',                type:'goblin',   target:5, gold:110, potions:1 },
   imps:      { name:'Огненные бесы',      desc:'В недрах земли пляшут бесы. Убейте 5 бесов.',              type:'imp',      target:5, gold:300, potions:2 },
-  lavalord:  { name:'Конец пламени',      desc:'Победите Повелителя Пламени в Огненных недрах.',            type:'lavalord', target:1, gold:420, potions:3 },
+  lavalord:  { name:'Конец пламени',      desc:'Победите Игнаррока в Кузнях Гхарраш.',            type:'lavalord', target:1, gold:420, potions:3 },
   mummies:   { name:'Проклятие песков',   desc:'Мумии стерегут пустыню. Убейте 5 мумий.',                  type:'mummy',    target:5, gold:360, potions:2 },
   ghouls:    { name:'Кладбищенская стража', desc:'Упыри бродят среди могил. Убейте 5 упырей.',            type:'ghoul',    target:5, gold:520, potions:3 },
-  lichq:     { name:'Конец некроманта',   desc:'Победите Повелителя Мёртвых на Мрачном кладбище.',        type:'lich',     target:1, gold:800, potions:3 },
+  lichq:     { name:'Конец Морвейна',   desc:'Победите Морвейна на Погосте Увядших Звёзд.',        type:'lich',     target:1, gold:800, potions:3 },
   panthers:  { name:'Тени джунглей',      desc:'Чёрные пантеры скрываются в чаще. Убейте 5 пантер.',      type:'panther',  target:5, gold:600, potions:3 },
-  treantq:   { name:'Сердце леса',        desc:'Победите Древнего Хранителя в Загадочных джунглях.',      type:'treant',   target:1, gold:1200, potions:4 },
+  treantq:   { name:'Сердце леса',        desc:'Победите Ольхарона в Дебрях Ксилотара.',      type:'treant',   target:1, gold:1200, potions:4 },
   icewolves: { name:'Ледяная стая',       desc:'Белые волки рыщут во льдах. Убейте 6 ледяных волков.',     type:'icewolf',  target:6, gold:440, potions:3 },
-  queenq:    { name:'Конец Паучьей Королевы', desc:'Победите Паучью Королеву в её логове.',               type:'spiderqueen', target:1, gold:380,  potions:3 },
-  marshalq:  { name:'Падение маршала',    desc:'Победите Чёрного Маршала в Средневековом городе.',       type:'warlord',  target:1, gold:1600, potions:4 },
-  phantomq:  { name:'Хозяин дома',        desc:'Изгоните Призрачного Хозяина из Заброшенного дома.',     type:'phantom',  target:1, gold:2000, potions:5 },
+  queenq:    { name:'Конец Шелибы', desc:'Победите Шелибу в её логове.',               type:'spiderqueen', target:1, gold:380,  potions:3 },
+  marshalq:  { name:'Падение Вархаала',    desc:'Победите Вархаала в Граде Вельмор.',       type:'warlord',  target:1, gold:1600, potions:4 },
+  phantomq:  { name:'Изгнание Эфирия',        desc:'Изгоните Эфирия из Обители Пустых Зеркал.',     type:'phantom',  target:1, gold:2000, potions:5 },
   weavers:   { name:'Паутина',            desc:'Пауки-плеватели замедляют путников. Убейте 5 пауков-плевателей.', type:'webspider', target:5, gold:340, potions:2 }
 };
 function questKill(type){
@@ -2124,6 +2312,7 @@ function update(dt){
     else player.dir = virtualMove.y>0?'down':'up';
   }
   if(!usingVirtual && mx!==0 && my!==0){ mx*=0.7071; my*=0.7071; }
+  if(player.fx.freeze>0){ mx = 0; my = 0; player.dashT = 0; }
   if(player.dashT>0){
     player.dashT -= dt*1000;
     const n = Math.ceil(Math.hypot(player.dvx,player.dvy)*dt/8)||1;
@@ -2159,7 +2348,7 @@ function update(dt){
     }
   }
   if(!keys['KeyE']) potionKeyLatch = false;
-  skillTick(dt, mx, my); elixTick(dt); folkTick(dt);
+  skillTick(dt, mx, my); elixTick(dt); folkTick(dt); statusTick(dt); rescuePlayer(); if(gameState!=='playing') return;
   updateAoes(dt); updateFlow(dt); respawnTick(dt);
   updateSkillButtons();
 
@@ -2201,7 +2390,7 @@ function update(dt){
       }
     } else { e.moving = false; }
     if(overlap(e, {x:player.x,y:player.y,w:player.w,h:player.h}) && e.cooldown<=0){
-      hurtPlayer(e.dmg);
+      if(hurtPlayer(e.dmg) && e.inflict && Math.random()<(e.inflict.chance||1)) inflictStatus(e.inflict.kind, e.inflict.ms, e.dmg);
       e.cooldown = 900;
     }
   }
@@ -2262,7 +2451,7 @@ function update(dt){
         if(en.hidden && !en.found) continue;
         if(en.tx===centerTX && en.ty===centerTY){
           const d = world[en.dungeon];
-          goTo(en.dungeon, d.spawn.x, d.spawn.y, en.dungeon==='town' ? 'Вы входите в Город Эльдор' : ENTER_MSG[en.dungeon] || 'Вы входите в пещеру...');
+          goTo(en.dungeon, d.spawn.x, d.spawn.y, en.dungeon==='town' ? 'Вы входите в Город Лиссарен' : ENTER_MSG[en.dungeon] || 'Вы входите в пещеру...');
           break;
         }
       }
@@ -2321,7 +2510,7 @@ function onWin(){
   gameState='won';
   clearSave(); refreshSaveUI();
   document.getElementById('winStats').textContent =
-    `Вы изгнали Призрачного Хозяина, забрали Сердце Поместья и победили всех десятерых боссов — свет вернулся в Эльдорию! Уровень: ${player.level}  •  Золото: ${player.gold}`;
+    `Вы изгнали Эфирия, забрали Сердце Эльдории и победили всех десятерых боссов — свет вернулся в Эльдорию! Уровень: ${player.level}  •  Золото: ${player.gold}`;
   document.getElementById('winScreen').classList.remove('hidden');
   menuBtn.classList.add('hidden');
   touchControls.classList.add('hidden');
@@ -2592,7 +2781,7 @@ function drawHero(sx,sy){
   ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,0.35)';
   const hideW = player.attacking;
   if(!side){
-    const leg=(x,sh)=>{ const h=8+sh; ctx.fillStyle=K(pal.pants); ctx.fillRect(x,3,5,h); ctx.fillStyle=K(pal.boots); ctx.fillRect(x-0.5,3+h-3,6,3); };
+    const leg=(x,sh)=>{ const h=8+sh; ctx.fillStyle=K(pal.pants); ctx.fillRect(x,3,5,h); ctx.fillStyle=K(player.boots?'#e0a830':pal.boots); ctx.fillRect(x-0.5,3+h-3,6,3); };
     leg(-6,sw*0.55); leg(1,-sw*0.55);
     ctx.fillStyle=K(pal.body); rrect(-7,-7,14,11,3); ctx.fill(); ctx.stroke();
     ctx.fillStyle=K(pal.dark); ctx.fillRect(-7,1,14,2);
@@ -2602,7 +2791,7 @@ function drawHero(sx,sy){
     arm(-10.6,-sw*0.5); arm(7,sw*0.5);
     if(!hideW) heldWeapon(player.weapon, 8.8, 4+sw*0.5, false);
   } else {
-    const leg=(x)=>{ ctx.fillStyle=K(pal.pants); ctx.fillRect(x-2,3,4,8); ctx.fillStyle=K(pal.boots); ctx.fillRect(x-2,8,5.5,3); };
+    const leg=(x)=>{ ctx.fillStyle=K(pal.pants); ctx.fillRect(x-2,3,4,8); ctx.fillStyle=K(player.boots?'#e0a830':pal.boots); ctx.fillRect(x-2,8,5.5,3); };
     ctx.globalAlpha = 0.85; leg(-1.5-sw*0.8); ctx.globalAlpha = 1; leg(1.5+sw*0.8);
     ctx.fillStyle=K(pal.body); rrect(-5,-7,10,11,3); ctx.fill(); ctx.stroke();
     ctx.fillStyle=K(pal.dark); ctx.fillRect(-5,1,10,2);
@@ -3503,6 +3692,67 @@ function drawEnemyExtra(e,K,flash,now,t,sw,face){
     ctx.strokeStyle='#4a3a22'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(13,-8); ctx.quadraticCurveTo(17,0,13,8); ctx.stroke();
     ctx.strokeStyle='#e8e0cc'; ctx.lineWidth=0.8; ctx.beginPath(); ctx.moveTo(13,-8); ctx.lineTo(8,0); ctx.lineTo(13,8); ctx.stroke(); ctx.restore();
     break; }
+  case 'frostmite': {
+    shadowAt(0,9,10,2.8);
+    ctx.strokeStyle=K('#8cc8f0'); ctx.lineWidth=1.6;
+    for(const sd of [-1,1]) for(let i=0;i<3;i++){ const ph=Math.sin(t*1.6+i*1.9+(sd>0?0:3))*2; ctx.beginPath(); ctx.moveTo(sd*4,-1+i*3); ctx.lineTo(sd*(10+i),-4+i*4+ph*0.4); ctx.lineTo(sd*(13+i),3+i*3+ph); ctx.stroke(); }
+    ctx.strokeStyle=OUT; ctx.lineWidth=1;
+    ctx.fillStyle=K('#bfeaff'); ctx.beginPath(); ctx.moveTo(0,-9); ctx.lineTo(8,-3); ctx.lineTo(6,7); ctx.lineTo(-6,7); ctx.lineTo(-8,-3); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=K('#e8f8ff'); ctx.beginPath(); ctx.moveTo(0,-9); ctx.lineTo(4,-2); ctx.lineTo(0,5); ctx.lineTo(-4,-2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=K('#9fd8f0'); for(const x of [-6,-2,2,6]){ ctx.beginPath(); ctx.moveTo(x-1.4,-5); ctx.lineTo(x,-12-Math.abs(x)*0.2); ctx.lineTo(x+1.4,-5); ctx.fill(); }
+    if(!flash){ ctx.fillStyle='#2a7aff'; circ(-2.6,0,1.4); ctx.fill(); circ(2.6,0,1.4); ctx.fill(); }
+    break; }
+  case 'cinderhound': {
+    const f = face==='left'?-1:1, lg = Math.sin(t*2.2)*2.4;
+    shadowAt(0,11,13,3);
+    ctx.scale(f,1);
+    ctx.fillStyle=K('#4a1a10'); for(const [x,l] of [[-9,lg],[-4,-lg],[5,lg],[10,-lg]]) ctx.fillRect(x-1.5,6,3,6+l*0.3);
+    ctx.fillStyle=K('#2a1210'); ell(-1,1,13,7.4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=K('#c2461e'); ctx.beginPath(); ctx.moveTo(-9,-3); ctx.quadraticCurveTo(-3,-7,4,-3); ctx.quadraticCurveTo(-3,3,-9,-3); ctx.fill();
+    if(!flash){ ctx.fillStyle='rgba(255,170,50,0.9)'; for(let i=0;i<4;i++){ const ph=Math.sin(now*9+i*1.7), x=-8+i*4.5; ctx.beginPath(); ctx.moveTo(x-2,-5); ctx.quadraticCurveTo(x,-10-ph*2.4,x+2,-5); ctx.fill(); } }
+    ctx.fillStyle=K('#3a1a12'); ell(11,0,6.4,5.2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=K('#e86a2a'); ell(15.5,2,2.6,2); ctx.fill();
+    ctx.fillStyle=K('#2a1210'); ctx.beginPath(); ctx.moveTo(8,-4); ctx.lineTo(7,-9); ctx.lineTo(11,-5); ctx.fill();
+    if(!flash){ ctx.fillStyle='#ffd34a'; circ(11,-1,1.3); ctx.fill(); }
+    ctx.fillStyle='#fff'; ctx.fillRect(13,3.2,1.2,2); ctx.fillRect(15,3.2,1.2,2);
+    ctx.strokeStyle=K('#c2461e'); ctx.lineWidth=2.6; ctx.beginPath(); ctx.moveTo(-12,-1); ctx.quadraticCurveTo(-17,-7,-15,-11); ctx.stroke();
+    break; }
+  case 'pyromancer': {
+    shadowAt(0,12,9,3);
+    ctx.fillStyle=K('#6a1a10'); ctx.beginPath(); ctx.moveTo(-5,-6); ctx.lineTo(5,-6); ctx.lineTo(10,12); ctx.lineTo(-10,12); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=K('#ff7a2a'); ctx.fillRect(-9,6,18,2.4);
+    ctx.fillStyle=K('#8a2a14'); ctx.beginPath(); ctx.moveTo(-7,-7); ctx.lineTo(0,-19); ctx.lineTo(7,-7); ctx.lineTo(5,-3); ctx.lineTo(-5,-3); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=flash?'#fff':'#14060a'; ell(0,-6,3.6,3); ctx.fill();
+    if(!flash){ ctx.fillStyle='#ffd34a'; circ(-1.6,-6.4,1); ctx.fill(); circ(1.6,-6.4,1); ctx.fill(); }
+    const fl = Math.sin(now*8+e.x);
+    ctx.strokeStyle='#5a3a1a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(10,12); ctx.lineTo(10,-10); ctx.stroke();
+    if(!flash){ ctx.fillStyle='rgba(255,120,30,0.9)'; ctx.beginPath(); ctx.moveTo(6.5,-10); ctx.quadraticCurveTo(7,-16-fl*2,10,-20-fl*2); ctx.quadraticCurveTo(13,-16,13.5,-10); ctx.closePath(); ctx.fill(); ctx.fillStyle='#ffe28a'; circ(10,-12,2.2); ctx.fill(); }
+    break; }
+  case 'blizzardmage': {
+    shadowAt(0,12,9,3);
+    ctx.fillStyle=K('#2e5a9a'); ctx.beginPath(); ctx.moveTo(-5,-6); ctx.lineTo(5,-6); ctx.lineTo(10,12); ctx.lineTo(-10,12); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=K('#e8f6ff'); ctx.fillRect(-9,7,18,2.4);
+    ctx.fillStyle=K('#4a7ac0'); ctx.beginPath(); ctx.moveTo(-7,-7); ctx.lineTo(0,-18); ctx.lineTo(7,-7); ctx.lineTo(5,-3); ctx.lineTo(-5,-3); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=K('#f2f8fc'); ctx.beginPath(); ctx.moveTo(-4,-4); ctx.quadraticCurveTo(0,6,4,-4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=flash?'#fff':'#0a1226'; ell(0,-7,3.4,2.6); ctx.fill();
+    if(!flash){ ctx.fillStyle='#9fe8ff'; circ(-1.5,-7.2,0.9); ctx.fill(); circ(1.5,-7.2,0.9); ctx.fill(); }
+    ctx.strokeStyle='#7a9ab8'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-10,12); ctx.lineTo(-10,-10); ctx.stroke();
+    ctx.fillStyle=K('#bfeaff'); ctx.beginPath(); ctx.moveTo(-10,-18); ctx.lineTo(-7,-13); ctx.lineTo(-10,-8); ctx.lineTo(-13,-13); ctx.closePath(); ctx.fill(); ctx.stroke();
+    if(!flash){ ctx.fillStyle='rgba(180,235,255,0.4)'; circ(-10,-13,8+Math.sin(now*4)*1.4); ctx.fill(); }
+    break; }
+  case 'venomtoad': {
+    const f = face==='left'?-1:1, hop = Math.abs(Math.sin(t*1.3))*3;
+    shadowAt(0,11,12,3);
+    ctx.scale(f,1); ctx.translate(0,-hop);
+    ctx.fillStyle=K('#3a6a1a'); ell(-8,9,5,3); ctx.fill(); ell(7,9,5,3); ctx.fill();
+    ctx.fillStyle=K('#5a9a2a'); ell(0,3,12,9.4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=K('#7ac03a'); ell(0,6,8,4.4); ctx.fill();
+    ctx.fillStyle=K('#8a2a9a'); for(const [x,y,r] of [[-6,-1,1.8],[-1,-3,2.2],[5,-1,1.8],[-3,3,1.4]]){ circ(x,y,r); ctx.fill(); }
+    ctx.fillStyle=K('#6aaa2a'); ell(8,-3,6,5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=K('#e8f060'); circ(7,-8,2.8); ctx.fill(); circ(12,-7,2.4); ctx.fill();
+    if(!flash){ ctx.fillStyle='#14080a'; circ(7,-8,1.2); ctx.fill(); circ(12,-7,1); ctx.fill(); }
+    ctx.strokeStyle='#2a4a10'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(7,-1); ctx.quadraticCurveTo(11,1,14,-1); ctx.stroke();
+    break; }
   case 'cursedbook': {
     const bob = Math.sin(now*3+e.x)*2.5, fl = Math.sin(now*10+e.x)*0.35;
     ctx.fillStyle='rgba(0,0,0,0.2)'; ell(0,14,8,2.4); ctx.fill();
@@ -3657,7 +3907,7 @@ function drawGround(camX,camY){
   if(wx1>wx0 && wy1>wy0) ctx.drawImage(layer, wx0, wy0, wx1-wx0, wy1-wy0, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
 }
 
-// ---------- Пещеры: входы (overworld) и спуск в Бездну (в подземелье) ----------
+// ---------- Пещеры: входы (overworld) и спуск в Провал (в подземелье) ----------
 const caveSprites = {};
 const GLOW_COL = { town:[255,206,120], abyss:[190,120,255], lavaGate:[255,140,40], tomb:[255,214,90], iceGate:[130,220,255], graveGate:[120,255,150], jungleGate:[190,255,90], cityGate:[255,176,90], manorGate:[130,255,230] };
 function makeCaveSprite(kind){
@@ -3744,7 +3994,7 @@ function makeCaveSprite(kind){
     g.beginPath(); g.moveTo(20,20); g.lineTo(34,30); g.moveTo(20,26); g.lineTo(32,30); g.moveTo(20,20); g.lineTo(20,32); g.stroke();
     g.beginPath(); g.moveTo(58,20); g.lineTo(44,30); g.moveTo(58,26); g.lineTo(46,30); g.moveTo(58,20); g.lineTo(58,32); g.stroke();
     g.fillStyle='#9ae8d8'; g.beginPath(); g.arc(38,22,2,0,Math.PI*2); g.fill();
-  } else if(kind==='dungeon2'){                                         // логово Костяного Короля: черепа и кости
+  } else if(kind==='dungeon2'){                                         // логово Мортракса: черепа и кости
     const skull = (x,y,r)=>{ g.fillStyle='#e6e1cf'; g.strokeStyle='#5a5546'; g.lineWidth=1; g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill(); g.stroke();
       g.fillRect(x-r*0.55,y+r*0.6,r*1.1,r*0.55); g.fillStyle='#14110c'; g.beginPath(); g.arc(x-r*0.4,y-r*0.1,r*0.28,0,Math.PI*2); g.arc(x+r*0.4,y-r*0.1,r*0.28,0,Math.PI*2); g.fill(); };
     g.strokeStyle='#d8d3bd'; g.lineWidth=2.4; g.lineCap='round';
@@ -3781,7 +4031,7 @@ function drawCaves(camX,camY){
   if(!loc.entrances) return;
   for(const en of loc.entrances) if(!(en.hidden && !en.found)) drawCaveAt(en.dungeon==='lair1' ? 'dungeon2' : en.dungeon, en.tx*TILE+TILE/2-camX, en.ty*TILE+TILE/2-camY, 1.3);
 }
-// пещера в пещере: открывается после победы над Костяным Королём
+// пещера в пещере: открывается после победы над Мортраксом
 function drawPortalCave(camX,camY){
   if(!(loc.portal && loc.portal.open)) return;
   drawCaveAt(PORTAL_KIND[currentLocId]||'abyss', loc.portal.tx*TILE+TILE/2-camX, loc.portal.ty*TILE+TILE/2-camY, 1.2);
@@ -4082,7 +4332,7 @@ function placesTick(dt){
     if(Math.hypot(pcx-(loc.chest.tx+0.5)*TILE, pcy-(loc.chest.ty+0.5)*TILE)<56){
       loc.chest.opened = true; SFX.play('pickup');
       const gold = rnd(90,160); player.gold += gold; addNote('📦 Сундук: +'+gold+' золота', '#e0c96a');
-      const k = ELIX_KEYS[rnd(0,3)];
+      const k = ELIX_KEYS[rnd(0,4)];
       if(player.elix[k]<ELIX_MAX){ player.elix[k]++; addNote('⚗ Найдено: '+ELIX[k].name.toLowerCase(), ELIX[k].col); }
       if(player.bag.length<BAG_MAX){ const g = makeGear(5,1); player.bag.push(g); addNote('🎒 Найдено: '+g.name+' ('+RAR[g.rar].n.toLowerCase()+')', RAR[g.rar].c); }
       else { player.gold += 60; addNote('Сумка полна — вместо снаряжения +60 золота', '#e0a03a'); }
@@ -4507,7 +4757,7 @@ function drawHPBar(x,y,w,h,ratio,fg,bg='#2a2a2a'){
   ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.strokeRect(x+0.5,y+0.5,w,h);
 }
 
-const ENEMY_LIFT = {boar:0, bandit:8, giantrat:0, gargoyle:8, salamander:2, vulture:6, icegolem:8, skelarcher:8, hunter:10, crossbowman:10, cursedbook:6, webspider:2, ghoul:6, banshee:3, lich:18, panther:3, shroom:5, gorilla:8, treant:22, spiderqueen:10, warlord:21, phantom:24, skeleton:8, wraith:3, frostwraith:3, boss:15, shadowlord:17, darkknight:8, zombie:5, golem:8, yeti:6, lavalord:18, pharaoh:16, frostking:19, goblin:3, imp:4, bat:0};
+const ENEMY_LIFT = {frostmite:0, cinderhound:2, pyromancer:8, blizzardmage:8, venomtoad:2, boar:0, bandit:8, giantrat:0, gargoyle:8, salamander:2, vulture:6, icegolem:8, skelarcher:8, hunter:10, crossbowman:10, cursedbook:6, webspider:2, ghoul:6, banshee:3, lich:18, panther:3, shroom:5, gorilla:8, treant:22, spiderqueen:10, warlord:21, phantom:24, skeleton:8, wraith:3, frostwraith:3, boss:15, shadowlord:17, darkknight:8, zombie:5, golem:8, yeti:6, lavalord:18, pharaoh:16, frostking:19, goblin:3, imp:4, bat:0};
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(gameState==='start'){ return; }
@@ -4590,7 +4840,7 @@ function draw(){
   {
     const sx=player.x-camX, sy=player.y-camY;
     drawHero(sx, sy);
-    drawSkillFx(sx, sy); drawChargeFx(sx, sy);
+    drawSkillFx(sx, sy); drawChargeFx(sx, sy); drawStatusFx(sx, sy);
     if(player.attacking) drawAttackFx(sx, sy);
   }
   drawArrows(camX, camY); drawEnemyShots(camX, camY);
@@ -4623,10 +4873,10 @@ function draw(){
   if(restFade>0){ const p = restFade/1400; ctx.fillStyle = 'rgba(4,4,12,'+(0.92*(1-Math.abs(2*p-1)))+')'; ctx.fillRect(0,0,canvas.width,canvas.height); }
 }
 
-const LEVEL_NAMES = {1:'Пещера теней', 2:'Логово Костяного Короля', 3:'Бездна Теней', 4:'Огненные недра', 5:'Пустыня Миражей', 6:'Ледяной край', 7:'Мрачное кладбище', 8:'Загадочные джунгли', 9:'Город Эльдор', 10:'Дом', 11:'Средневековый город', 12:'Заброшенный дом'};
+const LEVEL_NAMES = {1:'Грот Шорохов', 2:'Логово Мортракса', 3:'Провал Безмолвия', 4:'Кузни Гхарраш', 5:'Пустошь Зарахаб', 6:'Край Белого Эха', 7:'Погост Увядших Звёзд', 8:'Дебри Ксилотара', 9:'Город Лиссарен', 10:'Дом', 11:'Град Вельмор', 12:'Обитель Пустых Зеркал'};
 function getLocName(l){
   if(l.title) return l.title;
-  if(l.type==='overworld') return 'Лес';
+  if(l.type==='overworld') return 'Оверворлд';
   return LEVEL_NAMES[l.level] || 'Подземелье';
 }
 
@@ -4757,6 +5007,7 @@ function drawMinimap(){
     ctx.fillRect(mx+tx*sx-2, my+ty*sy-2, 5, 5); ctx.strokeRect(mx+tx*sx-2, my+ty*sy-2, 5, 5);
   }
   if(currentLocId==='overworld') for(const n of ev.npcs){
+    if(n.loc!=='overworld') continue;
     const pulse = 0.6+0.4*Math.sin(Date.now()/300);
     ctx.globalAlpha = pulse; ctx.fillStyle = n.kind==='caravan' ? '#ff9a2a' : '#5aff9a'; ctx.strokeStyle='#1a1006';
     ctx.beginPath(); ctx.moveTo(mx+(n.x/TILE)*sx, my+(n.y/TILE)*sy-5); ctx.lineTo(mx+(n.x/TILE)*sx+5, my+(n.y/TILE)*sy); ctx.lineTo(mx+(n.x/TILE)*sx, my+(n.y/TILE)*sy+5); ctx.lineTo(mx+(n.x/TILE)*sx-5, my+(n.y/TILE)*sy); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 0.95;
@@ -5083,14 +5334,14 @@ function resetHero(){
   player.sp = 0; player.vkeys = 0; player.skills = {dash:0,spin:0,shield:0,might:0};
   player.gear = {helm:null,ring:null,amulet:null}; player.bag = []; player.wLvl = {}; player.ench = {};
   player.cd = {dash:0,spin:0,shield:0}; player.shield = 0; player.dashT = 0; player.dvx = 0; player.dvy = 0; player.spinFx = 0; player.spinR = 0; player.vamp = 0;
-  player.elix = {big:0,speed:0,might:0,guard:0}; player.buff = {speed:0,might:0,guard:0}; player.slowT = 0;
+  player.elix = {big:0,speed:0,might:0,guard:0,swim:0}; player.buff = {speed:0,might:0,guard:0,swim:0}; player.slowT = 0; player.boots = false; player.fx = {freeze:0,freezeImm:0,burn:0,burnDps:0,poison:0,poisonDps:0,acc:0};
   aoes.length = 0;
 }
 function gearStat(k){
   let v = 0; for(const s in player.gear){ const g = player.gear[s]; if(g && g.stats[k]) v += g.stats[k]; }
   return k==='spd' ? Math.min(30,v) : k==='vamp' ? Math.min(20,v) : v;
 }
-function spdNow(){ return player.speed*(1+gearStat('spd')/100)*(player.buff.speed>0 ? 1.4 : 1)*(player.slowT>0 ? 0.6 : 1); }
+function spdNow(){ return player.speed*(1+gearStat('spd')/100)*(player.buff.speed>0 ? 1.4 : 1)*(player.slowT>0 ? 0.6 : 1)*(player.boots ? 1.18 : 1)*(onWater() ? 0.7 : 1); }
 function weaponMul(){ return 1+0.12*((player.wLvl||{})[player.weapon]||0); }
 
 // ---------- Снаряжение ----------
@@ -5319,50 +5570,55 @@ function drawAoes(camX,camY){
 // ======================= Энциклопедия =======================
 // [значок, название, где встречается, описание]
 const ENEMY_INFO = {
-  wolf:['🐺','Волк','Поверхность','Стайный хищник лесов. Быстро настигает, но слаб в одиночку.'],
-  boar:['🐗','Кабан','Поверхность','Бросается в лоб и бьёт клыками. Бегает быстрее волка, но не стреляет.'],
-  bandit:['🗡️','Разбойник','Поверхность','Прячется под капюшоном и метает ножи с расстояния. Держится на дистанции — подойдите вплотную.'],
-  slime:['🟢','Слизень','Пещера костей','Медленный и мягкий. Хорошая цель для новичка.'],
-  bat:['🦇','Летучая мышь','Пещеры','Порхает зигзагами, сложно поймать в удар. Слабая, но назойливая.'],
-  spider:['🕷️','Паук','Пещеры','Быстрый и кусачий. Любит подкрадываться в тесных коридорах.'],
-  skeleton:['💀','Скелет','Пещеры, кладбище','Лёгкая нежить с ржавым клинком.'],
-  giantrat:['🐀','Гигантская крыса','Пещера теней','Стайная грызунья подземелий. Быстрая и злая, но хрупкая.'],
-  zombie:['🧟','Зомби','Пещеры, город, поместье','Медленный, но очень живучий и тяжёлый на удар.'],
-  webspider:['🕸️','Паук-ткач','Пещеры, джунгли','Плюёт липкой паутиной: замедляет героя. Зелье скорости снимает замедление.'],
-  wraith:['👻','Призрак','Бездна Теней, поместье','Парит над полом и быстро сокращает расстояние.'],
-  darkknight:['🛡️','Тёмный рыцарь','Бездна, город','Закованный в сталь страж: много здоровья и тяжёлый удар.'],
-  gargoyle:['🗿','Горгулья','Бездна Теней','Каменный крылатый страж. Медлительна, но очень крепка и больно бьёт.'],
-  imp:['😈','Бес','Огненные недра','Мечет огненные шарики издалека и держит дистанцию.'],
-  lavaslime:['🔥','Лавовый слизень','Огненные недра','Горячая густая жижа. Обжигает при касании.'],
-  golem:['🪨','Голем','Огненные недра, город','Каменная глыба: невероятно крепкий, но медленный.'],
-  salamander:['🦎','Саламандра','Огненные недра','Огненная ящерица: быстро бегает и плюётся огнём на короткую дистанцию.'],
-  scorpion:['🦂','Скорпион','Пустыня Миражей','Проворный охотник песков с ядовитым жалом.'],
-  mummy:['🧻','Мумия','Пустыня Миражей','Древний страж гробниц: крепкая и неторопливая.'],
-  cobra:['🐍','Кобра','Пустыня, джунгли','Стремительный бросок и очень сильный укус.'],
-  vulture:['🦅','Гриф','Пустыня Миражей','Кружит над добычей и пикирует рывками. Сложно попасть, зато хрупкий.'],
-  icewolf:['🐺','Ледяной волк','Ледяной край','Быстрый хищник вечной мерзлоты.'],
-  yeti:['🦣','Йети','Ледяной край','Огромный и сильный снежный великан.'],
-  frostwraith:['❄️','Ледяной призрак','Ледяной край','Стреляет ледяными осколками, держась на расстоянии.'],
-  icegolem:['🧊','Ледяной голем','Ледяной край','Глыба вечного льда: очень медленный, но огромный запас здоровья.'],
-  ghoul:['🧛','Упырь','Кладбище, город','Быстрый и свирепый падальщик.'],
-  banshee:['😱','Банши','Кладбище, поместье','Призрачная плакальщица: её вопль ранит издалека.'],
-  skelarcher:['🏹','Скелет-лучник','Мрачное кладбище','Стреляет стрелами с расстояния. Сближайтесь рывком, прячьтесь за деревьями.'],
-  panther:['🐆','Пантера','Загадочные джунгли','Очень быстрая и сильная хищница.'],
-  shroom:['🍄','Грибной страж','Загадочные джунгли','Неподвижно стоит и выпускает споры.'],
-  gorilla:['🦍','Горилла','Загадочные джунгли','Грозный силач джунглей.'],
-  hunter:['🪃','Охотник джунглей','Загадочные джунгли','Метает отравленные дротики и ловко уходит от удара.'],
-  crossbowman:['🎯','Арбалетчик','Средневековый город','Тяжёлый стрелок городской стражи: стреляет болтами издалека.'],
-  cursedbook:['📕','Проклятая книга','Заброшенный дом','Парит и швыряет проклятия. Хрупкая, но летает непредсказуемо.'],
-  boss:['👑','Костяной Король','Пещера на поверхности','Страж №1. Бьёт по площади, не стойте на месте.'],
-  spiderqueen:['🕷️','Паучья Королева','Логово в Пещере теней','Страж №2. Плюётся паутиной, замедляющей героя.'],
-  shadowlord:['🌑','Повелитель Тьмы','Логово Бездны','Страж №3. Питается страхом, окружён тёмными шарами.'],
-  lavalord:['🌋','Повелитель Пламени','Логово Огненных недр','Страж №4. Мечет тройные огненные залпы.'],
-  pharaoh:['🏺','Фараон Песков','Логово пустыни','Страж №5. Бросает песчаные заряды.'],
-  frostking:['🥶','Ледяной Король','Логово Ледяного края','Страж №6. Мечет ледяные осколки веером.'],
-  lich:['☠️','Повелитель Мёртвых','Логово кладбища','Страж №7. Колдует тройные проклятия.'],
-  treant:['🌳','Древний Хранитель','Логово джунглей','Страж №8. Околдованный дух леса: выпускает споры.'],
-  warlord:['⚔️','Чёрный Маршал','Логово города','Страж №9. Предводитель стражи, мечет огненные шары.'],
-  phantom:['🎭','Призрачный Хозяин','Логово поместья','Страж №10. Хозяин Поместья, похитивший Сердце Эльдории.']
+  wolf:['🐺','Серошкур','Поверхность','Стайный хищник лесов. Быстро настигает, но слаб в одиночку.'],
+  boar:['🐗','Щетинистый Рвач','Поверхность','Бросается в лоб и бьёт клыками. Бегает быстрее волка, но не стреляет.'],
+  bandit:['🗡️','Тенекрад','Поверхность','Прячется под капюшоном и метает ножи с расстояния. Держится на дистанции — подойдите вплотную.'],
+  slime:['🟢','Зелёный Хлюп','Лаз Мортракса','Медленный и мягкий. Хорошая цель для новичка.'],
+  bat:['🦇','Крылошорох','Пещеры','Порхает зигзагами, сложно поймать в удар. Слабая, но назойливая.'],
+  spider:['🕷️','Тёмный Прядун','Пещеры','Быстрый и кусачий. Любит подкрадываться в тесных коридорах.'],
+  skeleton:['💀','Хрустун','Пещеры, погост','Лёгкая нежить с ржавым клинком.'],
+  giantrat:['🐀','Хвостогрыз','Грот Шорохов','Стайная грызунья подземелий. Быстрая и злая, но хрупкая.'],
+  zombie:['🧟','Гнилоступ','Пещеры, Град, Обитель','Медленный, но очень живучий и тяжёлый на удар.'],
+  webspider:['🕸️','Липкопряд','Пещеры, дебри','Плюёт липкой паутиной: замедляет героя. Зелье скорости снимает замедление.'],
+  wraith:['👻','Вуальник','Провал Безмолвия, Обитель','Парит над полом и быстро сокращает расстояние.'],
+  darkknight:['🛡️','Железный Скорбник','Провал, Град','Закованный в сталь страж: много здоровья и тяжёлый удар.'],
+  gargoyle:['🗿','Клювокрыл','Провал Безмолвия','Каменный крылатый страж. Медлительна, но очень крепка и больно бьёт.'],
+  imp:['😈','Искроплюй','Кузни Гхарраш','Мечет огненные шарики издалека и держит дистанцию.'],
+  lavaslime:['🔥','Магмохлюп','Кузни Гхарраш','Горячая густая жижа. Обжигает при касании.'],
+  golem:['🪨','Базальтоид','Кузни Гхарраш, город','Каменная глыба: невероятно крепкий, но медленный.'],
+  salamander:['🦎','Пеплоящер','Кузни Гхарраш','Огненная ящерица: быстро бегает и плюётся огнём на короткую дистанцию.'],
+  scorpion:['🦂','Песчаное Жало','Пустошь Зарахаб','Проворный охотник песков с ядовитым жалом.'],
+  mummy:['🧻','Бинтоход','Пустошь Зарахаб','Древний страж гробниц: крепкая и неторопливая.'],
+  cobra:['🐍','Шипящий Шаймар','Пустошь, дебри','Стремительный бросок и очень сильный укус.'],
+  vulture:['🦅','Стервокрыл','Пустошь Зарахаб','Кружит над добычей и пикирует рывками. Сложно попасть, зато хрупкий.'],
+  icewolf:['🐺','Белоклык','Край Белого Эха','Быстрый хищник вечной мерзлоты.'],
+  yeti:['🦣','Снеговей','Край Белого Эха','Огромный и сильный снежный великан.'],
+  frostwraith:['❄️','Инеелик','Край Белого Эха','Стреляет ледяными осколками, держась на расстоянии.'],
+  icegolem:['🧊','Льдеглыб','Край Белого Эха','Глыба вечного льда: очень медленный, но огромный запас здоровья.'],
+  ghoul:['🧛','Могилоед','Погост, Град','Быстрый и свирепый падальщик.'],
+  banshee:['😱','Плакуша','Погост, Обитель','Призрачная плакальщица: её вопль ранит издалека.'],
+  skelarcher:['🏹','Костострел','Погост Увядших Звёзд','Стреляет стрелами с расстояния. Сближайтесь рывком, прячьтесь за деревьями.'],
+  panther:['🐆','Тенепард','Дебри Ксилотара','Очень быстрая и сильная хищница.'],
+  shroom:['🍄','Спорошляп','Дебри Ксилотара','Неподвижно стоит и выпускает споры.'],
+  gorilla:['🦍','Лианобой','Дебри Ксилотара','Грозный силач джунглей.'],
+  hunter:['🪃','Дротикарь','Дебри Ксилотара','Метает отравленные дротики и ловко уходит от удара.'],
+  crossbowman:['🎯','Болтомёт','Град Вельмор','Тяжёлый стрелок городской стражи: стреляет болтами издалека.'],
+  cursedbook:['📕','Шепчущий Фолиант','Обитель Пустых Зеркал','Парит и швыряет проклятия. Хрупкая, но летает непредсказуемо.'],
+  frostmite:['🧊','Инеёж','Край Белого Эха','Колючий ледяной клещ. Укус замораживает: герой на миг теряет подвижность.'],
+  cinderhound:['🐕','Пеплолай','Кузни Гхарраш','Тлеющая гончая. Её укус поджигает — здоровье убывает, пока горение не угаснет. Вода тушит.'],
+  pyromancer:['🔥','Жаровержец','Кузни Гхарраш','Маг огня: бросает пару огненных шаров и поджигает цель.'],
+  blizzardmage:['🌨️','Метелун','Край Белого Эха','Чародей вьюги: ледяной снаряд замораживает героя. Щит и зелье стойкости защищают.'],
+  venomtoad:['🐸','Ядожаб','Дебри Ксилотара','Жаба с едкой слизью: отравляет — здоровье убывает некоторое время.'],
+  boss:['👑','Мортракс','Пещера на поверхности','Страж №1. Бьёт по площади, не стойте на месте.'],
+  spiderqueen:['🕷️','Шелиба','Логово в Гроте Шорохов','Страж №2. Плюётся паутиной, замедляющей героя.'],
+  shadowlord:['🌑','Ноктурн','Логово Провала','Страж №3. Питается страхом, окружён тёмными шарами.'],
+  lavalord:['🌋','Игнаррок','Логово Кузен Гхарраш','Страж №4. Мечет тройные огненные залпы.'],
+  pharaoh:['🏺','Хар-Атеп','Логово Пустоши','Страж №5. Бросает песчаные заряды.'],
+  frostking:['🥶','Криомир','Логово Края Белого Эха','Страж №6. Мечет ледяные осколки веером.'],
+  lich:['☠️','Морвейн','Логово Погоста','Страж №7. Колдует тройные проклятия.'],
+  treant:['🌳','Ольхарон','Логово Дебрей','Страж №8. Околдованный дух леса: выпускает споры.'],
+  warlord:['⚔️','Вархаал','Логово Града','Страж №9. Предводитель стражи, мечет огненные шары.'],
+  phantom:['🎭','Эфирий','Логово Обители','Страж №10. Хозяин Обители, похитивший Сердце Эльдории.']
 };
 const ARTIFACT_INFO = (()=>{
   const A = {};
@@ -5370,8 +5626,9 @@ const ARTIFACT_INFO = (()=>{
   for(const id of Object.keys(ARMORS)) if(id!=='none') A['a:'+id] = {i:'🛡️', n:ARMORS[id].name, d:'Броня. Гасит '+Math.round(ARMORS[id].reduce*100)+'% урона. '+ARMORS[id].desc};
   A['potion'] = {i:'🧪', n:'Эликсир здоровья', d:'Эликсир: восстанавливает здоровье. Выпадает из врагов и сундуков, продаётся в лавке.'};
   for(const k of Object.keys(ELIX)) A['e:'+k] = {i:'⚗️', n:ELIX[k].name, d:(k==='big'?'Эликсир. ':'Зелье. ')+ELIX[k].desc};
+  A['boots'] = {i:'👢', n:'Сапоги-скороходы', d:'Скорость передвижения +18%. Продаются только караванщиками.'};
   A['key'] = {i:'🗝', n:'Ключ', d:'Открывает запертый сундук в тайнике.'};
-  A['heart'] = {i:'💎', n:'Сердце Поместья', d:'Древний камень света, похищенный Призрачным Хозяином. Хранится в Заброшенном доме.'};
+  A['heart'] = {i:'💎', n:'Сердце Эльдории', d:'Древний камень света, похищенный Эфирием. Хранится в Обители Пустых Зеркал.'};
   return A;
 })();
 const codexScreen = document.getElementById('codexScreen'), codexList = document.getElementById('codexList'), codexTabsEl = document.getElementById('codexTabs'), codexBtn = document.getElementById('codexBtn');
@@ -5400,6 +5657,7 @@ function codexTick(dt){
   if(player.potions>0) codexAddArt('potion');
   for(const k of Object.keys(player.elix||{})) if(player.elix[k]>0) codexAddArt('e:'+k);
   if(player.vkeys>0) codexAddArt('key');
+  if(player.boots) codexAddArt('boots');
   const gl = [...(player.bag||[]), ...Object.values(player.gear||{}).filter(Boolean)];
   for(const g of gl) codexAddArt('g:'+g.name+':'+g.rar, {i:g.slot==='helm'?'⛑️':g.slot==='ring'?'💍':'📿', n:g.name, d:'Снаряжение ('+GEAR_SLOTS[g.slot].n.toLowerCase()+'), '+RAR[g.rar].n.toLowerCase()+'. '+gearLines(g)+'.', c:RAR[g.rar].c});
   for(const it of loc.items) if(it.type==='treasure' && Math.hypot(it.x-px,it.y-py)<300) codexAddArt('heart');
@@ -5583,7 +5841,7 @@ function renderDiff(){
       b.addEventListener('click', ()=>{ if(!locked) setDifficulty(id); });
       box.appendChild(b);
     }
-    document.getElementById(did).textContent = DIFFS[difficulty].desc + (locked ? ' (сменить можно в новой игре)' : '');
+    document.getElementById(did).textContent = locked ? 'Уровень сложности можно выбрать только при запуске новой игры' : DIFFS[difficulty].desc;
   }
 }
 
@@ -5695,9 +5953,9 @@ function drawChargeFx(sx,sy){
 const LEVEL_ROSTER = {
   0:['wolf','wolf','boar','bandit'],
   1:['slime','slime','bat','spider','skeleton','giantrat','giantrat'], 2:['skeleton','skeleton','zombie','spider','webspider','bat','slime'],
-  3:['wraith','wraith','darkknight','webspider','skeleton','zombie','gargoyle','gargoyle'], 4:['imp','lavaslime','lavaslime','golem','imp','salamander','salamander'],
-  5:['scorpion','mummy','cobra','scorpion','mummy','cobra','vulture','vulture'], 6:['icewolf','yeti','frostwraith','icewolf','frostwraith','icegolem'],
-  7:['ghoul','banshee','zombie','darkknight','ghoul','banshee','skelarcher','skelarcher'], 8:['panther','shroom','gorilla','cobra','webspider','panther','shroom','webspider','hunter','hunter'],
+  3:['wraith','wraith','darkknight','webspider','skeleton','zombie','gargoyle','gargoyle'], 4:['imp','lavaslime','lavaslime','golem','imp','salamander','salamander','cinderhound','cinderhound','pyromancer'],
+  5:['scorpion','mummy','cobra','scorpion','mummy','cobra','vulture','vulture'], 6:['icewolf','yeti','frostwraith','icewolf','frostwraith','icegolem','frostmite','frostmite','blizzardmage'],
+  7:['ghoul','banshee','zombie','darkknight','ghoul','banshee','skelarcher','skelarcher'], 8:['panther','shroom','gorilla','cobra','webspider','panther','shroom','webspider','hunter','hunter','venomtoad','venomtoad'],
   11:['darkknight','darkknight','ghoul','banshee','zombie','webspider','golem','crossbowman','crossbowman'], 12:['wraith','banshee','ghoul','webspider','darkknight','zombie','banshee','cursedbook','cursedbook']
 };
 const respawnTimers = new WeakMap();
@@ -5721,12 +5979,13 @@ function spawnWave(){
   const boss = loc.enemies.find(e=>BOSS_TYPES.includes(e.type) && e.hp>0);
   const open8 = (x,y)=>{ for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const t = loc.grid[y+dy] && loc.grid[y+dy][x+dx]; if(!t || bl.has(t)) return false; } return true; };
   let made = 0;
-  for(let tries=0; tries<900 && made<want; tries++){
+  for(let tries=0; tries<1800 && made<want; tries++){
+    const soft = tries>=900 && made<3;                           // тесная карта: смягчаем ограничения
     const x = rnd(2,W-3), y = rnd(2,H-3);
-    if(loc.grid[y][x]!=='.' || D[x+y*W]<0 || !open8(x,y)) continue;
-    if(Math.hypot(x-ptx,y-pty)<minD) continue;
-    if(loc.exit && Math.hypot(x-loc.exit.tx,y-loc.exit.ty)<11) continue;
-    if(loc.entrances && loc.entrances.some(en=>Math.hypot(x-en.tx,y-en.ty)<11)) continue;
+    if(loc.grid[y][x]!=='.' || D[x+y*W]<0 || (!soft && !open8(x,y))) continue;
+    if(Math.hypot(x-ptx,y-pty)<(soft ? 7 : minD)) continue;
+    if(loc.exit && Math.hypot(x-loc.exit.tx,y-loc.exit.ty)<(soft ? 6 : 11)) continue;
+    if(loc.entrances && loc.entrances.some(en=>Math.hypot(x-en.tx,y-en.ty)<(soft ? 6 : 11))) continue;
     if(loc.shop && Math.hypot(x-loc.shop.tx,y-loc.shop.ty)<8) continue;
     if(boss && Math.hypot(x-(boss.x+boss.w/2)/TILE,y-(boss.y+boss.h/2)/TILE)<6) continue;
     loc.enemies.push(makeEnemy(roster[rnd(0,roster.length-1)], x*TILE+3, y*TILE+3, loc.level||1)); made++;
@@ -5760,7 +6019,7 @@ renderDiff();
 const SAVE_KEY = 'eldoria_save_v1';                      // автосохранение
 const SLOT_KEYS = ['eldoria_slot_1','eldoria_slot_2','eldoria_slot_3'];   // ручные слоты
 try{ localStorage.setItem('__eldoria_t','1'); localStorage.removeItem('__eldoria_t'); storageOK=true; }catch(e){ storageOK=false; }
-const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex'];
+const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex','boots'];
 const savesBtn = document.getElementById('savesBtn');
 const loadBtn = document.getElementById('loadBtn');
 const saveInfoEl = document.getElementById('saveInfo');
@@ -5849,7 +6108,7 @@ function loadGame(key){
     if(!player.gear) player.gear = {helm:null,ring:null,amulet:null};
     if(!Array.isArray(player.bag)) player.bag = [];
     if(!player.wLvl) player.wLvl = {}; if(!player.ench) player.ench = {};
-    player.elix = Object.assign({big:0,speed:0,might:0,guard:0}, player.elix||{}); player.buff = {speed:0,might:0,guard:0}; player.slowT = 0;
+    player.elix = Object.assign({big:0,speed:0,might:0,guard:0,swim:0}, player.elix||{}); player.buff = {speed:0,might:0,guard:0,swim:0}; player.slowT = 0; player.boots = !!player.boots; player.fx = {freeze:0,freezeImm:0,burn:0,burnDps:0,poison:0,poisonDps:0,acc:0};
     player.cd = {dash:0,spin:0,shield:0}; player.shield = 0; player.dashT = 0; player.spinFx = 0;
     if(!WEAPONS[player.weapon]) player.weapon='sword';
     if(!ARMORS[player.armor]) player.armor='none';
@@ -5918,17 +6177,18 @@ const shopScreen = document.getElementById('shopScreen');
 const shopList = document.getElementById('shopList');
 const shopTabsEl = document.getElementById('shopTabs');
 let shopTab = 'weapons';
-const SHOP_TABS = [['weapons','⚔ Оружие'],['armor','🛡 Броня'],['potions','✚ Эликсиры'],['elixirs','⚗ Зелья'],['quests','📜 Задания'],['forge','🔨 Кузнец']];
+const BOOTS_PRICE = 260;
+const SHOP_TABS = [['boots','👢 Сапоги'],['weapons','⚔ Оружие'],['armor','🛡 Броня'],['potions','✚ Эликсиры'],['elixirs','⚗ Зелья'],['quests','📜 Задания'],['forge','🔨 Кузнец']];
 function shopKind(){ return currentLocId==='house2' ? 'alch' : shopMode==='caravan' ? 'caravan' : null; }
-function shopTabsNow(){ return shopKind() ? SHOP_TABS.filter(t=>t[0]==='potions'||t[0]==='elixirs') : SHOP_TABS; }
+function shopTabsNow(){ const k = shopKind(); if(k==='caravan') return SHOP_TABS.filter(t=>t[0]==='boots'||t[0]==='potions'||t[0]==='elixirs'); if(k) return SHOP_TABS.filter(t=>t[0]==='potions'||t[0]==='elixirs'); return SHOP_TABS.filter(t=>t[0]!=='boots'); }
 function shopMul(){ const k = shopKind(); return k==='alch' ? 0.8 : k==='caravan' ? 0.75 : 1; }
 function openShop(msg){
   SFX.play('shopOpen');
   for(const k in keys) keys[k]=false;
   gameState='shop';
   if(!shopTabsNow().some(t=>t[0]===shopTab)) shopTab = shopTabsNow()[0][0];
-  if(shopKind() && !msg) shopTab = 'elixirs';
-  renderShop(msg || (shopKind()==='alch' ? 'Добро пожаловать в мою лавку! Для вас — скидка 20%.' : shopKind()==='caravan' ? 'Странствующий торговец: «Редкая удача, путник! Для вас — скидка 25% на эликсиры и зелья.»' : 'Торговец: «'+STORY_TIPS[Math.min(10,storyStage())]+'»'));
+  if(shopKind() && !msg) shopTab = (shopKind()==='caravan' && !player.boots) ? 'boots' : 'elixirs';
+  renderShop(msg || (shopKind()==='alch' ? 'Добро пожаловать в мою лавку! Для вас — скидка 20%.' : shopKind()==='caravan' ? 'Караванщик Хазим: «Редкая удача, путник! Скидка 25% на эликсиры и зелья — а ещё у меня есть сапоги-скороходы, их нигде больше не купить.»' : 'Торговец: «'+STORY_TIPS[Math.min(10,storyStage())]+'»'));
   shopScreen.classList.remove('hidden');
 }
 function closeShop(){
@@ -6033,7 +6293,14 @@ function renderShop(msg){
     shopTabsEl.appendChild(t);
   });
   shopList.innerHTML='';
-  if(shopTab==='weapons'){
+  if(shopTab==='boots'){
+    const have = !!player.boots;
+    const b = have ? shopButton('Куплено ✓', null, true) : shopButton(`Купить — ${BOOTS_PRICE} ◆`, ()=>{
+      if(player.gold<BOOTS_PRICE){ renderShop(`Не хватает золота: нужно ${BOOTS_PRICE}, у вас ${player.gold}.`); return; }
+      player.gold -= BOOTS_PRICE; player.boots = true; addNote('👢 Куплены сапоги-скороходы: +18% к скорости', '#ffd34a'); saveGame(); renderShop('Сапоги-скороходы куплены и надеты — вы стали быстрее!');
+    });
+    shopRow('👢 Сапоги-скороходы', 'Скорость передвижения +18% навсегда. Такие сапоги не продаются в лавках — только у караванщиков.', [b]);
+  } else if(shopTab==='weapons'){
     for(const id of Object.keys(WEAPONS).sort((a,b)=>(WEAPON_UNLOCK[a]||0)-(WEAPON_UNLOCK[b]||0))) gearRow('weapon', id, WEAPONS[id]);
   } else if(shopTab==='armor'){
     for(const id of Object.keys(ARMORS)) if(id!=='none') gearRow('armor', id, ARMORS[id]);
