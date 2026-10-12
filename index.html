@@ -156,7 +156,7 @@
   </div>
 
   <div id="startScreen" class="overlay">
-    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.029</div>
+    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.030</div>
     <h2>Легенды Эльдории</h2>
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
@@ -713,7 +713,7 @@ const WEAPONS = {
 };
 const WEAPON_SFX = { sword:'swing', spear:'spear', axe:'axe', bow:'bow', crossbow:'crossbow', musket:'musket' };
 // оружие открывается постепенно: число побеждённых стражей-боссов, нужное для покупки
-const WEAPON_UNLOCK = { sword:0, spear:1, bow:2, axe:3, crossbow:5, musket:7 };
+const WEAPON_UNLOCK = { sword:0, spear:1, bow:2, axe:3, crossbow:4, musket:5 };
 const BOSS_NAME_BY_STAGE = ['Мортракс','Шелиба','Ноктурн','Игнаррок','Хар-Атеп','Криомир','Морвейн','Ольхарон','Вархаал','Эфирий'];
 function weaponUnlocked(id){ return (WEAPON_UNLOCK[id]||0) <= storyStage(); }
 function weaponLockText(id){ const n = WEAPON_UNLOCK[id]||0; return '🔒 После победы над стражем №'+n+': '+BOSS_NAME_BY_STAGE[n-1]; }
@@ -1618,8 +1618,8 @@ function eventsTick(dt){
       burst(n.x+14, n.y+10, 16, {colors:['#7fe0a0','#ffffff'], sp:70, up:50, g:-30, life:700, size:2.6});
     }
     if(n.kind==='caravan'){
-      if(d>115) evShopLock = false;
-      else if(d<70 && !evShopLock){ shopMode = 'caravan'; openShop(); return; }
+      if(d>135) evShopLock = false;
+      else if(d<95 && !evShopLock){ shopMode = 'caravan'; openShop(); return; }
     }
   }
 }
@@ -3846,6 +3846,10 @@ function buildGroundLayer(L){
     if(L.grid[ty][tx]!=='^') continue;
     const x0 = tx*TILE, y0 = ty*TILE, R = (k)=>hash2(tx,ty,200+k), n = vnoise(tx*0.7,ty*0.7,17);
     g.fillStyle = 'rgb('+((58+n*24)|0)+','+((56+n*22)|0)+','+((60+n*22)|0)+')'; g.fillRect(x0,y0,TILE,TILE);
+    g.strokeStyle='rgba(20,22,28,0.45)'; g.lineWidth=1;                                  // слоистая серая скала
+    for(let i=0;i<5;i++){ const px = x0+3+i*6.5+R(50+i)*3; g.beginPath(); g.moveTo(px,y0); g.lineTo(px+(R(60+i)-0.5)*4,y0+TILE); g.stroke(); }
+    g.strokeStyle='rgba(150,155,165,0.16)';
+    for(let i=0;i<3;i++){ const py = y0+5+i*10+R(70+i)*3; g.beginPath(); g.moveTo(x0,py); g.lineTo(x0+TILE,py+(R(80+i)-0.5)*3); g.stroke(); }
     for(let i=0;i<3;i++){                                   // камни и валуны на каменистой земле
       const px = x0+4+R(i*3)*24, py = y0+4+R(i*3+1)*24, r = 2.5+R(i*3+2)*3.5;
       g.fillStyle='rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(px+1,py+1.5,r*1.2,r*0.7,0,0,Math.PI*2); g.fill();
@@ -3873,29 +3877,37 @@ function buildGroundLayer(L){
   mounds.sort((a,b)=>a.base-b.base);
   for(const m of mounds){
     const R = (k)=>hash2(m.seed,k,320);
-    const bw = m.side ? 56+R(1)*30 : 78+R(1)*52, h = m.top ? 30+R(2)*12 : m.side ? 22+R(3)*14 : 38+R(3)*22, snow = R(4)<0.55;
-    const bx = m.bx, baseY = m.base, ax = bx+(R(5)-0.5)*bw*0.25, ay = baseY-h, l = bx-bw/2, r = bx+bw/2;
-    const path = ()=>{ g.beginPath(); g.moveTo(l,baseY);
-      g.bezierCurveTo(l+bw*0.16,baseY-h*0.12, ax-bw*0.22,ay+h*0.22, ax,ay);
-      g.bezierCurveTo(ax+bw*0.24,ay+h*0.2, r-bw*0.14,baseY-h*0.1, r,baseY); g.closePath(); };
-    g.save(); path();
-    const gr = g.createLinearGradient(0,ay,0,baseY); gr.addColorStop(0,'#9b9ba8'); gr.addColorStop(0.45,'#6c6c79'); gr.addColorStop(1,'#2b2b34');
-    g.fillStyle = gr; g.fill(); g.clip();
-    g.fillStyle='rgba(15,15,30,0.32)'; g.beginPath(); g.moveTo(ax,ay); g.lineTo(r+4,baseY+2); g.lineTo(ax+bw*0.06,baseY+2); g.closePath(); g.fill();   // тень склона
-    g.strokeStyle='rgba(0,0,0,0.16)'; g.lineWidth=1.2;                                                                                              // складки
-    for(let i=0;i<4;i++){ g.beginPath(); g.moveTo(ax+(i-1.5)*3,ay+h*0.2); g.quadraticCurveTo(ax+(i-1.5)*bw*0.12,ay+h*0.6,l+bw*(0.2+(i+1)/5*0.6),baseY); g.stroke(); }
-    g.strokeStyle='rgba(255,255,255,0.1)';
-    for(let i=0;i<3;i++){ g.beginPath(); g.moveTo(ax-2-i*3,ay+h*0.25); g.quadraticCurveTo(ax-bw*(0.1+i*0.07),ay+h*0.6,l+bw*(0.12+i*0.1),baseY); g.stroke(); }
-    if(snow){
-      g.fillStyle='#f3f7fb'; g.beginPath(); g.moveTo(ax-bw*0.5,ay-4); g.lineTo(ax-bw*0.5,ay+h*0.46);
-      for(let x=-0.45;x<=0.451;x+=0.05) g.lineTo(ax+bw*x, ay+h*(0.34+0.09*Math.sin(x*14+m.seed)));
-      g.lineTo(ax+bw*0.5,ay+h*0.46); g.lineTo(ax+bw*0.5,ay-4); g.closePath(); g.fill();
-      g.fillStyle='rgba(120,150,195,0.4)'; g.beginPath(); g.moveTo(ax,ay); g.lineTo(ax+bw*0.5,ay+h*0.46); g.lineTo(ax+bw*0.03,ay+h*0.4); g.closePath(); g.fill();
-    }
-    const fg = g.createLinearGradient(0,baseY-h*0.5,0,baseY); fg.addColorStop(0,'rgba(10,10,20,0)'); fg.addColorStop(1,'rgba(10,10,20,0.6)');
-    g.fillStyle = fg; g.fillRect(l-2,baseY-h*0.5,bw+4,h*0.5+4);                                                                                    // подножие темнее
+    const bw = m.side ? 52+R(1)*28 : 70+R(1)*46, h = (m.top ? 34+R(2)*14 : m.side ? 26+R(3)*16 : 42+R(3)*26)*1.12;
+    const bx = m.bx, baseY = m.base, ax = bx+(R(5)-0.5)*bw*0.3, ay = baseY-h, l = bx-bw/2, r = bx+bw/2;
+    // острая вершина с неровными склонами, как на нарисованной карте
+    const jag = (x0,y0,x1,y1,n,amp,sd)=>{ const pts=[]; for(let i=1;i<=n;i++){ const t=i/n; pts.push([x0+(x1-x0)*t+(i<n?(hash2(m.seed,sd+i,330)-0.5)*amp:0), y0+(y1-y0)*t+(i<n?(hash2(m.seed,sd+i+20,330)-0.5)*amp*0.7:0)]); } return pts; };
+    const left = jag(l,baseY,ax,ay,5,bw*0.14,1), right = jag(ax,ay,r,baseY,5,bw*0.14,40);
+    const shoulderX = ax+bw*0.30, shoulderY = ay+h*0.34;             // второй, меньший пик справа
+    const hasSub = R(6)<0.6;
+    const outline = ()=>{ g.beginPath(); g.moveTo(l,baseY); for(const q of left) g.lineTo(q[0],q[1]);
+      if(hasSub){ g.lineTo(ax+bw*0.12,ay+h*0.22); g.lineTo(shoulderX,shoulderY-h*0.14); g.lineTo(shoulderX+bw*0.04,shoulderY+h*0.1); }
+      for(const q of right) g.lineTo(q[0],q[1]); g.closePath(); };
+    g.save(); outline(); g.clip();
+    // освещённая (левая) грань
+    let gr = g.createLinearGradient(0,ay,0,baseY); gr.addColorStop(0,'#f0b862'); gr.addColorStop(0.55,'#d98a38'); gr.addColorStop(1,'#a85a24');
+    g.fillStyle = gr; g.fillRect(l-4,ay-4,bw+8,h+8);
+    // теневая (правая) грань
+    const rx0 = ax+(R(7)-0.5)*bw*0.06;
+    g.beginPath(); g.moveTo(ax,ay); for(let i=0;i<=5;i++){ const t=i/5; g.lineTo(rx0+(r+bw*0.2-rx0)*0.0+bw*(0.02+0.12*t)+Math.sin(i*2.1+m.seed)*bw*0.03, ay+h*t*1.05); }
+    g.lineTo(r+8,baseY+4); g.lineTo(r+8,ay-4); g.closePath();
+    gr = g.createLinearGradient(0,ay,0,baseY); gr.addColorStop(0,'#b86a2c'); gr.addColorStop(0.6,'#8a4a22'); gr.addColorStop(1,'#5a2e16');
+    g.fillStyle = gr; g.fill();
+    // штриховка склонов тушью
+    g.strokeStyle='rgba(60,28,10,0.45)'; g.lineWidth=0.9;
+    for(let i=0;i<7;i++){ const t=0.18+i*0.11, yy=ay+h*t; g.beginPath(); g.moveTo(ax+bw*(0.03+0.1*t),yy); g.lineTo(ax+bw*(0.03+0.1*t)+bw*(0.1+0.3*t)*(0.5+R(10+i)*0.5), yy+h*0.1); g.stroke(); }
+    g.strokeStyle='rgba(255,226,160,0.35)';
+    for(let i=0;i<4;i++){ const t=0.2+i*0.16; g.beginPath(); g.moveTo(ax-bw*0.02*t,ay+h*t); g.lineTo(ax-bw*(0.12+0.26*t),ay+h*(t+0.12)); g.stroke(); }
+    // подножие темнее
+    const fg = g.createLinearGradient(0,baseY-h*0.45,0,baseY); fg.addColorStop(0,'rgba(20,10,6,0)'); fg.addColorStop(1,'rgba(20,10,6,0.65)');
+    g.fillStyle = fg; g.fillRect(l-4,baseY-h*0.45,bw+8,h*0.45+6);
     g.restore();
-    path(); g.strokeStyle='rgba(0,0,0,0.3)'; g.lineWidth=1; g.stroke();
+    outline(); g.strokeStyle='rgba(42,20,8,0.85)'; g.lineWidth=1.4; g.lineJoin='round'; g.stroke();
+    g.beginPath(); g.moveTo(ax,ay); g.lineTo(ax+bw*0.03,ay+h*0.5); g.lineTo(ax+bw*0.1,baseY-h*0.05); g.strokeStyle='rgba(42,20,8,0.6)'; g.lineWidth=1; g.stroke();   // гребень между гранями
   }
   return cv;
 }
@@ -5822,7 +5834,7 @@ function renderForge(){
 // ---------- Сложность ----------
 const DIFFS = {
   easy:   {name:'Лёгкая',     dmg:0.6,  hp:0.75, reward:0.9,  spd:1,    desc:'Враги слабее и бьют мягче.'},
-  normal: {name:'Нормальная', dmg:1,    hp:1,    reward:1,    spd:1,    desc:'Задуманный баланс.'},
+  normal: {name:'Нормальная', dmg:1,    hp:1,    reward:1,    spd:1,    desc:''},
   hard:   {name:'Трудная',    dmg:1.8,  hp:1.6,  reward:1.3,  spd:1.06, desc:'Враги крепче, быстрее и бьют почти вдвое сильнее, награда выше.'},
   nightmare:{name:'Кошмар',   dmg:3,    hp:3.2,  reward:1.9,  spd:1.16, desc:'Для тех, кому мало. Враги втрое крепче, быстрее и бьют в три раза сильнее — ошибки не прощаются.'}
 };
@@ -6223,7 +6235,6 @@ function gearRow(kind, id, def){
   const equip = ()=>{ if(isW) player.weapon=id; else player.armor=id; };
   let btn;
   if(current===id) btn = shopButton('Экипировано', null, true);
-  else if(isW && !weaponUnlocked(id)) btn = shopButton(weaponLockText(id), null, true);
   else if(owned[id]) btn = shopButton('Экипировать', ()=>{ equip(); saveGame(); renderShop(`Экипировано: ${def.name}.`); });
   else btn = shopButton(`Купить — ${def.price} ◆`, ()=>{
     if(player.gold < def.price){ renderShop(`Не хватает золота: нужно ${def.price}, у вас ${player.gold}.`); return; }
@@ -6253,7 +6264,7 @@ function renderQuests(){
     if(player.questsDone && player.questsDone[id]) btn = shopButton('Выполнено ✓', null, true);
     else if(act && act.id===id){
       if(act.done){
-        btn = shopButton('Сдать задание', ()=>{
+        btn = shopButton('Получить Вознаграждение', ()=>{
           player.gold += d.gold; player.potions = Math.min(POTION_MAX, player.potions + d.potions);
           player.quest = null; player.questsDone[id] = true;
           addNote('📜 Награда: +'+d.gold+' золота', '#e0c96a'); SFX.play('levelup'); saveGame();
@@ -6301,7 +6312,7 @@ function renderShop(msg){
     });
     shopRow('👢 Сапоги-скороходы', 'Скорость передвижения +18% навсегда. Такие сапоги не продаются в лавках — только у караванщиков.', [b]);
   } else if(shopTab==='weapons'){
-    for(const id of Object.keys(WEAPONS).sort((a,b)=>(WEAPON_UNLOCK[a]||0)-(WEAPON_UNLOCK[b]||0))) gearRow('weapon', id, WEAPONS[id]);
+    for(const id of Object.keys(WEAPONS).filter(weaponUnlocked).sort((a,b)=>(WEAPON_UNLOCK[a]||0)-(WEAPON_UNLOCK[b]||0))) gearRow('weapon', id, WEAPONS[id]);
   } else if(shopTab==='armor'){
     for(const id of Object.keys(ARMORS)) if(id!=='none') gearRow('armor', id, ARMORS[id]);
   } else if(shopTab==='quests'){
