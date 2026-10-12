@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Эльдория">
 <meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%231a140a'/%3E%3Crect%20x='3'%20y='3'%20width='94'%20height='94'%20rx='19'%20fill='none'%20stroke='%235c4415'%20stroke-width='4'/%3E%3Ctext%20x='50'%20y='70'%20font-size='58'%20text-anchor='middle'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <title>Легенды Эльдории — 2D RPG</title>
 <style>
@@ -156,7 +158,7 @@
   </div>
 
   <div id="startScreen" class="overlay">
-    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.030</div>
+    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.031</div>
     <h2>Легенды Эльдории</h2>
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
@@ -167,9 +169,12 @@
     <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
     <div id="saveInfo" class="hidden" style="font-size:12px;color:#a89d78"></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><b style="font-size:13px">Сложность</b><div class="shopTabs" id="diffBtns"></div><div id="diffDesc" style="font-size:12px;color:#a89d78"></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><b style="font-size:13px">Качество графики</b><div class="shopTabs" id="qBtns"></div><div id="qDesc" style="font-size:12px;color:#a89d78"></div></div>
     <div class="btnRow">
       <button class="startBtn hidden" id="resumeBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">Вернуться в игру</button>
       <button class="startBtn" id="startBtn">Начать поход</button>
+      <button class="startBtn" id="mapBtn" style="background:linear-gradient(#e0c070,#9c7a2a); border-color:#4a3510;">🗺 Карта мира</button>
+      <button class="startBtn hidden" id="installBtn" style="background:linear-gradient(#b08ae0,#6a449c); border-color:#2a1850;">📲 Установить</button>
       <button class="startBtn" id="savesBtn" style="background:linear-gradient(#8fd38f,#3f8f4a); border-color:#1d4a22;">Сохранения</button>
     </div>
   </div>
@@ -209,11 +214,24 @@
     <button class="startBtn" id="heroClose">Закрыть</button>
   </div>
 
+  <div id="mapScreen" class="overlay hidden">
+    <h2>🗺 Карта мира</h2>
+    <p id="mapLegend" style="font-size:12px;color:#a89d78;max-width:560px;margin:0">⚔ логово босса &nbsp; ✔ страж побеждён &nbsp; 🔒 путь ещё закрыт &nbsp; 🛒 есть лавка &nbsp; ◈ особое место &nbsp; <span style="color:#ffd34a">●</span> вы здесь</p>
+    <div id="mapBox" style="width:100%;max-width:560px;flex:1 1 auto;min-height:0;overflow-y:auto;border:1px solid #5c4415;border-radius:10px;background:radial-gradient(#2a2216,#14100a)"></div>
+    <button class="startBtn" id="mapBack">Назад</button>
+  </div>
+
   <div id="savesScreen" class="overlay hidden">
     <h2>Сохранения</h2>
     <p id="savesLast"></p>
     <p id="savesMsg" style="min-height:18px"></p>
     <div id="savesList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <div class="btnRow">
+      <button class="startBtn" id="expBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">📤 Экспорт в файл</button>
+      <button class="startBtn" id="impBtn" style="background:linear-gradient(#e0c070,#9c7a2a); border-color:#4a3510;">📥 Импорт из файла</button>
+      <input type="file" id="impFile" accept=".json,application/json" class="hidden">
+    </div>
+    <p style="font-size:12px;color:#a89d78;max-width:520px;margin:0">Файл сохранений можно перенести на другое устройство (через почту, мессенджер, iCloud или Google Drive) и загрузить там кнопкой «Импорт».</p>
     <button class="startBtn" id="savesBack">Назад</button>
   </div>
 
@@ -956,6 +974,21 @@ let shopLock = false; // после закрытия лавки она не от
 let gameState = 'start'; // start | playing | dead | won
 
 // ---------- Звук (WebAudio: синтез на лету, внешних файлов нет) ----------
+// ---------- Качество графики (для слабых телефонов) ----------
+const QLEVELS = {low:{name:'Слабое', part:0.3, fog:0.25, anim:0, light:0}, mid:{name:'Среднее', part:0.6, fog:0.5, anim:1, light:1}, high:{name:'Высокое', part:1, fog:0.5, anim:2, light:2}};
+let quality = (navigator.maxTouchPoints>0 ? 'mid' : 'high');
+try{ const q = localStorage.getItem('eldoria_q'); if(QLEVELS[q]) quality = q; }catch(e){}
+function Q(){ return QLEVELS[quality]; }
+function setQuality(q){ if(!QLEVELS[q]) return; quality = q; try{ localStorage.setItem('eldoria_q', q); }catch(e){} lightCv = null; fogTmp = null; renderQuality(); }
+function renderQuality(){
+  const box = document.getElementById('qBtns'); if(!box) return;
+  box.innerHTML = '';
+  for(const id of Object.keys(QLEVELS)){
+    const b = document.createElement('button'); b.className = 'tabBtn'+(quality===id ? ' active' : ''); b.textContent = QLEVELS[id].name;
+    b.addEventListener('click', ()=>setQuality(id)); box.appendChild(b);
+  }
+  const d = document.getElementById('qDesc'); if(d) d.textContent = quality==='low' ? 'Меньше погоды и тумана, без анимаций листвы, волн и света факелов' : quality==='mid' ? 'Погода вполовину, упрощённые анимации' : 'Все эффекты в полную силу';
+}
 const SFX = {
   ctx:null, master:null, sfx:null, music:null, noiseBuf:null, muted:false, droneAt:0,
   init(){
@@ -1055,6 +1088,18 @@ const SFX = {
     if(Math.random() < {day:0.55,night:0.4,cave:0.35,abyss:0.3,lava:0.3,desert:0.4,ice:0.45,grave:0.3,jungle:0.5,town:0.55,house:0.4}[mode]){
       this.tone(sc[Math.floor(Math.random()*sc.length)], soft?1.6:2.4, {type:mode==='day'?'triangle':'sine', vol:soft?0.05:0.06, attack:0.02, dest:this.music});
     }
+    // повторяющийся мотив: у каждого места свой рисунок (индексы лада, -1 пауза); в логове — ещё и барабан
+    const MOT = {day:[0,2,4,2,5,4,2,-1], night:[0,-1,2,-1,4,2,1,-1], cave:[0,-1,-1,3,2,-1,-1,1], abyss:[0,1,-1,4,-1,3,1,-1], lava:[0,0,2,-1,3,2,0,-1], desert:[0,1,3,4,3,1,0,-1],
+                 ice:[4,2,0,2,4,5,4,-1], grave:[0,-1,2,-1,1,-1,3,-1], jungle:[0,2,4,5,4,2,3,-1], town:[0,2,4,5,4,2,0,-1], house:[0,-1,2,4,2,-1,0,-1]}[mode];
+    this.step = (this.step||0)+1;
+    if(this.step%2===0 && MOT){
+      const n = MOT[(this.step/2)%MOT.length|0];
+      if(n>=0) this.tone(sc[n%sc.length]*(mode==='day'||mode==='town'?1:0.5), soft?1.1:1.5, {type:soft?'triangle':'sine', vol:0.04, attack:0.03, dest:this.music});
+    }
+    if(LAIR[currentLocId]){
+      const L = loc && loc.boss; const alive = !L || L.hp>0;
+      if(alive && this.step%2===0){ this.tone(52, 0.22, {type:'sine', slide:30, vol:0.12, attack:0.005, dest:this.music}); if(this.step%4===2) this.noise(0.08,{type:'highpass',f0:5000,q:0.5,vol:0.025,attack:0.005}); }
+    }
     const now = this.ctx.currentTime;
     if(now > this.droneAt){ this.tone({day:130.8,night:98,cave:55,abyss:49,lava:41,desert:73,ice:196,grave:58,jungle:110,town:98,house:65}[mode], 5, {vol:0.05, attack:0.9, dest:this.music}); this.droneAt = now+4.6; }
     const w = weatherName();                                               // шум погоды
@@ -1114,15 +1159,28 @@ function footstep(){
   stepSide = -stepSide;
   const fx = player.x+player.w/2+stepSide*3.5, fy = player.y+player.h-2;
   const ang = {down:Math.PI/2, up:-Math.PI/2, left:Math.PI, right:0}[player.dir] || 0;
-  prints.push({x:fx, y:fy, life:1800, max:1800, ang});
-  if(prints.length>60) prints.shift();
+  const deep = currentLocId==='ice' || currentLocId==='desert';              // на снегу и песке следы держатся долго
+  const lf = deep ? 9000 : 1800;
+  prints.push({x:fx, y:fy, life:lf, max:lf, ang, deep});
+  if(prints.length>(deep?150:60)) prints.shift();
   if(loc.type==='overworld') burst(fx,fy,3,{colors:['#7fc45a','#4f9a3a','#a6dc78'],sp:28,up:22,g:90,life:420,size:1.2});
+  else if(currentLocId==='ice') burst(fx,fy,4,{colors:['#ffffff','#dff0ff'],sp:26,up:16,g:50,life:520,size:1.5});
+  else if(currentLocId==='desert') burst(fx,fy,4,{colors:['#e8cf94','#c9a864'],sp:26,up:14,g:50,life:520,size:1.5});
   else burst(fx,fy,3,{colors:['#a9a39a','#8d877e'],sp:22,up:12,g:60,life:420,size:1.6});
 }
 function drawPrints(camX,camY){
   for(let i=prints.length-1;i>=0;i--){
     const q = prints[i];
     q.life -= 16.7; if(q.life<=0){ prints.splice(i,1); continue; }
+    const k = Math.min(1, q.life/q.max*1.6);
+    if(q.deep){
+      const snow = currentLocId==='ice', px = q.x-camX, py = q.y-camY;
+      ctx.fillStyle = snow ? 'rgba(255,255,255,'+(0.55*k)+')' : 'rgba(255,236,190,'+(0.35*k)+')';          // светлый валик вокруг отпечатка
+      ctx.beginPath(); ctx.ellipse(px+0.8, py+1, 3.4, 4.5, q.ang+Math.PI/2, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = snow ? 'rgba(88,118,158,'+(0.6*k)+')' : 'rgba(128,92,44,'+(0.55*k)+')';
+      ctx.beginPath(); ctx.ellipse(px, py, 2.6, 3.7, q.ang+Math.PI/2, 0, Math.PI*2); ctx.fill();
+      continue;
+    }
     ctx.fillStyle = (loc.type==='overworld' ? 'rgba(28,66,24,' : 'rgba(18,16,14,') + (0.34*q.life/q.max) + ')';
     ctx.beginPath(); ctx.ellipse(q.x-camX, q.y-camY, 2.2, 3.3, q.ang+Math.PI/2, 0, Math.PI*2); ctx.fill();
   }
@@ -2634,7 +2692,25 @@ function drawWater(x0,y0,x1,y1,camX,camY){
     ctx.imageSmoothingEnabled = prev;
   }
   // лёгкая рябь на воде (только там, где вокруг клетки тоже вода)
-  const tm = Date.now()/900;
+  const tm = Date.now()/900, QA = Q().anim;
+  if(QA>0){                                                           // пена и волны у берега, бегущие блики
+    const t2 = Date.now()/1000;
+    for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){
+      if(loc.grid[y][x]!=='~') continue;
+      const sx = x*TILE-camX, sy = y*TILE-camY, ph = Math.sin(t2*1.6+x*0.8+y*0.5);
+      const edges = [[0,-1,sx,sy,TILE,0],[0,1,sx,sy+TILE,TILE,0],[-1,0,sx,sy,0,TILE],[1,0,sx+TILE,sy,0,TILE]];
+      for(const e of edges){
+        if(isWater(x+e[0],y+e[1])) continue;
+        const inw = (0.6+0.4*ph)*2.2*(e[0]||e[1]);                  // кромка то накатывает, то отходит
+        ctx.strokeStyle = 'rgba(236,248,255,'+(0.28+0.22*ph)+')'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        if(e[4]){ ctx.moveTo(e[2],e[3]-inw); for(let k=1;k<=4;k++) ctx.lineTo(e[2]+k*8, e[3]-inw+Math.sin(t2*2+k+x)*1.2); }
+        else { ctx.moveTo(e[2]-inw,e[3]); for(let k=1;k<=4;k++) ctx.lineTo(e[2]-inw+Math.sin(t2*2+k+y)*1.2, e[3]+k*8); }
+        ctx.stroke();
+      }
+      if(QA>1){ const h = ((x*2654435761) ^ (y*40503))>>>0; if(h%5===0){ const wv = (t2*0.35+(h%100)/100)%1; ctx.strokeStyle='rgba(255,255,255,'+(0.28*Math.sin(wv*3.1416))+')'; ctx.lineWidth=1.2; const ox = sx+4+wv*22, oy = sy+10+(h>>4)%12; ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+7,oy-1.2); ctx.stroke(); } }
+    }
+  }
   ctx.strokeStyle='rgba(190,225,248,0.25)'; ctx.lineWidth=1.5;
   for(let y=y0;y<y1;y++){
     for(let x=x0;x<x1;x++){
@@ -2691,6 +2767,19 @@ function drawTrees(x0,y0,x1,y1,camX,camY){
       const jx = (h%5)-2, jy = ((h>>4)%5)-2;           // лёгкий сдвиг, чтобы лес не выглядел решёткой
       const sway = Math.sin(tnow*1.1+x*0.7+y*0.45)*1.3 + Math.sin(tnow*0.45+x*0.1)*0.8;   // ветер
       ctx.drawImage(treeSprites[h%TREE_VARIANTS], x*TILE-camX+TILE/2-32+jx+sway, y*TILE-camY+TILE/2-32+jy);
+    }
+  }
+  const QA = Q().anim;                                                  // опадающие листья
+  if(QA>0){
+    const LC = ['#7fc45a','#a6c83e','#d8a62a','#c8642a'];
+    for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){
+      if(loc.grid[y][x]!=='#') continue;
+      const h = ((x*73856093) ^ (y*19349663)) >>> 0;
+      if(h%(QA>1?5:11)!==0) continue;
+      const ph = (tnow*0.16+(h%97)/97)%1, a = Math.sin(ph*3.1416);
+      const lx = x*TILE-camX+TILE/2+Math.sin(ph*9+h)*13+ph*18, ly = y*TILE-camY+TILE/2+ph*46-6;
+      ctx.save(); ctx.translate(lx,ly); ctx.rotate(ph*7+h); ctx.globalAlpha = a*0.9; ctx.fillStyle = LC[(h>>3)%4];
+      ctx.beginPath(); ctx.ellipse(0,0,3,1.6,0,0,6.283); ctx.fill(); ctx.restore();
     }
   }
 }
@@ -4798,6 +4887,7 @@ function draw(){
     if(loc.level===4) drawLavaAnim(startTX,startTY,endTX,endTY,camX,camY);
   }
   drawPrints(camX,camY);
+  drawTorchSprites(camX,camY);
 
   // предметы
   for(const it of loc.items){
@@ -5072,7 +5162,7 @@ function updateFog(){
 }
 const FOG_TINT = { 1:'rgba(8,8,14,0.5)', 2:'rgba(8,10,18,0.5)', 3:'rgba(14,6,26,0.5)', 4:'rgba(34,6,2,0.5)', 5:'rgba(236,206,150,0.3)', 6:'rgba(236,246,255,0.3)', 7:'rgba(10,18,14,0.5)', 8:'rgba(20,50,30,0.35)', 11:'rgba(26,20,26,0.45)', 12:'rgba(20,10,26,0.55)' };
 function drawFog(camX,camY){
-  const W = canvas.width, H = canvas.height, F = getFog(loc);
+  const W = canvas.width, H = canvas.height, F = getFog(loc), FS = Q().fog;
   if(!fogTex){
     fogTex = document.createElement('canvas'); fogTex.width = fogTex.height = 256;
     const g = fogTex.getContext('2d'); g.fillStyle = 'rgb(140,152,168)'; g.fillRect(0,0,256,256);
@@ -5086,8 +5176,8 @@ function drawFog(camX,camY){
       }
     }
   }
-  if(!fogTmp || fogTmp.width!==Math.ceil(W/2) || fogTmp.height!==Math.ceil(H/2)){
-    fogTmp = document.createElement('canvas'); fogTmp.width = Math.ceil(W/2); fogTmp.height = Math.ceil(H/2); fogTmpG = fogTmp.getContext('2d'); fogPat = fogTmpG.createPattern(fogTex,'repeat');
+  if(!fogTmp || fogTmp.width!==Math.ceil(W*FS) || fogTmp.height!==Math.ceil(H*FS)){
+    fogTmp = document.createElement('canvas'); fogTmp.width = Math.ceil(W*FS); fogTmp.height = Math.ceil(H*FS); fogTmpG = fogTmp.getContext('2d'); fogPat = fogTmpG.createPattern(fogTex,'repeat');
   }
   if(F.dirty){
     const d = F.img.data;
@@ -5097,7 +5187,7 @@ function drawFog(camX,camY){
   const g = fogTmpG, now = Date.now()/1000;
   g.setTransform(1,0,0,1,0,0); g.globalCompositeOperation = 'source-over'; g.clearRect(0,0,W,H);
   const ox = -(camX*0.5) + now*7, oy = -(camY*0.5) + now*3;
-  g.setTransform(0.5,0,0,0.5,(ox%256)*0.5,(oy%256)*0.5); g.fillStyle = fogPat; g.fillRect(-256,-256,W+512,H+512); g.setTransform(0.5,0,0,0.5,0,0);
+  g.setTransform(FS,0,0,FS,(ox%256)*FS,(oy%256)*FS); g.fillStyle = fogPat; g.fillRect(-256,-256,W+512,H+512); g.setTransform(FS,0,0,FS,0,0);
   g.globalCompositeOperation = 'source-atop'; g.fillStyle = FOG_TINT[loc.level||0] || 'rgba(0,0,0,0)'; g.fillRect(0,0,W,H);
   g.globalCompositeOperation = 'destination-in'; g.imageSmoothingEnabled = true;
   g.drawImage(F.cv, 0,0,F.W,F.H, -camX,-camY, F.W*TILE, F.H*TILE);
@@ -5181,7 +5271,7 @@ const frac = v => v-Math.floor(v);
 let lightCv = null, lightG = null, fogSpr = null;
 function drawWeather(){
   const b = env.b[currentLocId]; if(!b || b.amt<0.02) return;
-  const a = b.amt, W = canvas.width, H = canvas.height, now = Date.now()/1000, area = Math.min(1.6, W*H/(900*500));
+  const a = b.amt, W = canvas.width, H = canvas.height, now = Date.now()/1000, area = Math.min(1.6, W*H/(900*500))*Q().part;
   switch(b.name){
     case 'rain': case 'storm': {
       const n = Math.min(300, Math.floor((b.name==='storm'?190:120)*a*area));
@@ -5213,7 +5303,7 @@ function drawWeather(){
       for(let i=0;i<9;i++){ const sz = 260+RN[i*3+2]*240, x = frac(RN[i*3]+now*0.006*(0.6+RN[i*3+2]))*(W+sz)-sz, y = RN[i*3+1]*H-sz/2; ctx.globalAlpha = a; ctx.drawImage(fogSpr,x,y,sz,sz); }
       ctx.globalAlpha = 1; break; }
     case 'embers': {
-      for(let i=0;i<46;i++){
+      for(let i=0,ne=Math.floor(46*Q().part);i<ne;i++){
         const sp = 0.5+RN[i*3+2]*0.9, x = frac(RN[i*3]+Math.sin(now*0.7+RN[i*3+1]*9)*0.02)*W, y = H-frac(RN[i*3+1]+now*0.05*sp)*(H+20)+10, k = 0.5+0.5*Math.sin(now*4+i);
         ctx.fillStyle = 'rgba(255,'+((120+k*100)|0)+',40,'+(0.35+0.4*k)+')'; ctx.beginPath(); ctx.arc(x,y,0.9+RN[i*3+2]*1.6,0,6.283); ctx.fill();
       }
@@ -5262,7 +5352,60 @@ function drawDayNight(camX,camY){
   }
   if(env.flash>0){ ctx.fillStyle = 'rgba(235,240,255,'+(0.55*env.flash)+')'; ctx.fillRect(0,0,W,H); }
 }
-function drawAtmosphere(camX,camY){ drawWeather(); drawDayNight(camX,camY); if(loc.level===4 && env.b.lava) { /* угли рисуются в drawWeather */ } }
+const torchCache = new WeakMap();
+function getTorches(L){
+  let t = torchCache.get(L); if(t) return t;
+  t = {torch:[], lava:[]};
+  const cT = [], cL = [];
+  for(let y=1;y<L.height-1;y++) for(let x=1;x<L.width-1;x++){
+    const c = L.grid[y][x];
+    if(c==='.' && L.grid[y-1][x]==='#') cT.push([hash2(x,y,501),x,y]);
+    else if(c==='L') cL.push([hash2(x,y,503),x,y]);
+  }
+  cT.sort((a,b)=>a[0]-b[0]); cL.sort((a,b)=>a[0]-b[0]);
+  const wantT = Math.min(60, Math.max(4, Math.round(L.width*L.height/260)));
+  for(const q of cT){ if(t.torch.length>=wantT) break; if(t.torch.every(o=>Math.hypot(o.tx-q[1],o.ty-q[2])>7)) t.torch.push({tx:q[1],ty:q[2],seed:q[0]*100}); }
+  for(const q of cL){ if(t.lava.length>=16) break; if(t.lava.every(o=>Math.hypot(o.tx-q[1],o.ty-q[2])>2.5)) t.lava.push({tx:q[1],ty:q[2],seed:q[0]*100}); }
+  torchCache.set(L,t); return t;
+}
+function caveLit(){ return loc.type==='dungeon' && !loc.safe && !OUTDOOR[currentLocId] && !loc.nofog; }
+function flickerAt(seed, now){ return 1 + 0.06*Math.sin(now*9+seed) + 0.04*Math.sin(now*23+seed*2.3) + 0.03*Math.sin(now*41+seed*0.7); }
+function drawTorchSprites(camX,camY){
+  if(!caveLit() || loc.level===4 && false) return;
+  const T = getTorches(loc), now = Date.now()/1000, W = canvas.width, H = canvas.height;
+  for(const q of T.torch){
+    const x = q.tx*TILE+16-camX, y = q.ty*TILE+2-camY; if(x<-30||y<-30||x>W+30||y>H+30) continue;
+    const f = flickerAt(q.seed, now);
+    ctx.fillStyle = '#3a2a1a'; ctx.fillRect(x-1.5,y-7,3,9); ctx.fillStyle = '#6a5a4a'; ctx.fillRect(x-3,y-8,6,2);          // кронштейн
+    ctx.fillStyle = 'rgba(255,120,30,0.9)'; ctx.beginPath(); ctx.ellipse(x,y-12,3.2*f,6*f,0,0,6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(255,214,90,0.95)'; ctx.beginPath(); ctx.ellipse(x,y-11,1.8,3.6*f,0,0,6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,220,0.9)'; ctx.beginPath(); ctx.ellipse(x,y-10,0.9,1.8,0,0,6.283); ctx.fill();
+  }
+}
+function drawCaveLight(camX,camY){
+  const W = canvas.width, H = canvas.height, now = Date.now()/1000, QL = Q().light;
+  if(!lightCv || lightCv.width!==W || lightCv.height!==H){ lightCv = document.createElement('canvas'); lightCv.width = W; lightCv.height = H; lightG = lightCv.getContext('2d'); }
+  const g = lightG, T = getTorches(loc), lair = !!LAIR[currentLocId], lava = loc.level===4;
+  g.globalCompositeOperation = 'source-over'; g.clearRect(0,0,W,H);
+  g.fillStyle = 'rgba(3,4,12,'+(lava ? 0.62 : lair ? 0.8 : 0.74)+')'; g.fillRect(0,0,W,H);
+  g.globalCompositeOperation = 'destination-out';
+  const hole = (x,y,r,k)=>{ const gr = g.createRadialGradient(x,y,r*0.06,x,y,r); gr.addColorStop(0,'rgba(0,0,0,'+k+')'); gr.addColorStop(0.5,'rgba(0,0,0,'+(k*0.55)+')'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x-r,y-r,r*2,r*2); };
+  const px = player.x+player.w/2-camX, py = player.y+player.h/2-camY, pf = QL>0 ? flickerAt(1.7,now) : 1;
+  hole(px,py,215*pf,0.97);
+  const vis = [];
+  for(const q of T.torch){ const x = q.tx*TILE+16-camX, y = q.ty*TILE-8-camY; if(x<-150||y<-150||x>W+150||y>H+150) continue; const f = QL>0 ? flickerAt(q.seed,now) : 1; hole(x,y,135*f,0.92); vis.push([x,y,f,255,150,60]); }
+  for(const q of T.lava){ const x = q.tx*TILE+16-camX, y = q.ty*TILE+16-camY; if(x<-120||y<-120||x>W+120||y>H+120) continue; const f = flickerAt(q.seed,now*0.6); hole(x,y,95*f,0.8); vis.push([x,y,f,255,70,20]); }
+  g.globalCompositeOperation = 'source-over';
+  ctx.drawImage(lightCv,0,0);
+  if(QL>1){
+    ctx.globalCompositeOperation = 'lighter';
+    const glow = (x,y,r,col)=>{ const gr = ctx.createRadialGradient(x,y,2,x,y,r); gr.addColorStop(0,col); gr.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle = gr; ctx.fillRect(x-r,y-r,r*2,r*2); };
+    glow(px,py,170*pf,'rgba(255,176,96,0.13)');
+    for(const v of vis) glow(v[0],v[1],100*v[2],'rgba(%R,%G,%B,0.22)'.replace('%R',v[3]).replace('%G',v[4]).replace('%B',v[5]));
+    ctx.globalCompositeOperation = 'source-over';
+  }
+}
+function drawAtmosphere(camX,camY){ drawWeather(); if(caveLit()) drawCaveLight(camX,camY); drawDayNight(camX,camY); if(loc.level===4 && env.b.lava) { /* угли рисуются в drawWeather */ } }
 
 // ---------- Игровой цикл ----------
 let lastTime = performance.now();
@@ -6026,7 +6169,7 @@ const AudioFix = {
   }
 };
 
-renderDiff();
+renderDiff(); renderQuality();
 // ---------- Сохранение ----------
 const SAVE_KEY = 'eldoria_save_v1';                      // автосохранение
 const SLOT_KEYS = ['eldoria_slot_1','eldoria_slot_2','eldoria_slot_3'];   // ручные слоты
@@ -6397,6 +6540,120 @@ document.getElementById('startBtn').addEventListener('click', ()=>{
 });
 savesBtn.addEventListener('click', openSaves);
 document.getElementById('savesBack').addEventListener('click', closeSaves);
+
+// ---------- Экспорт и импорт сохранений файлом ----------
+function exportSaves(){
+  const bundle = {format:'eldoria-saves', v:1, build:'D001.031', t:Date.now(), saves:{}};
+  let n = 0;
+  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ let v = null; try{ v = localStorage.getItem(k); }catch(e){} if(v){ bundle.saves[k] = v; n++; } }
+  if(!n){ renderSaves('Нечего экспортировать: сохранений пока нет.'); return; }
+  const d = new Date(), pad = x=>String(x).padStart(2,'0');
+  const name = 'eldoria-saves-'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.json';
+  const blob = new Blob([JSON.stringify(bundle)], {type:'application/json'});
+  try{
+    const file = new File([blob], name, {type:'application/json'});
+    if(isTouchDevice && navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({files:[file], title:'Сохранения Легенд Эльдории'}).then(()=>renderSaves('Файл передан: '+name), ()=>renderSaves('Отправка отменена.'));
+      return;
+    }
+  }catch(e){}
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  renderSaves('Сохранения ('+n+') выгружены в файл '+name);
+}
+function importSaves(file){
+  const rd = new FileReader();
+  rd.onerror = ()=>renderSaves('Не удалось прочитать файл.');
+  rd.onload = ()=>{
+    let b; try{ b = JSON.parse(rd.result); }catch(e){ renderSaves('Файл повреждён: это не файл сохранений.'); return; }
+    if(!b || b.format!=='eldoria-saves' || !b.saves){ renderSaves('Это не файл сохранений Легенд Эльдории.'); return; }
+    const allowed = new Set([SAVE_KEY, ...SLOT_KEYS]); let ok = 0, bad = 0;
+    for(const k of Object.keys(b.saves)){
+      if(!allowed.has(k)){ bad++; continue; }
+      try{ const d = JSON.parse(b.saves[k]); if(!d || !d.player || !d.world) throw 0; localStorage.setItem(k, b.saves[k]); ok++; }catch(e){ bad++; }
+    }
+    renderSaves(ok ? 'Загружено сохранений: '+ok+(bad?' (пропущено: '+bad+')':'')+'. Теперь выберите «Загрузить».' : 'В файле нет подходящих сохранений.');
+    refreshSaveUI();
+  };
+  rd.readAsText(file);
+}
+document.getElementById('expBtn').addEventListener('click', exportSaves);
+document.getElementById('impBtn').addEventListener('click', ()=>{ if(!storageOK){ renderSaves('Хранилище браузера недоступно.'); return; } document.getElementById('impFile').click(); });
+document.getElementById('impFile').addEventListener('change', e=>{ const f = e.target.files[0]; e.target.value = ''; if(f) importSaves(f); });
+
+// ---------- Карта мира: все уровни, локации и переходы ----------
+const mapScreen = document.getElementById('mapScreen');
+function mapTitle(id){
+  if(id==='overworld') return 'Оверворлд';
+  if(id==='town') return 'Город Лиссарен';
+  if(id==='house1') return 'Трактир «Дремлющий Грифон»';
+  if(id==='house2') return 'Лавка «Дымный Тигель»';
+  if(id==='secret1') return 'Грот Мудреца Орбина';
+  if(id==='secret2') return 'Тайник Забытых Эхо';
+  const pd = POI_DEFS.find(d=>d.id===id); if(pd) return pd.title;
+  return LOC_NAME[id] || id;
+}
+function renderMap(){
+  const box = document.getElementById('mapBox'), stage = (world && world.lair1) ? storyStage() : 0;
+  const W = 300, RX = 34, SHOPS = {overworld:1, desert:1, ice:1, grave:1, jungle:1};
+  const COL = {overworld:'#4c9a3a', lair:'#a8322a', dungeon1:'#7a7a86', dungeon3:'#5a4a7a', lava:'#d8561e', desert:'#d8a84a', ice:'#8cc8e8', grave:'#6a7a70', jungle:'#3a8a4a', city:'#9a8a7a', manor:'#7a5a8a'};
+  const cur = hasActiveGame ? currentLocId : null;
+  const mainIds = ['overworld', ...CHAIN];
+  const lairsBefore = id=>{ let n = 0; for(const c of CHAIN){ if(c===id) break; if(LAIR[c]) n++; } return n; };
+  const subs = {};                                              // особые места: список [id, уровень вложенности]
+  subs.overworld = [['poi_cabin',1],['town',1],['house1',2],['house2',2],['secret1',1],['secret2',1]];
+  for(const pd of POI_DEFS) if(pd.parent!=='overworld') subs[pd.parent] = [[pd.id,1]];
+  const SUBCOL = {town:'#c8a050', house1:'#9a7a4a', house2:'#9a7a4a', secret1:'#6a5a8a', secret2:'#6a5a8a'};
+  let svg = '', y = 40, rail = '', body = '', pos = {};
+  const esc = t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  mainIds.forEach((id,i)=>{
+    const isL = !!LAIR[id], req = id==='overworld' ? 0 : lairsBefore(id);
+    const locked = stage<req, beaten = isL && stage>=(LAIR_ORDER.indexOf(id)+1), col = isL ? COL.lair : (COL[id]||'#7a7a7a'), op = locked ? 0.45 : 1;
+    pos[id] = [RX,y];
+    body += isL ? `<rect x="${RX-12}" y="${y-12}" width="24" height="24" rx="4" transform="rotate(45 ${RX} ${y})" fill="${col}" stroke="#1a0c06" stroke-width="2" opacity="${op}"/>`
+                : `<circle cx="${RX}" cy="${y}" r="14" fill="${col}" stroke="#1a0c06" stroke-width="2" opacity="${op}"/>`;
+    const ic = isL ? (beaten?'✔':locked?'🔒':'⚔') : locked ? '🔒' : (id==='overworld'?'🌲':'');
+    if(ic) body += `<text x="${RX}" y="${y+5}" text-anchor="middle" font-size="13" fill="#fff">${ic}</text>`;
+    body += `<text x="${RX+26}" y="${y-1}" font-size="14" font-weight="bold" fill="${locked?'#a09470':'#f0e2b0'}">${esc(mapTitle(id))}${SHOPS[id]?' 🛒':''}</text>`;
+    const sub = isL ? 'Страж: '+BOSS_NAME_BY_STAGE[LAIR_ORDER.indexOf(id)] + (beaten?' — побеждён':'') : id==='overworld' ? 'здесь начинается поход' : (CHAIN[i-1] && LAIR[CHAIN[i-1]] ? 'спуск открывается после стража' : '');
+    if(sub) body += `<text x="${RX+26}" y="${y+13}" font-size="10.5" fill="#a89d78">${esc(sub)}</text>`;
+    let yy = y;
+    for(const [sid,lv] of (subs[id]||[])){
+      yy += 28; const sx = RX+22+lv*16, sc = SUBCOL[sid]||'#7a6a4a';
+      rail += `<path d="M${RX} ${yy} H${sx-8}" stroke="#8a7440" stroke-width="1.5" stroke-dasharray="3 3" fill="none"/>`;
+      body += `<circle cx="${sx}" cy="${yy}" r="6.5" fill="${sc}" stroke="#1a0c06" stroke-width="1.6" opacity="${locked?0.45:1}"/>`
+            + `<text x="${sx+13}" y="${yy+4}" font-size="11.5" fill="${locked?'#8a7f5c':'#d8c890'}">${esc(mapTitle(sid))}${sid.startsWith('secret')?' ◈':''}</text>`;
+      pos[sid] = [sx,yy];
+    }
+    y = yy + (i<mainIds.length-1 ? 58 : 0);
+    pos['_y'+i] = yy;
+  });
+  // позвоночник пути со стрелками перехода
+  let spine = '';
+  for(let i=0;i<mainIds.length-1;i++){
+    const y1 = pos[mainIds[i]][1]+(i===0?16:16), y2 = pos[mainIds[i+1]][1]-16;
+    spine += `<line x1="${RX}" y1="${y1}" x2="${RX}" y2="${y2}" stroke="#a8884a" stroke-width="3" stroke-linecap="round"/>`;
+    const my = y2-14; spine += `<path d="M${RX-5} ${my-4} L${RX} ${my+3} L${RX+5} ${my-4}" fill="none" stroke="#e0c070" stroke-width="2"/>`;
+  }
+  const H = y + 70;
+  let ring = '';
+  if(cur && pos[cur]){ const q = pos[cur], r = mainIds.includes(cur) ? 20 : 12; ring = `<circle cx="${q[0]}" cy="${q[1]}" r="${r}" fill="none" stroke="#ffd34a" stroke-width="3"><animate attributeName="opacity" values="1;.25;1" dur="1.5s" repeatCount="indefinite"/></circle><text x="${W-12}" y="${q[1]+4}" text-anchor="end" font-size="11" fill="#ffd34a">● вы здесь</text>`; }
+  const fin = pos[mainIds[mainIds.length-1]];
+  svg = spine + rail + body + ring + `<text x="${RX+26}" y="${fin[1]+44}" font-size="13" fill="#ffd34a">💎 Сердце Эльдории — конец похода</text>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">${svg}</svg>`;
+  if(cur && pos[cur]) setTimeout(()=>{ box.scrollTop = Math.max(0, pos[cur][1]*box.clientWidth/W - box.clientHeight/2); }, 30); else box.scrollTop = 0;
+}
+function openMap(){ startScreenEl.classList.add('hidden'); renderMap(); mapScreen.classList.remove('hidden'); }
+function closeMap(){ mapScreen.classList.add('hidden'); startScreenEl.classList.remove('hidden'); }
+document.getElementById('mapBtn').addEventListener('click', openMap);
+document.getElementById('mapBack').addEventListener('click', closeMap);
+
+// ---------- PWA: установка и офлайн-режим (работает, когда игра открыта по https и рядом лежат sw.js и manifest) ----------
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredInstall = e; const b = document.getElementById('installBtn'); if(b && !isStandalone) b.classList.remove('hidden'); });
+window.addEventListener('appinstalled', ()=>{ deferredInstall = null; document.getElementById('installBtn').classList.add('hidden'); });
+document.getElementById('installBtn').addEventListener('click', ()=>{ if(!deferredInstall) return; deferredInstall.prompt(); deferredInstall = null; document.getElementById('installBtn').classList.add('hidden'); });
+try{ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }catch(e){}
 loadBtn.addEventListener('click', ()=>{ loadGame(latestSaveKey()); });
 refreshSaveUI();
 document.getElementById('restartBtn').addEventListener('click', newGameWithIntro);
@@ -6404,7 +6661,7 @@ document.getElementById('restartBtn2').addEventListener('click', newGameWithIntr
 resumeBtn.addEventListener('click', resumeGame);
 menuBtn.addEventListener('click', exitToMenu);
 window.addEventListener('keydown', e=>{
-  if(e.code==='Escape'){ if(gameState==='shop') closeShop(); else if(gameState==='hero') closeHero(); else if(gameState==='codex') closeCodex(); else exitToMenu(); }
+  if(e.code==='Escape' && !mapScreen.classList.contains('hidden')){ closeMap(); } else if(e.code==='Escape'){ if(gameState==='shop') closeShop(); else if(gameState==='hero') closeHero(); else if(gameState==='codex') closeCodex(); else exitToMenu(); }
 });
 
 
