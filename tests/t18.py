@@ -16,7 +16,7 @@ async def main():
         E=lambda js,a=None: pg.evaluate(js,a)
         # menu
         r=await E("()=>[document.getElementById('buildTag').textContent, document.getElementById('startScreen').innerText]")
-        chk('buildTag',  'D001.034' in r[0], r[0])
+        chk('buildTag',  'D001.035' in r[0], r[0])
         chk('menu: no old text/scheme', 'Этапы' not in r[1], '')
         await pg.screenshot(path=SC+'z_menu.png')
         await pg.click('#startBtn'); await pg.wait_for_timeout(300)
