@@ -177,7 +177,7 @@
 
   <div id="startScreen" class="overlay">
     <div class="scroll"><div class="scrollIn">
-    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.033</div>
+    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.034</div>
     <h2>Легенды Эльдории</h2>
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
@@ -1008,15 +1008,37 @@ const QLEVELS = {low:{name:'Слабое', part:0.3, fog:0.25, anim:0, light:0},
 let quality = (navigator.maxTouchPoints>0 ? 'mid' : 'high');
 try{ const q = localStorage.getItem('eldoria_q'); if(QLEVELS[q]) quality = q; }catch(e){}
 function Q(){ return QLEVELS[quality]; }
-function setQuality(q){ if(!QLEVELS[q]) return; quality = q; try{ localStorage.setItem('eldoria_q', q); }catch(e){} lightCv = null; fogTmp = null; renderQuality(); }
+// «Авто»: игра сама понижает качество, если кадры стабильно долгие (по умолчанию включено, ручной выбор отключает)
+let autoQ = true;
+try{ if(localStorage.getItem('eldoria_qm')==='1') autoQ = false; }catch(e){}
+const QORDER = ['high','mid','low'];
+function applyQuality(q){ quality = q; try{ localStorage.setItem('eldoria_q', q); }catch(e){} lightCv = null; fogTmp = null; renderQuality(); }
+function setQuality(q){ if(!QLEVELS[q]) return; autoQ = false; try{ localStorage.setItem('eldoria_qm','1'); }catch(e){} applyQuality(q); }
+function setAutoQuality(){ autoQ = true; try{ localStorage.removeItem('eldoria_qm'); }catch(e){} afSum = 0; afN = 0; afBad = 0; renderQuality(); }
+let afSum = 0, afN = 0, afBad = 0;
+// вызывается каждый кадр с реальным интервалом между кадрами (мс); возвращает true, если качество понижено
+function autoQualityTick(rawMs, active){
+  if(!autoQ || !active || rawMs > 250 || rawMs <= 0){ return false; } // вкладка в фоне или пауза — не считаем
+  afSum += rawMs; afN++;
+  if(afN < 90) return false;
+  const avg = afSum/afN; afSum = 0; afN = 0;
+  afBad = avg > 26 ? afBad+1 : 0;
+  if(afBad >= 2){
+    afBad = 0; const i = QORDER.indexOf(quality);
+    if(i < QORDER.length-1){ applyQuality(QORDER[i+1]); try{ addNote('Для плавности качество графики снижено: '+QLEVELS[quality].name, '#9ad0ff'); }catch(e){} return true; }
+  }
+  return false;
+}
 function renderQuality(){
   const box = document.getElementById('qBtns'); if(!box) return;
   box.innerHTML = '';
   for(const id of Object.keys(QLEVELS)){
-    const b = document.createElement('button'); b.className = 'tabBtn'+(quality===id ? ' active' : ''); b.textContent = QLEVELS[id].name;
+    const b = document.createElement('button'); b.className = 'tabBtn'+(quality===id && !autoQ ? ' active' : ''); b.textContent = QLEVELS[id].name;
     b.addEventListener('click', ()=>setQuality(id)); box.appendChild(b);
   }
-  const d = document.getElementById('qDesc'); if(d) d.textContent = quality==='low' ? 'Меньше погоды и тумана, без анимаций листвы, волн и света факелов' : quality==='mid' ? 'Погода вполовину, упрощённые анимации' : 'Все эффекты в полную силу';
+  { const b = document.createElement('button'); b.className = 'tabBtn'+(autoQ ? ' active' : ''); b.textContent = 'Авто';
+    b.addEventListener('click', setAutoQuality); box.appendChild(b); }
+  const d = document.getElementById('qDesc'); if(d) d.textContent = (autoQ ? 'Авто: сейчас «'+QLEVELS[quality].name+'», снижается само, если игра тормозит. ' : '') + (quality==='low' ? 'Меньше погоды и тумана, без анимаций листвы, волн и света факелов' : quality==='mid' ? 'Погода вполовину, упрощённые анимации' : 'Все эффекты в полную силу');
 }
 const SFX = {
   ctx:null, master:null, sfx:null, music:null, noiseBuf:null, muted:false, droneAt:0,
@@ -1854,9 +1876,10 @@ function generatePOIInterior(def, parent){
   const T = TILE, lvl = parent.level||1, size = def.size||34, W = size, H = size, nRooms = def.rooms||6;
   const grid = makeGrid(W,H,'#');
   const rooms = [];
-  for(let tries=0; tries<400 && rooms.length<nRooms; tries++){
+  for(let tries=0; tries<1200 && rooms.length<nRooms; tries++){
     const rw = rnd(5,8), rh = rnd(5,7), rx = rnd(2,W-rw-3), ry = rnd(2,H-rh-3), cx = rx+(rw>>1), cy = ry+(rh>>1);
-    if(rooms.some(r=>Math.hypot(r.cx-cx,r.cy-cy)<9)) continue;
+    const minD = tries<400 ? 9 : tries<800 ? 7 : 6; // если места мало, комнаты можно ставить чуть теснее
+    if(rooms.some(r=>Math.hypot(r.cx-cx,r.cy-cy)<minD)) continue;
     rooms.push({x:rx,y:ry,w:rw,h:rh,cx,cy});
   }
   for(const r of rooms) for(let y=r.y;y<r.y+r.h;y++) for(let x=r.x;x<r.x+r.w;x++) grid[y][x] = '.';
@@ -5472,6 +5495,7 @@ function drawAtmosphere(camX,camY){ drawWeather(); if(caveLit()) drawCaveLight(c
 let lastTime = performance.now();
 function loop(now){
   const dt = Math.min(0.05, (now-lastTime)/1000);
+  autoQualityTick(now-lastTime, gameState==='playing' && !document.hidden);
   lastTime = now;
   update(dt);
   draw();
