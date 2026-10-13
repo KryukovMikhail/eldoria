@@ -1,0 +1,28 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Синтаксис модулей
+        run: for f in src/js/*.js; do node --check "$f"; done
+      - name: index.html собран из src (не забыли пересобрать?)
+        run: |
+          python3 tools/build.py
+          git diff --exit-code -- index.html sw.js || (echo "::error::Запустите python3 tools/build.py и закоммитьте index.html и sw.js"; exit 1)
+      - name: Установка Playwright
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+      - name: Тестовая сборка
+        run: python3 tools/build.py --test
+      - name: Тесты
+        env: { PERF_SLACK: '3' }
+        run: python3 tests/run_all.py
