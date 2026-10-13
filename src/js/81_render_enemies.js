@@ -81,6 +81,7 @@ function flameAt(x,y,w,h,ph,c1,c2){
 function drawEnemyExtra(e,K,flash,now,t,sw,face){
   const OUT = 'rgba(0,0,0,0.5)';
   ctx.strokeStyle = OUT; ctx.lineWidth = 1; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  if(NEW_ENEMY_DRAW[e.type]){ NEW_ENEMY_DRAW[e.type](e,K,flash,now,t,face); return; }
   switch(e.type){
   case 'bat': {
     const fl = Math.sin(now*16+e.x*0.3);

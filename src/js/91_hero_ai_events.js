@@ -152,12 +152,12 @@ function drawChargeFx(sx,sy){
 
 // ---------- Новые враги, когда прежних перебили ----------
 const LEVEL_ROSTER = {
-  0:['wolf','wolf','boar','bandit'],
-  1:['slime','slime','bat','spider','skeleton','giantrat','giantrat'], 2:['skeleton','skeleton','zombie','spider','webspider','bat','slime'],
-  3:['wraith','wraith','darkknight','webspider','skeleton','zombie','gargoyle','gargoyle'], 4:['imp','lavaslime','lavaslime','golem','imp','salamander','salamander','cinderhound','cinderhound','pyromancer'],
-  5:['scorpion','mummy','cobra','scorpion','mummy','cobra','vulture','vulture'], 6:['icewolf','yeti','frostwraith','icewolf','frostwraith','icegolem','frostmite','frostmite','blizzardmage'],
-  7:['ghoul','banshee','zombie','darkknight','ghoul','banshee','skelarcher','skelarcher'], 8:['panther','shroom','gorilla','cobra','webspider','panther','shroom','webspider','hunter','hunter','venomtoad','venomtoad'],
-  11:['darkknight','darkknight','ghoul','banshee','zombie','webspider','golem','crossbowman','crossbowman'], 12:['wraith','banshee','ghoul','webspider','darkknight','zombie','banshee','cursedbook','cursedbook']
+  0:['wolf','wolf','boar','bandit','ram'],
+  1:['slime','slime','bat','spider','skeleton','giantrat','giantrat','gelcube','gelcube'], 2:['skeleton','skeleton','zombie','spider','webspider','bat','slime','gelcube','vampbat'],
+  3:['wraith','wraith','darkknight','webspider','skeleton','zombie','gargoyle','gargoyle','shieldbearer','necromancer','vampbat'], 4:['imp','lavaslime','lavaslime','golem','imp','salamander','salamander','cinderhound','cinderhound','pyromancer','emberbomb','emberbomb'],
+  5:['scorpion','mummy','cobra','scorpion','mummy','cobra','vulture','vulture','dunepriest','dunepriest'], 6:['icewolf','yeti','frostwraith','icewolf','frostwraith','icegolem','frostmite','frostmite','blizzardmage','snowstalker','snowstalker'],
+  7:['ghoul','banshee','zombie','darkknight','ghoul','banshee','skelarcher','skelarcher','necromancer','shieldbearer'], 8:['panther','shroom','gorilla','cobra','webspider','panther','shroom','webspider','hunter','hunter','venomtoad','venomtoad','rhino','rhino'],
+  11:['darkknight','darkknight','ghoul','banshee','zombie','webspider','golem','crossbowman','crossbowman','shieldbearer','bombardier','bombardier'], 12:['wraith','banshee','ghoul','webspider','darkknight','zombie','banshee','cursedbook','cursedbook','vampbat','necromancer','bombardier']
 };
 const respawnTimers = new WeakMap();
 let respawnAcc = 0;

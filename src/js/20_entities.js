@@ -63,6 +63,7 @@ function makeEnemy(type,x,y,level=1){
   if(base.shoot) e.shoot = base.shoot;
   if(base.erratic) e.erratic = true;
   if(base.inflict) e.inflict = base.inflict;
+  if(base.ab) e.ab = base.ab;
   return e;
 }
 // на карте золота стало заметно меньше: потион выпадает как раньше, золото — лишь в части точек

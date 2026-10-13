@@ -115,7 +115,7 @@ function questKill(type){
 }
 
 function killEnemy(e){
-  startDeathFx(e);
+  startDeathFx(e); onEnemyDeath(e);
   const gx = Math.round(e.xp*diffMul('reward')), gg = Math.round(e.gold*diffMul('reward'));
   player.xp += gx; player.gold += gg;
   questKill(e.type); if(player.codex){ player.codex.e[e.type] = 1; player.codex.k[e.type] = (player.codex.k[e.type]||0)+1; }
@@ -229,6 +229,7 @@ function update(dt){
       if(e.losT<=0){ e.losT = 0.15+Math.random()*0.1; e.los = hasLOS(e.x+e.w/2, e.y+e.h/2, player.x+player.w/2, player.y+player.h/2); }
       if(!e.los){ const fd = flowDir(e); if(fd){ nx = fd[0]; ny = fd[1]; } }                // стена на пути — обходим по полю расстояний
       if(e.shoot && e.shoot.keep){ if(dist<85){ nx=-nx; ny=-ny; spd*=0.8; } else if(dist<125) spd=0; }   // стрелки держат дистанцию
+      if(e.ab){ const m = aiExtra(e, dt, dist, dx, dy, nx, ny, spd); if(m.dead) continue; nx = m.nx; ny = m.ny; spd = m.spd; }
       if(e.erratic){ const w=Math.sin(Date.now()/170+(e.seed||0))*0.95, px=-ny, py=nx; nx+=px*w; ny+=py*w; const l=Math.hypot(nx,ny)||1; nx/=l; ny/=l; }   // летучие мыши мечутся
       if(spd>0) tryMove(e, nx*spd*dt, ny*spd*dt, loc);
       e.moving = spd>0; e.walkT = (e.walkT||0) + dt*9;
@@ -238,8 +239,13 @@ function update(dt){
         if(e.shotCd<=0){ enemyShoot(e,dx,dy); e.shotCd = e.shoot.cd; }
       }
     } else { e.moving = false; }
-    if(overlap(e, {x:player.x,y:player.y,w:player.w,h:player.h}) && e.cooldown<=0){
-      if(hurtPlayer(e.dmg) && e.inflict && Math.random()<(e.inflict.chance||1)) inflictStatus(e.inflict.kind, e.inflict.ms, e.dmg);
+    if(e.dmg>0 && overlap(e, {x:player.x,y:player.y,w:player.w,h:player.h}) && e.cooldown<=0){
+      const dashing = e.ai && e.ai.st==='dash';
+      if(hurtPlayer(dashing ? Math.round(e.dmg*1.5) : e.dmg)){
+        if(e.inflict && Math.random()<(e.inflict.chance||1)) inflictStatus(e.inflict.kind, e.inflict.ms, e.dmg);
+        if(e.ab && e.ab.leech){ e.hp = Math.min(e.maxHp, e.hp+e.dmg*e.ab.leech); burst(e.x+e.w/2, e.y+e.h/2, 6, {colors:['#d02a4a','#ff7a8a'], sp:40, up:30, g:-40, life:500, size:2.4}); }
+        if(dashing){ e.ai.st = null; e.ai.cd = e.ab.charge.cd; shakeT = Math.max(shakeT, 160); }
+      }
       e.cooldown = 900;
     }
   }
