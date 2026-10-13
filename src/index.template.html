@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Эльдория">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%231a140a'/%3E%3Crect%20x='3'%20y='3'%20width='94'%20height='94'%20rx='19'%20fill='none'%20stroke='%235c4415'%20stroke-width='4'/%3E%3Ctext%20x='50'%20y='70'%20font-size='58'%20text-anchor='middle'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<title>Легенды Эльдории — 2D RPG</title>
+<style>
+/*@@CSS@@*/
+</style>
+</head>
+<body>
+<div id="gameWrap">
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="rotateHint"><span>📱↻</span><div>Поверните телефон горизонтально</div></div>
+  <div id="safeProbe" style="position:absolute;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);"></div>
+  <div id="topBtns">
+    <button id="menuBtn" class="hidden">Выйти в меню</button>
+    <button id="fullscreenBtn" class="hidden">⛶</button>
+    <button id="soundBtn" title="Звук">🔊</button>
+    <button id="heroBtn" class="hidden" title="Герой (I)">🎒</button>
+    <button id="codexBtn" class="hidden" title="Энциклопедия (K)">📖</button>
+  </div>
+
+  <div id="fsToast" class="hidden"></div>
+
+  <div id="touchControls" class="hidden">
+    <div id="joystickBase"><div id="joystickKnob"></div></div>
+    <div class="actionBtn" id="potionBtn">✚</div>
+    <div class="actionBtn" id="attackBtn">⚔</div>
+    <div class="actionBtn skillBtn hidden" id="dashBtn">⚡</div>
+    <div class="actionBtn skillBtn hidden" id="spinBtn">🌀</div>
+    <div class="actionBtn skillBtn hidden" id="shieldBtn">🛡</div>
+  </div>
+
+  <div id="startScreen" class="overlay">
+    <div class="scroll"><div class="scrollIn">
+    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.034</div>
+    <h2>Легенды Эльдории</h2>
+    <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
+    сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
+    Путь лежит через цепочку мест, и между каждыми двумя из них стоит отдельное <b>логово с боссом</b>. Проход дальше открывается, когда босс повержен. Днём и ночью, в дождь, туман и метель вас ждут новые враги. В углу карты стоит <b>торговая лавка</b>: покупайте и продавайте оружие, броню и зелья. Есть и <b>Город Лиссарен</b> — с трактиром, лавкой «Дымный Тигель» и рынком; его ворота стоят где-то на поверхности. Ищите <b>тайные места</b>: сундуки, ключи к запертым сундукам и скрытые пещеры (они появляются на карте, когда вы подходите близко). На поверхности можно встретить караванщика Хазима, целительницу Айлун — и попасть в засаду. Игра сохраняется автоматически.</p>
+    <p style="font-size:13px">Карта и местность скрыты туманом: он рассеивается, когда вы подходите. Торговые лавки есть в углу карты, в Пустоши Зарахаб, Крае Белого Эха, на Погосте и в Дебрях.</p>
+    <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака (удерживайте — мощный удар) &nbsp;|&nbsp; <b>E</b> — выпить эликсир здоровья &nbsp;|&nbsp; <b>1</b> — большой эликсир, <b>2–5</b> — зелья (скорость, сила, стойкость, водоход) &nbsp;|&nbsp; <b>ESC</b> — меню<br><b>Shift</b> — рывок &nbsp;|&nbsp; <b>Q</b> — вихрь &nbsp;|&nbsp; <b>R</b> — щит &nbsp;|&nbsp; <b>I</b> — герой (навыки и снаряжение)</p>
+    <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Эликсиры лечат 30 HP, уровень повышает здоровье и урон. Чем ближе враг, тем сильнее удар.</p>
+    <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
+    <div id="saveInfo" class="hidden" style="font-size:12px;color:#a89d78"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><b style="font-size:13px">Сложность</b><div class="shopTabs" id="diffBtns"></div><div id="diffDesc" style="font-size:12px;color:#a89d78"></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><b style="font-size:13px">Качество графики</b><div class="shopTabs" id="qBtns"></div><div id="qDesc" style="font-size:12px;color:#a89d78"></div></div>
+    <div class="btnRow">
+      <button class="startBtn hidden" id="resumeBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">Вернуться в игру</button>
+      <button class="startBtn" id="startBtn">Начать поход</button>
+      <button class="startBtn" id="mapBtn" style="background:linear-gradient(#e0c070,#9c7a2a); border-color:#4a3510;">🗺 Карта мира</button>
+      <button class="startBtn hidden" id="installBtn" style="background:linear-gradient(#b08ae0,#6a449c); border-color:#2a1850;">📲 Установить</button>
+      <button class="startBtn" id="savesBtn" style="background:linear-gradient(#8fd38f,#3f8f4a); border-color:#1d4a22;">Сохранения</button>
+    </div>
+    </div></div>
+  </div>
+
+  <div id="deathScreen" class="overlay hidden">
+    <h2 style="color:#d9534f;">Вы пали...</h2>
+    <p id="deathStats"></p>
+    <button class="startBtn hidden" id="loadBtn" style="background:linear-gradient(#8fd38f,#3f8f4a); border-color:#1d4a22;">Загрузить сохранение</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><b style="font-size:13px">Сложность</b><div class="shopTabs" id="diffBtns2"></div><div id="diffDesc2" style="font-size:12px;color:#a89d78"></div></div>
+    <button class="startBtn" id="restartBtn">Начать заново</button>
+  </div>
+
+  <div id="shopScreen" class="overlay hidden">
+    <h2>Торговая лавка</h2>
+    <p id="shopMsg"></p>
+    <div id="shopGold"></div>
+    <div class="shopTabs" id="shopTabs"></div>
+    <div id="shopList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <button class="startBtn" id="shopClose">Уйти</button>
+  </div>
+
+  <div id="codexScreen" class="overlay hidden">
+    <h2>📖 Энциклопедия</h2>
+    <p id="codexMsg" style="min-height:18px"></p>
+    <div id="codexInfo" style="color:#e0c23a;font-weight:bold"></div>
+    <div class="shopTabs" id="codexTabs"></div>
+    <div id="codexList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <button class="startBtn" id="codexClose">Закрыть</button>
+  </div>
+
+  <div id="heroScreen" class="overlay hidden">
+    <h2>Герой</h2>
+    <p id="heroMsg" style="min-height:18px"></p>
+    <div id="heroInfo" style="color:#e0c23a;font-weight:bold"></div>
+    <div class="shopTabs" id="heroTabs"></div>
+    <div id="heroList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <button class="startBtn" id="heroClose">Закрыть</button>
+  </div>
+
+  <div id="mapScreen" class="overlay hidden">
+    <div class="scroll"><div class="scrollIn">
+    <h2>🗺 Карта мира</h2>
+    <p id="mapLegend" style="font-size:12px;max-width:520px;margin:0">⚔ логово босса &nbsp; ✔ страж побеждён &nbsp; 🔒 путь закрыт &nbsp; 🛒 лавка &nbsp; ✕ тайное место &nbsp; <span style="color:#c8321a">◎</span> вы здесь</p>
+    <div id="mapBox" style="width:100%;max-width:440px;flex:none"></div>
+    <button class="startBtn" id="mapBack">Назад</button>
+    </div></div>
+  </div>
+
+  <div id="savesScreen" class="overlay hidden">
+    <h2>Сохранения</h2>
+    <p id="savesLast"></p>
+    <p id="savesMsg" style="min-height:18px"></p>
+    <div id="savesList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <div class="btnRow">
+      <button class="startBtn" id="expBtn" style="background:linear-gradient(#7fb0e0,#3a6f9c); border-color:#1a3550;">📤 Экспорт в файл</button>
+      <button class="startBtn" id="impBtn" style="background:linear-gradient(#e0c070,#9c7a2a); border-color:#4a3510;">📥 Импорт из файла</button>
+      <input type="file" id="impFile" accept=".json,application/json" class="hidden">
+    </div>
+    <p style="font-size:12px;color:#a89d78;max-width:520px;margin:0">Файл сохранений можно перенести на другое устройство (через почту, мессенджер, iCloud или Google Drive) и загрузить там кнопкой «Импорт».</p>
+    <button class="startBtn" id="savesBack">Назад</button>
+  </div>
+
+  <div id="dialogScreen" class="overlay hidden">
+    <h2 id="dlgTitle"></h2>
+    <div id="dlgText" style="max-width:560px;text-align:left;font-size:15px;line-height:1.55"></div>
+    <button class="startBtn" id="dlgBtn">Дальше</button>
+  </div>
+
+  <div id="winScreen" class="overlay hidden">
+    <h2>🏆 Победа!</h2>
+    <p id="winStats"></p>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><b style="font-size:13px">Сложность</b><div class="shopTabs" id="diffBtns3"></div><div id="diffDesc3" style="font-size:12px;color:#a89d78"></div></div>
+    <button class="startBtn" id="restartBtn2">Играть снова</button>
+  </div>
+</div>
+
+<script>
+/*@@JS@@*/
+</script>
+</body>
+</html>
