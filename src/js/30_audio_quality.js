@@ -120,6 +120,21 @@ const SFX = {
       case 'thunder': this.noise(1.5,{type:'lowpass',f0:420,f1:60,q:0.7,vol:0.4,attack:0.05}); this.tone(55,1.2,{type:'sine',slide:32,vol:0.26}); break;
       case 'rain':    this.noise(0.7,{type:'highpass',f0:4200,q:0.5,vol:0.04,attack:0.2}); break;
       case 'wind':    this.noise(1.3,{f0:350,f1:900,q:0.6,vol:0.05,attack:0.45}); break;
+      case 'roar':    this.tone(90,0.55,{type:'sawtooth',slide:-35,vol:0.26}); this.noise(0.5,{type:'lowpass',f0:900,f1:120,q:0.8,vol:0.2}); this.tone(140,0.4,{type:'square',slide:-60,vol:0.08,delay:0.05}); break;
+      case 'charge':  this.noise(0.35,{f0:200,f1:1800,q:0.9,vol:0.2,attack:0.15}); this.tone(110,0.3,{type:'sawtooth',slide:260,vol:0.14}); break;
+      case 'boom':    this.noise(0.7,{type:'lowpass',f0:1800,f1:60,q:0.6,vol:0.42}); this.tone(70,0.5,{type:'sine',slide:28,vol:0.34}); this.noise(0.25,{f0:3000,f1:600,q:1,vol:0.12}); break;
+      case 'fuse':    this.noise(0.45,{f0:2400,f1:3800,q:3,vol:0.1}); this.tone(1500,0.4,{type:'square',slide:900,vol:0.04}); break;
+      case 'heal':    [660,880,1100].forEach((f,i)=>this.tone(f,0.28,{type:'sine',slide:90,vol:0.12,delay:i*0.07})); this.tone(1760,0.3,{type:'triangle',vol:0.05,delay:0.22}); break;
+      case 'blink':   this.tone(1500,0.14,{type:'sine',slide:-1100,vol:0.12}); this.noise(0.12,{f0:3500,f1:800,q:2,vol:0.08}); break;
+      case 'summon':  this.tone(160,0.55,{type:'sawtooth',slide:90,vol:0.14}); this.tone(240,0.5,{type:'triangle',slide:420,vol:0.1,delay:0.1}); this.noise(0.5,{type:'lowpass',f0:300,f1:1200,vol:0.1,attack:0.2}); break;
+      case 'clang':   this.tone(1250,0.2,{type:'square',slide:-200,vol:0.1}); this.tone(1870,0.28,{type:'triangle',vol:0.08}); this.noise(0.06,{f0:5000,f1:2000,q:2,vol:0.12}); break;
+      case 'mortar':  this.tone(150,0.18,{type:'square',slide:-90,vol:0.16}); this.noise(0.2,{type:'lowpass',f0:1200,f1:200,vol:0.18}); break;
+      case 'bite':    this.noise(0.1,{f0:2200,f1:600,q:2,vol:0.14}); this.tone(380,0.12,{type:'sawtooth',slide:-200,vol:0.1}); break;
+      case 'splat':   this.noise(0.18,{type:'lowpass',f0:900,f1:200,q:0.7,vol:0.2}); this.tone(200,0.14,{type:'sine',slide:-100,vol:0.12}); break;
+      case 'barrel':  this.noise(0.2,{type:'lowpass',f0:1400,f1:250,q:0.8,vol:0.26}); this.tone(180,0.12,{type:'triangle',slide:-90,vol:0.16}); this.noise(0.1,{f0:3000,f1:1200,q:2,vol:0.08,delay:0.06}); break;
+      case 'spikes':  this.noise(0.12,{f0:3500,f1:1500,q:2,vol:0.14}); this.tone(900,0.08,{type:'square',slide:-400,vol:0.1}); break;
+      case 'plate':   this.tone(130,0.12,{type:'square',slide:-40,vol:0.18}); this.noise(0.15,{type:'lowpass',f0:700,f1:150,vol:0.2}); this.tone(520,0.1,{type:'triangle',vol:0.08,delay:0.12}); break;
+      case 'bolt':    this.noise(0.12,{f0:6000,f1:1500,q:1,vol:0.34}); this.noise(1.2,{type:'lowpass',f0:500,f1:50,q:0.7,vol:0.4,attack:0.04,delay:0.08}); this.tone(50,1.0,{type:'sine',slide:28,vol:0.28,delay:0.08}); break;
       case 'step':    this.noise(0.05,{type:'lowpass',f0:500,f1:250,vol:0.045}); break;
     }
   },

@@ -28,7 +28,8 @@
   .overlay .scroll p { color:#3b2812; margin:0; max-width:560px; }
   .overlay .scroll p b, .overlay .scroll .scrollIn b { color:#7a2a12; }
   .overlay .scroll [style*="#a89d78"] { color:#6b5530 !important; }
-  .overlay .scroll #buildTag { color:#8a6a3a !important; }
+  #buildTag { flex:0 0 auto; font-size:11px; color:#d9c68f; letter-spacing:1px; margin:0; text-shadow:0 1px 2px #000; }
+  #startScreen .scroll { max-height:calc(100dvh - 34px); }
   .overlay .scroll #iosHint { color:#5a3a10; border-color:#a8884a; }
   .overlay .scroll .tabBtn { background:#e8d29a; color:#4a2e0c; border-color:#8a6a2a; }
   .overlay .scroll .tabBtn.active { background:linear-gradient(#a8442a,#7a2a14); color:#fff2d0; border-color:#4a1608; }
@@ -87,16 +88,16 @@
   }
   #menuBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
   #menuBtn:active { transform: translateY(1px); box-shadow: none; }
-  #fullscreenBtn, #soundBtn, #heroBtn, #codexBtn {
+  #fullscreenBtn, #soundBtn, #heroBtn, #codexBtn, #questBtn {
     position: relative; z-index: 15; width: 34px; height: 34px;
     padding: 0; font-size: 15px; font-weight:bold; cursor:pointer; line-height:1;
     background: linear-gradient(#3a3a3a,#1e1e1e); border: 2px solid #5c4415; border-radius: 5px; color:#e8c873;
     box-shadow: 0 2px 0 #000; display:flex; align-items:center; justify-content:center;
   }
   #soundBtn { z-index: 30; }
-  #heroBtn, #codexBtn { width:auto; min-width:34px; padding:0 6px; }
-  #fullscreenBtn:hover, #soundBtn:hover, #heroBtn:hover, #codexBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
-  #fullscreenBtn:active, #soundBtn:active, #heroBtn:active, #codexBtn:active { transform: translateY(1px); box-shadow: none; }
+  #heroBtn, #codexBtn, #questBtn { width:auto; min-width:34px; padding:0 6px; }
+  #fullscreenBtn:hover, #soundBtn:hover, #heroBtn:hover, #codexBtn:hover, #questBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
+  #fullscreenBtn:active, #soundBtn:active, #heroBtn:active, #codexBtn:active, #questBtn:active { transform: translateY(1px); box-shadow: none; }
   #fsToast {
     position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:30;
     max-width:85%; background:rgba(10,8,4,0.96); border:2px solid #5c4415; border-radius:8px;

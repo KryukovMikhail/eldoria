@@ -138,7 +138,7 @@ function drawArrows(camX,camY){
 // ---------- Частицы и анимация смерти ----------
 const particles = [], dying = [];
 let shakeT = 0, stepT = 0;
-function clearFx(){ aoes.length = 0; eshots.length = 0; particles.length = 0; dying.length = 0; shakeT = 0; prints.length = 0; arrows.length = 0; }
+function clearFx(){ aoes.length = 0; eshots.length = 0; particles.length = 0; dying.length = 0; shakeT = 0; prints.length = 0; arrows.length = 0; if(typeof clearWorldFx==='function') clearWorldFx(); }
 function burst(x,y,n,o){
   for(let i=0;i<n;i++){
     const a = Math.random()*Math.PI*2, sp = (o.sp||60)*(0.4+Math.random()*0.8);

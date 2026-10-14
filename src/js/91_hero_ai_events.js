@@ -17,6 +17,7 @@ function renderForge(){
     }, en===k));
     shopRow('Зачарование: '+W.name, en ? 'Сейчас: '+ENCH[en].n+' — '+ENCH[en].desc+'.' : '🔥 огонь — поджигает; ❄ лёд — замедляет; ☠ яд — отравляет. Новое зачарование заменяет старое.', btns);
   }
+  renderGearForge();
 }
 
 // ======================= Бой, мир, сложность, звук (v2) =======================
@@ -60,12 +61,13 @@ function hasLOS(x1,y1,x2,y2){
 function bfsDist(tx,ty,maxD){
   const W = loc.width, H = loc.height, dist = new Int16Array(W*H).fill(-1), bl = blockedTiles(loc.type);
   if(tx<0||ty<0||tx>=W||ty>=H) return dist;
+  const pb = new Set(); if(loc.props) for(const p of loc.props) pb.add(Math.floor(p.x/TILE)+Math.floor(p.y/TILE)*W);   // бочки и ящики — как стены
   const q = [tx+ty*W]; dist[tx+ty*W] = 0;
   for(let h=0; h<q.length; h++){
     const c = q[h], x = c%W, y = (c/W)|0, d = dist[c]; if(d>=maxD) continue;
     for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
       const nx = x+dx, ny = y+dy; if(nx<0||ny<0||nx>=W||ny>=H) continue;
-      const k = nx+ny*W; if(dist[k]>=0 || bl.has(loc.grid[ny][nx])) continue;
+      const k = nx+ny*W; if(dist[k]>=0 || bl.has(loc.grid[ny][nx]) || pb.has(k)) continue;
       dist[k] = d+1; q.push(k);
     }
   }
@@ -110,6 +112,7 @@ function unstick(e){
 function distMul(d){ return 1.45 - 0.7*clamp((d-14)/34,0,1); }          // вплотную ×1.45, на краю удара ×0.75
 const CHARGE_MS = 700;
 function meleeStrike(hb, mult, push){
+  propsStrike(hb);
   const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
   for(const e of loc.enemies){
     if(e.hp<=0 || !overlap(hb,e)) continue;

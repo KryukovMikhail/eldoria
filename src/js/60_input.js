@@ -110,7 +110,7 @@ function isBlocked(gridInfo, x, y, w, h){
   };
   for(let i=0;i<=nx;i++){ const px = x+w*i/nx; if(hit(px,y)||hit(px,y+h)) return true; }
   for(let j=1;j<ny;j++){ const py = y+h*j/ny; if(hit(x,py)||hit(x+w,py)) return true; }
-  return false;
+  return gridInfo.props && gridInfo.props.length ? propBlocks(gridInfo, x, y, w, h) : false;
 }
 function tryMove(entity, dx, dy, gridInfo){
   _swimMove = entity===player && swimOn();

@@ -2,7 +2,7 @@
 const SAVE_KEY = 'eldoria_save_v1';                      // автосохранение
 const SLOT_KEYS = ['eldoria_slot_1','eldoria_slot_2','eldoria_slot_3'];   // ручные слоты
 try{ localStorage.setItem('__eldoria_t','1'); localStorage.removeItem('__eldoria_t'); storageOK=true; }catch(e){ storageOK=false; }
-const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex','boots'];
+const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','visited','track','stories'];
 const savesBtn = document.getElementById('savesBtn');
 const loadBtn = document.getElementById('loadBtn');
 const saveInfoEl = document.getElementById('saveInfo');
@@ -95,6 +95,7 @@ function loadGame(key){
     player.cd = {dash:0,spin:0,shield:0}; player.shield = 0; player.dashT = 0; player.spinFx = 0;
     if(!WEAPONS[player.weapon]) player.weapon='sword';
     if(!ARMORS[player.armor]) player.armor='none';
+    ensureNewPlayerFields(); storiesEnsure();
     if(!('quest' in d.player)) player.quest = null;
     if(!('questsDone' in d.player)) player.questsDone = {};
     player.codex = Object.assign({e:{},a:{},k:{}}, player.codex||{});

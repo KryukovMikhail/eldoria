@@ -115,7 +115,7 @@ const player = {
 };
 function incomingDamage(d){
   const red = Math.min(0.85, ARMORS[player.armor].reduce + gearStat('def')/100);
-  return Math.max(1, Math.round(d * (1-red) * (player.shield>0 ? 0.2 : 1) * (player.buff.guard>0 ? 0.5 : 1) * diffMul('dmg')));
+  return Math.max(1, Math.round(d * (1-red) * (player.shield>0 ? 0.2 : 1) * (player.buff.guard>0 ? 0.5 : 1) * (player.sb && player.sb.might==='b' ? 0.88 : 1) * diffMul('dmg')));
 }
 function playerDamage(){ return Math.round(player.atk * WEAPONS[player.weapon].mult * weaponMul() * (1 + (gearStat('dmg') + 6*player.skills.might + (player.buff.might>0 ? 50 : 0))/100)); }
 

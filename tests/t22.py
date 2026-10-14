@@ -14,9 +14,11 @@ async def main():
         await pg.click('#startBtn'); await pg.wait_for_timeout(300)
         for i in range(3): await pg.click('#dlgBtn')
         E=pg.evaluate
-        setup="""const t=__t,P=t.player,L=t.loc; L.enemies.length=0; P.invuln=0; P.hp=P.maxHp=1000; t.setEnv({weather:'clear',tod:0.5});
+        setup="""const t=__t,P=t.player,L=t.loc; L.enemies.length=0; P.invuln=0; P.hp=P.maxHp=1000; t.setEnv({weather:'clear',tod:0.5}); { const wb=t.env.b[t.locId]; if(wb){ wb.name='clear'; wb.amt=1; wb.next=null; wb.timer=1e9; } }
+          // герой не у входа в пещеру (там враги не нападают)
+          if(L.entrances){ const far=()=>L.entrances.every(en=>Math.hypot(P.x-(en.tx+0.5)*32,P.y-(en.ty+0.5)*32)>12*32); for(let k=0;k<400&&!far();k++){ const x=3+Math.floor(Math.random()*(L.width-6)), y=3+Math.floor(Math.random()*(L.height-6)); if(L.grid[y][x]==='.'){ P.x=x*32; P.y=y*32; } } }
           // чистая площадка вокруг героя
-          const T=32, cx=Math.floor(P.x/T), cy=Math.floor(P.y/T); for(let y=cy-8;y<=cy+8;y++) for(let x=cx-10;x<=cx+10;x++) if(L.grid[y]&&L.grid[y][x]!=='#') L.grid[y][x]='.';
+          const T=32, cx=Math.floor(P.x/T), cy=Math.floor(P.y/T); for(let y=cy-8;y<=cy+8;y++) for(let x=cx-10;x<=cx+10;x++) if(L.grid[y]&&L.grid[y][x]&&!'^<>'.includes(L.grid[y][x])&&x>1&&y>1&&x<L.width-2&&y<L.height-2) L.grid[y][x]='.';
           const mk=(ty,dx,dy)=>{const e=t.makeEnemy(ty,P.x+dx,P.y+dy,1); L.enemies.push(e); return e;};"""
         # все новые типы: описаны в энциклопедии, есть в ростерах, рисуются без ошибок
         r=await E("""()=>{const t=__t; const nw=Object.keys(t.NEW_ENEMY_BASE); const noInfo=nw.filter(k=>!t.ENEMY_INFO[k]); const inRoster=nw.filter(k=>k==='slimelet'||Object.values(t.LEVEL_ROSTER).some(a=>a.includes(k))); return [nw.length,noInfo,nw.length-inRoster.length]}""")
@@ -68,7 +70,7 @@ async def main():
         # бомбардир: ставит круг под героем и бьёт по нему, стоящему на месте
         r=await E("()=>{"+setup+"""
           const e=mk('bombardier',200,0); let marks=0; const hp0=P.hp; for(let i=0;i<60*8;i++){ t.update(0.016); marks=Math.max(marks,t.aoes.length); }
-          return [marks, hp0-P.hp]}""")
+          return [marks, hp0-P.hp, t.state, t.locId, Math.round(e.x-P.x), Math.round(e.y-P.y), e.hp, P.hp, t.env.b[t.locId]&&t.env.b[t.locId].name]}""")
         chk('bombardier telegraphs and hits stationary hero',r[0]>=1 and r[1]>0,r)
         # старые сохранения/волны: спавн новых врагов работает в каждой локации без исключений
         r=await E("""()=>{const t=__t; let n=0; for(const id of Object.keys(t.world)){ t.setLoc(id); try{ t.loc.enemies.length=0; n+=t.spawnWave()||0; for(let i=0;i<30;i++) t.update(0.016);}catch(e){ return 'ERR '+id+' '+e.message } } return n}""")

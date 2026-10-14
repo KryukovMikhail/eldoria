@@ -43,7 +43,8 @@
   .overlay .scroll p { color:#3b2812; margin:0; max-width:560px; }
   .overlay .scroll p b, .overlay .scroll .scrollIn b { color:#7a2a12; }
   .overlay .scroll [style*="#a89d78"] { color:#6b5530 !important; }
-  .overlay .scroll #buildTag { color:#8a6a3a !important; }
+  #buildTag { flex:0 0 auto; font-size:11px; color:#d9c68f; letter-spacing:1px; margin:0; text-shadow:0 1px 2px #000; }
+  #startScreen .scroll { max-height:calc(100dvh - 34px); }
   .overlay .scroll #iosHint { color:#5a3a10; border-color:#a8884a; }
   .overlay .scroll .tabBtn { background:#e8d29a; color:#4a2e0c; border-color:#8a6a2a; }
   .overlay .scroll .tabBtn.active { background:linear-gradient(#a8442a,#7a2a14); color:#fff2d0; border-color:#4a1608; }
@@ -102,16 +103,16 @@
   }
   #menuBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
   #menuBtn:active { transform: translateY(1px); box-shadow: none; }
-  #fullscreenBtn, #soundBtn, #heroBtn, #codexBtn {
+  #fullscreenBtn, #soundBtn, #heroBtn, #codexBtn, #questBtn {
     position: relative; z-index: 15; width: 34px; height: 34px;
     padding: 0; font-size: 15px; font-weight:bold; cursor:pointer; line-height:1;
     background: linear-gradient(#3a3a3a,#1e1e1e); border: 2px solid #5c4415; border-radius: 5px; color:#e8c873;
     box-shadow: 0 2px 0 #000; display:flex; align-items:center; justify-content:center;
   }
   #soundBtn { z-index: 30; }
-  #heroBtn, #codexBtn { width:auto; min-width:34px; padding:0 6px; }
-  #fullscreenBtn:hover, #soundBtn:hover, #heroBtn:hover, #codexBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
-  #fullscreenBtn:active, #soundBtn:active, #heroBtn:active, #codexBtn:active { transform: translateY(1px); box-shadow: none; }
+  #heroBtn, #codexBtn, #questBtn { width:auto; min-width:34px; padding:0 6px; }
+  #fullscreenBtn:hover, #soundBtn:hover, #heroBtn:hover, #codexBtn:hover, #questBtn:hover { background: linear-gradient(#4a4a4a,#262626); }
+  #fullscreenBtn:active, #soundBtn:active, #heroBtn:active, #codexBtn:active, #questBtn:active { transform: translateY(1px); box-shadow: none; }
   #fsToast {
     position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:30;
     max-width:85%; background:rgba(10,8,4,0.96); border:2px solid #5c4415; border-radius:8px;
@@ -161,6 +162,7 @@
     <button id="fullscreenBtn" class="hidden">⛶</button>
     <button id="soundBtn" title="Звук">🔊</button>
     <button id="heroBtn" class="hidden" title="Герой (I)">🎒</button>
+    <button id="questBtn" class="hidden" title="Журнал (J)">📜</button>
     <button id="codexBtn" class="hidden" title="Энциклопедия (K)">📖</button>
   </div>
 
@@ -176,8 +178,8 @@
   </div>
 
   <div id="startScreen" class="overlay">
+    <div id="buildTag">сборка D001.037</div>
     <div class="scroll"><div class="scrollIn">
-    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.035</div>
     <h2>Легенды Эльдории</h2>
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
@@ -216,6 +218,14 @@
     <button class="startBtn" id="shopClose">Уйти</button>
   </div>
 
+  <div id="questScreen" class="overlay hidden">
+    <h2>📜 Журнал</h2>
+    <p id="questMsg" style="min-height:18px"></p>
+    <div id="questInfo" style="color:#e0c23a;font-weight:bold"></div>
+    <div class="shopTabs" id="questTabs"></div>
+    <div id="questList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <button class="startBtn" id="questClose">Закрыть</button>
+  </div>
   <div id="codexScreen" class="overlay hidden">
     <h2>📖 Энциклопедия</h2>
     <p id="codexMsg" style="min-height:18px"></p>
@@ -789,7 +799,7 @@ const player = {
 };
 function incomingDamage(d){
   const red = Math.min(0.85, ARMORS[player.armor].reduce + gearStat('def')/100);
-  return Math.max(1, Math.round(d * (1-red) * (player.shield>0 ? 0.2 : 1) * (player.buff.guard>0 ? 0.5 : 1) * diffMul('dmg')));
+  return Math.max(1, Math.round(d * (1-red) * (player.shield>0 ? 0.2 : 1) * (player.buff.guard>0 ? 0.5 : 1) * (player.sb && player.sb.might==='b' ? 0.88 : 1) * diffMul('dmg')));
 }
 function playerDamage(){ return Math.round(player.atk * WEAPONS[player.weapon].mult * weaponMul() * (1 + (gearStat('dmg') + 6*player.skills.might + (player.buff.might>0 ? 50 : 0))/100)); }
 
@@ -1125,6 +1135,21 @@ const SFX = {
       case 'thunder': this.noise(1.5,{type:'lowpass',f0:420,f1:60,q:0.7,vol:0.4,attack:0.05}); this.tone(55,1.2,{type:'sine',slide:32,vol:0.26}); break;
       case 'rain':    this.noise(0.7,{type:'highpass',f0:4200,q:0.5,vol:0.04,attack:0.2}); break;
       case 'wind':    this.noise(1.3,{f0:350,f1:900,q:0.6,vol:0.05,attack:0.45}); break;
+      case 'roar':    this.tone(90,0.55,{type:'sawtooth',slide:-35,vol:0.26}); this.noise(0.5,{type:'lowpass',f0:900,f1:120,q:0.8,vol:0.2}); this.tone(140,0.4,{type:'square',slide:-60,vol:0.08,delay:0.05}); break;
+      case 'charge':  this.noise(0.35,{f0:200,f1:1800,q:0.9,vol:0.2,attack:0.15}); this.tone(110,0.3,{type:'sawtooth',slide:260,vol:0.14}); break;
+      case 'boom':    this.noise(0.7,{type:'lowpass',f0:1800,f1:60,q:0.6,vol:0.42}); this.tone(70,0.5,{type:'sine',slide:28,vol:0.34}); this.noise(0.25,{f0:3000,f1:600,q:1,vol:0.12}); break;
+      case 'fuse':    this.noise(0.45,{f0:2400,f1:3800,q:3,vol:0.1}); this.tone(1500,0.4,{type:'square',slide:900,vol:0.04}); break;
+      case 'heal':    [660,880,1100].forEach((f,i)=>this.tone(f,0.28,{type:'sine',slide:90,vol:0.12,delay:i*0.07})); this.tone(1760,0.3,{type:'triangle',vol:0.05,delay:0.22}); break;
+      case 'blink':   this.tone(1500,0.14,{type:'sine',slide:-1100,vol:0.12}); this.noise(0.12,{f0:3500,f1:800,q:2,vol:0.08}); break;
+      case 'summon':  this.tone(160,0.55,{type:'sawtooth',slide:90,vol:0.14}); this.tone(240,0.5,{type:'triangle',slide:420,vol:0.1,delay:0.1}); this.noise(0.5,{type:'lowpass',f0:300,f1:1200,vol:0.1,attack:0.2}); break;
+      case 'clang':   this.tone(1250,0.2,{type:'square',slide:-200,vol:0.1}); this.tone(1870,0.28,{type:'triangle',vol:0.08}); this.noise(0.06,{f0:5000,f1:2000,q:2,vol:0.12}); break;
+      case 'mortar':  this.tone(150,0.18,{type:'square',slide:-90,vol:0.16}); this.noise(0.2,{type:'lowpass',f0:1200,f1:200,vol:0.18}); break;
+      case 'bite':    this.noise(0.1,{f0:2200,f1:600,q:2,vol:0.14}); this.tone(380,0.12,{type:'sawtooth',slide:-200,vol:0.1}); break;
+      case 'splat':   this.noise(0.18,{type:'lowpass',f0:900,f1:200,q:0.7,vol:0.2}); this.tone(200,0.14,{type:'sine',slide:-100,vol:0.12}); break;
+      case 'barrel':  this.noise(0.2,{type:'lowpass',f0:1400,f1:250,q:0.8,vol:0.26}); this.tone(180,0.12,{type:'triangle',slide:-90,vol:0.16}); this.noise(0.1,{f0:3000,f1:1200,q:2,vol:0.08,delay:0.06}); break;
+      case 'spikes':  this.noise(0.12,{f0:3500,f1:1500,q:2,vol:0.14}); this.tone(900,0.08,{type:'square',slide:-400,vol:0.1}); break;
+      case 'plate':   this.tone(130,0.12,{type:'square',slide:-40,vol:0.18}); this.noise(0.15,{type:'lowpass',f0:700,f1:150,vol:0.2}); this.tone(520,0.1,{type:'triangle',vol:0.08,delay:0.12}); break;
+      case 'bolt':    this.noise(0.12,{f0:6000,f1:1500,q:1,vol:0.34}); this.noise(1.2,{type:'lowpass',f0:500,f1:50,q:0.7,vol:0.4,attack:0.04,delay:0.08}); this.tone(50,1.0,{type:'sine',slide:28,vol:0.28,delay:0.08}); break;
       case 'step':    this.noise(0.05,{type:'lowpass',f0:500,f1:250,vol:0.045}); break;
     }
   },
@@ -1305,7 +1330,7 @@ function drawArrows(camX,camY){
 // ---------- Частицы и анимация смерти ----------
 const particles = [], dying = [];
 let shakeT = 0, stepT = 0;
-function clearFx(){ aoes.length = 0; eshots.length = 0; particles.length = 0; dying.length = 0; shakeT = 0; prints.length = 0; arrows.length = 0; }
+function clearFx(){ aoes.length = 0; eshots.length = 0; particles.length = 0; dying.length = 0; shakeT = 0; prints.length = 0; arrows.length = 0; if(typeof clearWorldFx==='function') clearWorldFx(); }
 function burst(x,y,n,o){
   for(let i=0;i<n;i++){
     const a = Math.random()*Math.PI*2, sp = (o.sp||60)*(0.4+Math.random()*0.8);
@@ -1837,6 +1862,7 @@ function resetGame(){
   fullInvNoticeTimer = 0;
   resetHero();
   resetEnv();
+  ensureMapExtras(world); storiesEnsure();
 }
 
 // старые сохранения: достраиваем новые уровни и спуск из Провала
@@ -2071,7 +2097,7 @@ function ensureWorldExtras(){
   if(!world.town || !world.house1 || !world.house2) Object.assign(world, makeTownSet());
   if(world.overworld && !world.overworld.entrances.some(en=>en.dungeon==='town')) placeTownGate(world.overworld, world.overworld.entrances[0]);
   for(const id of CHAIN) if(!world[id]) world[id] = genLoc(id);
-  ensureSecrets(world); ensurePOIs(world);
+  ensureSecrets(world); ensurePOIs(world); ensureMapExtras(world);
 }
 
 const CHAIN = ['lair1','dungeon1','lair2','dungeon3','lair3','lava','lair4','desert','lair5','ice','lair6','grave','lair7','jungle','lair8','city','lair9','manor','lair10'];
@@ -2126,6 +2152,9 @@ function goTo(locId, x, y, message){
   player.x = x; player.y = y;
   transitionCooldown = 700;
   clearFx(); SFX.play('portal');
+  if(player.visited) player.visited[locId] = 1;
+  storiesEnsure();
+  if(loc.npcs) for(const n of loc.npcs) n.lock = false;
   if(message) addNote(message);
   if(LAIR[locId] && loc.boss && loc.boss.hp>0 && LAIR_TAUNT[locId]) addNote(LAIR_TAUNT[locId], '#ff9f4a');
   saveGame(); // контрольная точка при каждом переходе
@@ -2243,7 +2272,7 @@ function isBlocked(gridInfo, x, y, w, h){
   };
   for(let i=0;i<=nx;i++){ const px = x+w*i/nx; if(hit(px,y)||hit(px,y+h)) return true; }
   for(let j=1;j<ny;j++){ const py = y+h*j/ny; if(hit(x,py)||hit(x+w,py)) return true; }
-  return false;
+  return gridInfo.props && gridInfo.props.length ? propBlocks(gridInfo, x, y, w, h) : false;
 }
 function tryMove(entity, dx, dy, gridInfo){
   _swimMove = entity===player && swimOn();
@@ -2380,7 +2409,7 @@ function questKill(type){
 }
 
 function killEnemy(e){
-  startDeathFx(e); onEnemyDeath(e);
+  startDeathFx(e); onEnemyDeath(e); dropMats(e);
   const gx = Math.round(e.xp*diffMul('reward')), gg = Math.round(e.gold*diffMul('reward'));
   player.xp += gx; player.gold += gg;
   questKill(e.type); if(player.codex){ player.codex.e[e.type] = 1; player.codex.k[e.type] = (player.codex.k[e.type]||0)+1; }
@@ -2432,6 +2461,7 @@ function update(dt){
     const n = Math.ceil(Math.hypot(player.dvx,player.dvy)*dt/8)||1;
     for(let i=0;i<n;i++) tryMove(player, player.dvx*dt/n, player.dvy*dt/n, loc);
     burst(player.x+player.w/2, player.y+player.h/2, 2, {colors:['#cfe8ff','#ffffff'], sp:15, up:0, g:0, life:280, size:3.2});
+    dashDamage();
   } else tryMove(player, mx*spdNow()*dt*(player.chargeT>200?0.8:1), my*spdNow()*dt*(player.chargeT>200?0.8:1), loc);
   if(mx!==0||my!==0){ player.walkT=(player.walkT||0)+dt*11; stepT -= dt; if(stepT<=0){ SFX.play('step'); footstep(); stepT = 0.3; } } else { player.walkT=0; stepT = 0; }
 
@@ -2463,7 +2493,7 @@ function update(dt){
   }
   if(!keys['KeyE']) potionKeyLatch = false;
   skillTick(dt, mx, my); elixTick(dt); folkTick(dt); statusTick(dt); rescuePlayer(); if(gameState!=='playing') return;
-  updateAoes(dt); updateFlow(dt); respawnTick(dt);
+  updateAoes(dt); updateFlow(dt); respawnTick(dt); worldExtrasTick(dt); if(gameState!=='playing') return;
   updateSkillButtons();
 
   // враги
@@ -2471,9 +2501,10 @@ function update(dt){
   let safeZone = false;                                                // у входа в пещеру и у выхода из неё враги не нападают
   if(loc.exit && Math.hypot(pcx-(loc.exit.tx+0.5)*TILE, pcy-(loc.exit.ty+0.5)*TILE)<SAFE) safeZone = true;
   if(loc.entrances) for(const en of loc.entrances) if(Math.hypot(pcx-(en.tx+0.5)*TILE, pcy-(en.ty+0.5)*TILE)<SAFE) safeZone = true;
-  const nightAggro = loc.type==='overworld' ? 1+0.3*darkness() : 1;   // ночью на поверхности звери злее
+  const nightAggro = (loc.type==='overworld' ? 1+0.3*darkness() : 1)*weatherAggroMul(), wShoot = weatherShootMul();   // ночью на поверхности звери злее
   for(const e of loc.enemies){
     if(e.hp<=0) continue;
+    if(!e.ab){ const bb = ENEMY_BASE[e.type]; if(bb && bb.ab) e.ab = bb.ab; }
     e.hitFlash = Math.max(0, e.hitFlash-dt*1000);
     e.cooldown = Math.max(0, e.cooldown-dt*1000);
     if(e.dot){
@@ -2499,16 +2530,17 @@ function update(dt){
       if(spd>0) tryMove(e, nx*spd*dt, ny*spd*dt, loc);
       e.moving = spd>0; e.walkT = (e.walkT||0) + dt*9;
       if(Math.abs(dx)>3) e.face = dx<0 ? 'left' : 'right';
-      if(e.shoot && dist<e.shoot.range){
+      if(e.shoot && dist<e.shoot.range*wShoot){
         e.shotCd = (e.shotCd===undefined ? rnd(500,e.shoot.cd) : e.shotCd) - dt*1000;
         if(e.shotCd<=0){ enemyShoot(e,dx,dy); e.shotCd = e.shoot.cd; }
       }
     } else { e.moving = false; }
+    if(player.shield>0 && shieldReflect(e,dt)) continue;
     if(e.dmg>0 && overlap(e, {x:player.x,y:player.y,w:player.w,h:player.h}) && e.cooldown<=0){
       const dashing = e.ai && e.ai.st==='dash';
       if(hurtPlayer(dashing ? Math.round(e.dmg*1.5) : e.dmg)){
         if(e.inflict && Math.random()<(e.inflict.chance||1)) inflictStatus(e.inflict.kind, e.inflict.ms, e.dmg);
-        if(e.ab && e.ab.leech){ e.hp = Math.min(e.maxHp, e.hp+e.dmg*e.ab.leech); burst(e.x+e.w/2, e.y+e.h/2, 6, {colors:['#d02a4a','#ff7a8a'], sp:40, up:30, g:-40, life:500, size:2.4}); }
+        if(e.ab && e.ab.leech){ sfxNear(e,'bite'); e.hp = Math.min(e.maxHp, e.hp+e.dmg*e.ab.leech); burst(e.x+e.w/2, e.y+e.h/2, 6, {colors:['#d02a4a','#ff7a8a'], sp:40, up:30, g:-40, life:500, size:2.4}); }
         if(dashing){ e.ai.st = null; e.ai.cd = e.ab.charge.cd; shakeT = Math.max(shakeT, 160); }
       }
       e.cooldown = 900;
@@ -2598,7 +2630,7 @@ function update(dt){
     }
   }
 
-  placesTick(dt); codexTick(dt);
+  placesTick(dt); codexTick(dt); storiesTick(dt); if(gameState!=='playing') return;
   eventsTick(dt); if(gameState!=='playing') return;
   // торговец: лавка открывается, когда игрок подходит вплотную
   if(loc.merchant){
@@ -5178,7 +5210,7 @@ function draw(){
     }
   }
 
-  drawChest(camX, camY); drawFolk(camX, camY); drawSage(camX, camY); drawEvents(camX, camY);
+  drawChest(camX, camY); drawFolk(camX, camY); drawSage(camX, camY); drawEvents(camX, camY); drawWorldExtras(camX, camY);
   // торговец и прилавок
   if(loc.merchant){ drawStallBack(camX, camY); drawMerchant(loc.merchant, camX, camY); drawStallFront(camX, camY); }
 
@@ -5231,6 +5263,7 @@ function draw(){
     }
   }
 
+  drawTrackArrow(camX, camY);
   drawHUD();
   drawSkillBar(); drawElixHUD();
   if(loc.type==='overworld') drawMinimap();
@@ -5695,6 +5728,9 @@ function freeSpotAround(cx, cy, w, h, minR, maxR, tries){
   return null;
 }
 let guardHint = false;
+function sfxNear(e,n){ if(Math.hypot(e.x-player.x,e.y-player.y)<420) SFX.play(n); }
+const zoneHint = {};
+const ZONE_NOTE = {fire:'🔥 Земля вспыхивает: не стойте в огненных кругах!', ice:'❄ Лёд сковывает землю: круги замедляют героя', poison:'☠ Ядовитые лужи: выходите из кругов', sand:'🏜 Зыбучий песок: круги замедляют героя'};
 // щитоносец: удар с лицевой стороны ослаблен
 function guardBlocks(e){
   if(!e.ab || !e.ab.guard || !e.ai || e.ai.g===undefined) return false;
@@ -5719,27 +5755,36 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
     ai.cd = (ai.cd===undefined ? 600+Math.random()*c.cd : ai.cd) - ms;
     if(ai.st==='wind'){
       ai.t -= ms; out.spd = 0;
-      if(ai.t<=0){ ai.st = 'dash'; ai.t = c.dash; const l = Math.hypot(dx,dy)||1; ai.dx = dx/l; ai.dy = dy/l; }
+      if(ai.t<=0){ ai.st = 'dash'; ai.t = c.dash; const l = Math.hypot(dx,dy)||1; ai.dx = dx/l; ai.dy = dy/l; sfxNear(e,'charge'); }
     } else if(ai.st==='dash'){
       ai.t -= ms; out.nx = ai.dx; out.ny = ai.dy; out.spd = e.speed*c.mul;
       if(Math.random()<dt*20) burst(ecx, e.y+e.h-2, 1, {colors:['#cdbf9a','#a89a78'], sp:30, up:14, g:60, life:380, size:3});
       if(ai.t<=0){ ai.st = null; ai.cd = c.cd; }
-    } else if(ai.cd<=0 && dist<c.range && dist>70 && e.los!==false){ ai.st = 'wind'; ai.t = c.wind; }
+    } else if(ai.cd<=0 && dist<c.range && dist>70 && e.los!==false){ ai.st = 'wind'; ai.t = c.wind; sfxNear(e,'roar'); }
   }
   if(ab.summon){
     const s = ab.summon;
     ai.sc = (ai.sc===undefined ? 1500 : ai.sc) - ms; if(ai.sa>0) ai.sa -= ms;
-    if(ai.sc<=0 && dist<s.range){
+    if(ai.sc<=0 && dist<s.range && (e.phase||1)>=(s.minPhase||1)){
       if(!e.uid) e.uid = Math.floor(Math.random()*1e9)+1;
       const alive = loc.enemies.filter(m=>m.hp>0 && m.owner===e.uid).length;
       if(alive<s.max && loc.enemies.length<90){
         const p = freeSpotAround(ecx, ecy, 24, 24, 30, 60, 10);
         if(p){
           const m = makeEnemy(s.type, p.x, p.y, loc.level||1); m.minion = true; m.owner = e.uid; m.xp = 0; m.gold = 0; m.hp = m.maxHp = Math.round(m.maxHp*0.6);
-          loc.enemies.push(m); ai.sa = 700; burst(p.x+12, p.y+12, 12, {colors:['#46d68a','#9affc0','#1c4a30'], sp:60, up:40, g:-30, life:600, size:2.6});
+          loc.enemies.push(m); ai.sa = 700; sfxNear(e,'summon'); burst(p.x+12, p.y+12, 12, {colors:['#46d68a','#9affc0','#1c4a30'], sp:60, up:40, g:-30, life:600, size:2.6});
           ai.sc = s.cd;
         } else ai.sc = 1200;
       } else ai.sc = 1500;
+    }
+  }
+  if(ab.zones){
+    const z = ab.zones; ai.zc = (ai.zc===undefined ? 2500 : ai.zc) - ms;
+    if(ai.zc<=0 && dist<z.range){
+      const n = (e.phase||1)>=3 ? 2 : 1;
+      for(let i=0;i<n;i++){ const a = Math.random()*6.283, rr = i ? 70 : 0; hazards.push({x:pcx+Math.cos(a)*rr, y:pcy+Math.sin(a)*rr, r:z.r, t:-900, dur:z.dur, dps:z.dps, kind:z.kind}); }
+      ai.zc = z.cd; sfxNear(e,'summon');
+      if(!zoneHint[z.kind]){ zoneHint[z.kind] = 1; addNote(ZONE_NOTE[z.kind], '#ff9f4a'); }
     }
   }
   if(ab.bomb){
@@ -5749,9 +5794,9 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
       if(ai.f<=0){
         aoes.push({x:ecx, y:ecy, r:b.r, t:0, dur:1, dmg:b.dmg, col:'#ff7a1a'});
         burst(ecx, ecy, 26, {colors:['#ff7a1a','#ffd34a','#3a2a20'], sp:150, up:30, g:40, life:560, size:3.4});
-        e.hp = 0; killEnemy(e); out.dead = true;
+        sfxNear(e,'boom'); shakeT = Math.max(shakeT, 300); e.hp = 0; killEnemy(e); out.dead = true;
       }
-    } else if(dist<38){ ai.f = b.fuse; }
+    } else if(dist<38){ ai.f = b.fuse; sfxNear(e,'fuse'); }
   }
   if(ab.heal){
     const h = ab.heal;
@@ -5764,7 +5809,7 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
         m.hp = Math.min(m.maxHp, m.hp+m.maxHp*h.pct); healed++;
         burst(m.x+m.w/2, m.y+m.h/2, 6, {colors:['#7aff9a','#d8ffe0'], sp:30, up:40, g:-50, life:600, size:2.4});
       }
-      if(healed){ ai.hf = 600; ai.hc = h.cd; } else ai.hc = 700;
+      if(healed){ ai.hf = 600; ai.hc = h.cd; sfxNear(e,'heal'); } else ai.hc = 700;
     }
   }
   if(ab.blink){
@@ -5774,7 +5819,7 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
       const p = freeSpotAround(pcx, pcy, e.w, e.h, b.minR, b.maxR, 14);
       if(p){
         burst(ecx, ecy, 12, {colors:['#d8f4ff','#7ab8f0'], sp:70, up:30, g:-20, life:500, size:2.6});
-        e.x = p.x; e.y = p.y; ai.bl = 450; ai.bc = b.cd;
+        e.x = p.x; e.y = p.y; ai.bl = 450; ai.bc = b.cd; sfxNear(e,'blink');
         burst(e.x+e.w/2, e.y+e.h/2, 12, {colors:['#d8f4ff','#7ab8f0'], sp:70, up:30, g:-20, life:500, size:2.6});
       } else ai.bc = 1000;
     }
@@ -5784,7 +5829,7 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
     ai.mc = (ai.mc===undefined ? 800+Math.random()*m.cd : ai.mc) - ms; if(ai.mf>0) ai.mf -= ms;
     if(ai.mc<=0 && dist<m.range && e.los!==false){
       aoes.push({x:pcx, y:pcy, r:m.r, t:0, dur:m.delay, dmg:Math.round(m.dmg*(e.dmg/ENEMY_BASE[e.type].dmg||1)), col:'#caa43a'});
-      ai.mc = m.cd; ai.mf = 350; SFX.play('swing');
+      ai.mc = m.cd; ai.mf = 350; sfxNear(e,'mortar');
     }
   }
   return out;
@@ -5798,9 +5843,883 @@ function onEnemyDeath(e){
       const s = ENEMY_BASE[ab.split.type], p = freeSpotAround(cx, cy, s.size, s.size, 4, 22, 10) || {x:e.x, y:e.y};
       const m = makeEnemy(ab.split.type, p.x, p.y, loc.level||1); m.minion = true; m.xp = 2; m.gold = 0; m.cooldown = 600; loc.enemies.push(m);
     }
+    sfxNear(e,'splat');
   }
   if(ab.summon && e.uid){
     for(const m of loc.enemies) if(m.owner===e.uid && m.hp>0){ m.hp = 0; startDeathFx(m); }
+  }
+}
+// у стражей логов свои умения (см. ниже): призыв, щит, зоны на земле, рывок, телепорт
+const BOSS_AB = {
+  boss:       {summon:{type:'skeleton',  cd:7500, max:3, range:360, minPhase:2}},
+  spiderqueen:{summon:{type:'webspider', cd:8500, max:2, range:360, minPhase:1}},
+  shadowlord: {guard:true},
+  lavalord:   {zones:{kind:'fire',   cd:5200, r:46, dur:6500, dps:11, range:420}},
+  pharaoh:    {summon:{type:'mummy', cd:9000, max:2, range:360, minPhase:2}, zones:{kind:'sand', cd:7000, r:50, dur:5000, dps:5, range:420}},
+  frostking:  {zones:{kind:'ice',    cd:5600, r:50, dur:6000, dps:6,  range:420}},
+  lich:       {summon:{type:'skelarcher', cd:8000, max:2, range:380, minPhase:1}},
+  treant:     {zones:{kind:'poison', cd:5000, r:48, dur:6500, dps:9,  range:420}},
+  warlord:    {guard:true, charge:{wind:900, dash:700, mul:3, cd:5200, range:320}},
+  phantom:    {blink:{cd:5200, minR:70, maxR:130}, summon:{type:'cursedbook', cd:8500, max:2, range:380, minPhase:1}}
+};
+for(const k in BOSS_AB) ENEMY_BASE[k].ab = BOSS_AB[k];
+// ---------- Журнал, стрелка-указатель, быстрый перенос ----------
+// Граф переходов между локациями: из doorsOf() видно, куда ведёт каждая дверь/спуск/выход и где она находится.
+function ensureNewPlayerFields(){
+  if(!player.visited) player.visited = {overworld:1};
+  if(!player.track) player.track = 'main';
+  if(!player.stories) player.stories = {};
+  if(!player.mats) player.mats = {scrap:0, essence:0, crystal:0};
+  player.mats = Object.assign({scrap:0, essence:0, crystal:0}, player.mats);
+  if(!player.sb) player.sb = {};
+  player.visited[currentLocId] = 1;
+}
+function doorsOf(id){
+  const L = world[id], out = []; if(!L) return out;
+  const c = (tx,ty)=>({x:(tx+0.5)*TILE, y:(ty+0.5)*TILE});
+  if(L.type==='overworld'){
+    for(const en of (L.entrances||[])){ if(en.hidden && !en.found) continue; out.push(Object.assign({to:en.dungeon}, c(en.tx,en.ty))); }
+    for(const d of (L.doors||[])) out.push(Object.assign({to:d.to}, c(d.tx,d.ty)));
+  } else {
+    for(const d of (L.doors||[])) out.push(Object.assign({to:d.to}, c(d.tx,d.ty)));
+    if(L.exit) out.push(Object.assign({to: L.backTo ? L.backTo.loc : (PREV_LOC[id] || 'overworld')}, c(L.exit.tx,L.exit.ty)));
+    if(L.portal && L.portal.open && NEXT_LOC[id]) out.push(Object.assign({to:NEXT_LOC[id]}, c(L.portal.tx,L.portal.ty)));
+  }
+  return out;
+}
+// кратчайший путь по локациям: возвращает {path:[ids], first:дверь в текущей локации} или null
+function routeInfo(targetId, fromId){
+  fromId = fromId || currentLocId;
+  if(fromId===targetId || !world[targetId]) return null;
+  const prev = {[fromId]:null}, firstDoor = {}, q = [fromId];
+  while(q.length){
+    const id = q.shift();
+    for(const d of doorsOf(id)){
+      if(!world[d.to] || d.to in prev) continue;
+      prev[d.to] = id; firstDoor[d.to] = id===fromId ? d : firstDoor[id];
+      if(d.to===targetId){ const path = [targetId]; let p = prev[targetId]; while(p!==null){ path.unshift(p); p = prev[p]; } return {path, first:firstDoor[targetId]}; }
+      q.push(d.to);
+    }
+  }
+  return null;
+}
+function locLabel(id){ const L = world[id]; return L ? getLocName(L) : id; }
+function routeText(targetId){
+  if(currentLocId===targetId) return 'Вы уже здесь: '+locLabel(targetId)+'.';
+  const r = routeInfo(targetId); if(!r) return 'Путь пока неизвестен.';
+  return r.path.map(locLabel).join(' → ');
+}
+function merchantLoc(){
+  let best = null, bd = 1e9;
+  for(const id of Object.keys(world)){ if(!world[id].merchant) continue; const r = id===currentLocId ? {path:[id]} : routeInfo(id); if(r && r.path.length<bd){ bd = r.path.length; best = id; } }
+  return best;
+}
+// куда идти по выбранному заданию: {loc, x, y, label} (x,y — только если это текущая локация и точка известна)
+function trackSpec(){
+  const tr = player.track || 'main';
+  const main = ()=>{
+    const st = storyStage();
+    if(st>=LAIR_ORDER.length){
+      const L = world.lair10; if(currentLocId==='lair10'){ const t = loc.items.find(i=>i.type==='treasure'); if(t) return {loc:'lair10', x:t.x+8, y:t.y+8, label:'Сердце'}; }
+      return {loc:'lair10', label:'Сердце Эльдории'};
+    }
+    return lairSpec(LAIR_ORDER[st]);
+  };
+  if(tr==='quest' && player.quest){
+    const q = player.quest, d = QUESTS[q.id];
+    if(q.done){ const m = merchantLoc(); if(m){ if(m===currentLocId && loc.merchant) return {loc:m, x:loc.merchant.x+loc.merchant.w/2, y:loc.merchant.y+loc.merchant.h/2, label:'Торговец'}; return {loc:m, label:'Торговец'}; } }
+    else if(d && BOSS_TYPES.includes(d.type)){ const lid = Object.keys(LAIR).find(k=>LAIR[k].boss===d.type); if(lid) return lairSpec(lid); }
+    return main();
+  }
+  if(tr.startsWith('story:')){ const s = storyTarget(tr.slice(6)); if(s) return s; }
+  return main();
+}
+function lairSpec(lid){
+  if(currentLocId===lid){
+    const b = loc.boss || loc.enemies.find(e=>BOSS_TYPES.includes(e.type) && e.hp>0);
+    if(b && b.hp>0) return {loc:lid, x:b.x+b.w/2, y:b.y+b.h/2, label:'Босс'};
+    if(loc.portal) return {loc:lid, x:(loc.portal.tx+0.5)*TILE, y:(loc.portal.ty+0.5)*TILE, label:'Спуск'};
+  }
+  return {loc:lid, label:LAIR[lid].title};
+}
+// точка на экране-карте, к которой ведёт стрелка (в текущей локации) или null
+function trackPoint(){
+  const s = trackSpec(); if(!s) return null;
+  if(s.loc===currentLocId && s.x!==undefined) return {x:s.x, y:s.y, label:s.label};
+  if(s.loc===currentLocId){ return null; }
+  const r = routeInfo(s.loc); if(!r) return null;
+  return {x:r.first.x, y:r.first.y, label:'→ '+locLabel(r.first.to)};
+}
+function drawTrackArrow(camX, camY){
+  if(gameState!=='playing') return;
+  const p = trackPoint(); if(!p) return;
+  const px = p.x-camX, py = p.y-camY, W = canvas.width, H = canvas.height, m = 30, t = Date.now()/1000;
+  const inside = px>m && py>m && px<W-m && py<H-m;
+  ctx.save(); ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+  if(inside){
+    const bob = Math.sin(t*4)*3;
+    ctx.fillStyle = '#ffd34a'; ctx.strokeStyle = '#3a2a06'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px,py-18+bob); ctx.lineTo(px-7,py-30+bob); ctx.lineTo(px+7,py-30+bob); ctx.closePath(); ctx.fill(); ctx.stroke();
+    if(p.label){ ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.lineWidth = 3; ctx.strokeText(p.label,px,py-34+bob); ctx.fillStyle = '#ffe9a0'; ctx.fillText(p.label,px,py-34+bob); }
+  } else {
+    const cx = W/2, cy = H/2, dx = px-cx, dy = py-cy;
+    const k = Math.min((cx-m-UI.r)/Math.max(Math.abs(dx),1e-6), (cy-m-UI.b)/Math.max(Math.abs(dy),1e-6));
+    const ax = cx+dx*k, ay = cy+dy*k, pulse = 1+Math.sin(t*5)*0.12;
+    ctx.translate(ax,ay); ctx.rotate(Math.atan2(dy,dx)); ctx.scale(pulse,pulse);
+    ctx.fillStyle = '#ffd34a'; ctx.strokeStyle = '#3a2a06'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-8,-10); ctx.lineTo(-3,0); ctx.lineTo(-8,10); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.rotate(-Math.atan2(dy,dx)); ctx.scale(1/pulse,1/pulse);
+    const dist = Math.round(Math.hypot(dx,dy)/TILE);
+    const txt = (p.label ? p.label+' · ' : '')+dist+' кл.';
+    const tw = ctx.measureText(txt).width, lx = Math.max(tw/2+6, Math.min(W-tw/2-6, ax))-ax;
+    ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.lineWidth = 3; ctx.strokeText(txt, lx, ay<cy ? 26 : -16); ctx.fillStyle = '#ffe9a0'; ctx.fillText(txt, lx, ay<cy ? 26 : -16);
+  }
+  ctx.restore();
+}
+
+// ---------- Быстрый перенос ----------
+function travelList(){
+  const ids = ['overworld','town'].concat(CHAIN).filter(id=>world[id] && player.visited && player.visited[id]);
+  return ids;
+}
+function travelCost(id){ return id==='overworld' ? 25 : id==='town' ? 20 : 20+10*Math.max(0,CHAIN.indexOf(id)); }
+function travelBlock(){
+  if(LAIR[currentLocId] && loc.boss && loc.boss.hp>0) return 'Пока жив страж логова, уйти нельзя.';
+  const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
+  if(!loc.safe && loc.enemies.some(e=>e.hp>0 && Math.hypot(e.x+e.w/2-pcx, e.y+e.h/2-pcy)<240)) return 'Враги слишком близко — отойдите подальше.';
+  if(currentLocId.startsWith('house')) return 'Выйдите из дома на улицу.';
+  return null;
+}
+function doTravel(id){
+  const why = travelBlock(); if(why){ renderJournal(why); SFX.play('deny'); return; }
+  const cost = travelCost(id); if(player.gold<cost){ renderJournal('Не хватает золота: нужно '+cost+'.'); SFX.play('deny'); return; }
+  player.gold -= cost; closeJournal(true);
+  const L = world[id]; goTo(id, L.spawn.x, L.spawn.y, 'Вы перенеслись: '+locLabel(id)+' (−'+cost+' ◆)');
+  burst(player.x+player.w/2, player.y+player.h/2, 24, {colors:['#c9a8ff','#ffffff','#7ad4ff'], sp:110, up:40, g:-30, life:700, size:3});
+  ensureNewPlayerFields(); saveGame();
+}
+
+// ---------- Экран журнала ----------
+const questScreen = document.getElementById('questScreen'), questList = document.getElementById('questList'), questTabsEl = document.getElementById('questTabs'), questBtn = document.getElementById('questBtn');
+let journalTab = 'journal';
+function jRow(title, desc, buttons, color){
+  const row = document.createElement('div'); row.className = 'shopItem';
+  const info = document.createElement('div'); info.className = 'shopInfo';
+  const nm = document.createElement('b'); nm.textContent = title; if(color) nm.style.color = color;
+  const ds = document.createElement('span'); ds.textContent = desc; info.append(nm, ds);
+  const box = document.createElement('div'); box.className = 'shopBtns'; (buttons||[]).forEach(b=>box.appendChild(b));
+  row.append(info, box); questList.appendChild(row);
+}
+function jHead(text){ const h = document.createElement('div'); h.style.cssText = 'width:100%;text-align:left;color:#e0c23a;font-weight:bold;font-size:13px;margin-top:6px'; h.textContent = text; questList.appendChild(h); }
+function trackBtn(key, label){
+  const on = (player.track||'main')===key;
+  return shopButton(on ? '📌 Отслеживается' : '📌 Следить', ()=>{ player.track = key; renderJournal('Стрелка на экране указывает: '+label+'.'); }, on);
+}
+function renderJournal(msg){
+  document.getElementById('questMsg').textContent = msg || '';
+  ensureNewPlayerFields();
+  document.getElementById('questInfo').textContent = journalTab==='travel' ? 'Золото: '+player.gold+' ◆' : 'Убито стражей: '+storyStage()+' из '+LAIR_ORDER.length;
+  questTabsEl.innerHTML = '';
+  [['journal','📜 Задания'],['travel','🧭 Перенос']].forEach(([id,label])=>{
+    const t = document.createElement('button'); t.className = 'tabBtn'+(journalTab===id?' active':''); t.textContent = label;
+    t.addEventListener('click', ()=>{ journalTab = id; renderJournal(''); }); questTabsEl.appendChild(t);
+  });
+  questList.innerHTML = '';
+  if(journalTab==='travel'){
+    const why = travelBlock();
+    if(why) jRow('Сейчас перенос недоступен', why, []);
+    const ids = travelList();
+    for(const id of ids){
+      const here = id===currentLocId, cost = travelCost(id);
+      jRow(locLabel(id), here ? 'Вы здесь.' : 'Появитесь у входа. Стоимость — '+cost+' ◆.', [shopButton(here ? 'Вы здесь' : 'Перенестись — '+cost+' ◆', ()=>doTravel(id), here || !!why || player.gold<cost)]);
+    }
+    if(ids.length<=2) jRow('Новые места', 'Места появляются в списке, когда вы там побываете.', []);
+    return;
+  }
+  const st = storyStage();
+  jHead('Главная цель');
+  jRow(goalText().replace('Цель: ',''), 'Путь: '+routeText(trackMainLoc()), [trackBtn('main','главная цель')], '#ffd34a');
+  if(player.quest && QUESTS[player.quest.id]){
+    const q = player.quest, d = QUESTS[q.id];
+    jHead('Поручение торговца');
+    jRow(d.name, d.desc+(q.done ? ' Выполнено — вернитесь к торговцу за наградой.' : ' Прогресс: '+q.progress+'/'+d.target+'.'), [trackBtn('quest','задание «'+d.name+'»')], q.done ? '#7fe07f' : '#e0c96a');
+  }
+  const act = Object.keys(STORIES).filter(id=>storyState(id)==='active'), avail = Object.keys(STORIES).filter(id=>storyState(id)==='avail');
+  if(act.length){ jHead('Истории'); for(const id of act) jRow(STORIES[id].title, storyJournalText(id), [trackBtn('story:'+id, '«'+STORIES[id].title+'»')], '#9ad0ff'); }
+  if(avail.length){ jHead('Слухи'); for(const id of avail) jRow('❔ '+STORIES[id].rumor, 'Поговорите с жителем в городе: '+locLabel('town')+'.', []); }
+  const done = Object.keys(STORIES).filter(id=>storyState(id)==='done'), qd = Object.keys(player.questsDone||{}).filter(k=>QUESTS[k]);
+  if(done.length || qd.length || st>0){
+    jHead('Выполнено');
+    for(let i=0;i<st && i<LAIR_ORDER.length;i++) jRow('✔ '+(BOSS_NAME_BY_STAGE[i]||'Страж')+' побеждён', LAIR[LAIR_ORDER[i]].title, [], '#7fe07f');
+    for(const id of done) jRow('✔ '+STORIES[id].title, STORIES[id].doneText, [], '#7fe07f');
+    for(const k of qd) jRow('✔ '+QUESTS[k].name, 'Поручение торговца выполнено.', [], '#7fe07f');
+  }
+}
+function trackMainLoc(){ const st = storyStage(); return st>=LAIR_ORDER.length ? 'lair10' : LAIR_ORDER[st]; }
+function openJournal(tab){
+  if(gameState!=='playing') return;
+  for(const k in keys) keys[k] = false;
+  journalTab = tab || 'journal'; gameState = 'journal'; renderJournal(''); questScreen.classList.remove('hidden');
+}
+function closeJournal(silent){
+  questScreen.classList.add('hidden'); if(gameState==='journal') gameState = 'playing'; for(const k in keys) keys[k] = false; if(!silent) saveGame();
+}
+document.getElementById('questClose').addEventListener('click', ()=>closeJournal());
+questBtn.addEventListener('click', ()=>{ if(gameState==='playing') openJournal(); else if(gameState==='journal') closeJournal(); });
+window.addEventListener('keydown', e=>{
+  if(e.code==='KeyJ'){ if(gameState==='playing') openJournal('journal'); else if(gameState==='journal') closeJournal(); }
+  else if(e.code==='KeyT'){ if(gameState==='playing') openJournal('travel'); else if(gameState==='journal') closeJournal(); }
+});
+// ---------- Мини-истории: жители просят о помощи ----------
+// steps: find — поговорить с персонажем в локации; collect — подобрать предметы; return — вернуться к тому, кто просил.
+const STORIES = {
+  lost_boy:{ title:'Пропавший мальчишка', need:0, rumor:'В городе кто-то тревожно ищет пропавшего ребёнка…',
+    giver:{name:'Горан Железнорук', col:'#8a5a3a'},
+    offer:['— Эй, путник! Тебе не встречался мальчишка лет двенадцати? Мой Тиль ушёл за светящимися грибами в Грот Шорохов и не вернулся.','Третий день не сплю. Сходи туда, найди его — а я уж не поскуплюсь: кую хорошие вещи.'],
+    waiting:'Нашёл Тиля? Грот Шорохов, дальше логова Мортракса…',
+    steps:[ {kind:'find', loc:'dungeon1', npc:{name:'Тиль', col:'#d6a93a'}, hint:'Найдите мальчика Тиля в Гроте Шорохов.', talk:['— Ой! Вы от папы? Я… заплутал, а факел погас.','Скажите отцу, что со мной всё хорошо. Я выберусь следом, честно!']},
+            {kind:'return', hint:'Вернитесь к Горану Железноруку в городе.', talk:['— Тиль дома?! Слава предкам…','Держи, это не плата — благодарность. И обломки хорошей стали: пригодятся у кузнеца.']} ],
+    reward:{gold:160, mats:{scrap:6}, gear:1}, doneText:'Горан получил сына обратно и щедро отблагодарил вас.' },
+  letter:{ title:'Письмо в Пустошь', need:1, rumor:'У аптекарши есть письмо, которое некому отнести…',
+    giver:{name:'Мариэль Травница', col:'#7a4a9a'},
+    offer:['— Ах, как кстати! У меня письмо для старого друга, караванщика Брама. Он торгует где-то в Пустоши Зарахаб.','Донесёшь? Он расплатится — он всегда держит слово.'],
+    waiting:'Письмо всё ещё у тебя? Брам ждёт в Пустоши Зарахаб.',
+    steps:[ {kind:'find', loc:'desert', npc:{name:'Брам-караванщик', col:'#b8742e'}, hint:'Передайте письмо Браму в Пустоши Зарахаб.', talk:['— Письмо от Мариэль? Ха! Давно от неё вестей не было.','Прочту потом. А тебе — за труды. Бери, не стесняйся.']} ],
+    reward:{gold:260, elix:1, mats:{scrap:4}}, doneText:'Письмо доставлено, Брам рассчитался сполна.' },
+  ore:{ title:'Алая руда', need:3, rumor:'Угольщик жалуется, что остался без руды…',
+    giver:{name:'Тарн Угольщик', col:'#5a5a64'},
+    offer:['— Горнило стынет! Мне нужна алая руда из Кузней Гхарраш — пять кусков. В тех пещерах жарко, а твари злые.','Принесёшь — перекую твоё снаряжение так, что враги заплачут.'],
+    waiting:'Алой руды ещё не хватает? Кузни Гхарраш, пять кусков.',
+    steps:[ {kind:'collect', loc:'lava', n:5, item:'Алая руда', hint:'Соберите алую руду в Кузнях Гхарраш.'},
+            {kind:'return', hint:'Отнесите руду Тарну Угольщику в город.', talk:['— Ха! Горит как надо! Вот это руда.','Бери награду и эти заготовки. Заходи ещё.']} ],
+    reward:{gold:420, mats:{scrap:8, essence:3}, gear:1}, doneText:'Тарн снова раздул горнило — и не остался в долгу.' },
+  locket:{ title:'Медальон на погосте', need:6, rumor:'Вдова с погоста просит найти фамильную вещь…',
+    giver:{name:'Эйра Вдовица', col:'#6a6a8a'},
+    offer:['— Мой муж лежит на Погосте Увядших Звёзд. Я обронила там медальон — единственное, что от него осталось.','Принеси его, умоляю. Там неспокойно, береги себя.'],
+    waiting:'Медальон всё ещё на Погосте Увядших Звёзд…',
+    steps:[ {kind:'collect', loc:'grave', n:1, item:'Серебряный медальон', hint:'Найдите серебряный медальон на Погосте Увядших Звёзд.'},
+            {kind:'return', hint:'Верните медальон Эйре Вдовице в городе.', talk:['— Он… он самый! Спасибо тебе.','Пусть это поможет тебе в пути.']} ],
+    reward:{gold:700, mats:{essence:4, crystal:1}, gear:2}, doneText:'Эйра вновь держит память о муже в руках.' }
+};
+function storyState(id){
+  const S = STORIES[id], st = player.stories && player.stories[id];
+  if(st) return st.done ? 'done' : 'active';
+  return S.need<=storyStage() ? 'avail' : 'locked';
+}
+function curStep(id){ const st = player.stories[id]; return st && !st.done ? STORIES[id].steps[st.step] : null; }
+function npcsOf(L){ return L.npcs || (L.npcs = []); }
+function findNpc(L, sid, role){ return npcsOf(L).find(n=>n.sid===sid && n.role===role); }
+function storySpot(L, town){
+  const T = TILE, W = L.width, H = L.height, bad = L.type==='overworld' ? '~^#SBo' : '#LSBo';
+  const sx = Math.floor(L.spawn.x/T), sy = Math.floor(L.spawn.y/T);
+  const seen = floodFrom(L.grid, sx, sy, bad), P = town && townPaths ? townPaths(L) : null;
+  const used = npcsOf(L).map(n=>[n.x,n.y]);
+  for(let tries=0; tries<1500; tries++){
+    const x = rnd(3,W-4), y = rnd(3,H-4);
+    if(L.grid[y][x]!=='.' || !seen[x+y*W]) continue;
+    if(P && !P[y][x]) continue;
+    if(!town && Math.hypot(x-sx,y-sy)<(tries<700 ? 10 : 6)) continue;
+    if(L.exit && Math.hypot(x-L.exit.tx,y-L.exit.ty)<5) continue;
+    let ok = true; for(let dy=-1;dy<=1&&ok;dy++) for(let dx=-1;dx<=1;dx++){ const t = L.grid[y+dy] && L.grid[y+dy][x+dx]; if(!t || bad.includes(t)){ ok = false; break; } }
+    if(!ok && tries<1100) continue;
+    if(used.some(u=>Math.hypot(u[0]-x*T,u[1]-y*T)<TILE*3)) continue;
+    if((L.props && L.props.some(q=>Math.hypot(q.x-(x*T+9),q.y-(y*T+9))<30)) || (L.traps && L.traps.some(q=>Math.hypot(q.x-(x*T+9),q.y-(y*T+9))<30))) continue;
+    return {x:x*T+9, y:y*T+9};
+  }
+  return {x:L.spawn.x, y:L.spawn.y};
+}
+function addNpc(L, sid, role, def, town){
+  const p = storySpot(L, town);
+  npcsOf(L).push({sid, role, name:def.name, col:def.col, x:p.x, y:p.y, w:14, h:14, face:1});
+}
+function storiesEnsure(){
+  if(!player.stories || !world.town) return;
+  for(const id of Object.keys(STORIES)){
+    const S = STORIES[id], state = storyState(id), st = player.stories[id];
+    if(state==='avail' || (state==='active' && curStep(id) && curStep(id).kind==='return')){
+      if(!findNpc(world.town, id, 'giver')) addNpc(world.town, id, 'giver', S.giver, true);
+    }
+    if(state==='active'){
+      const step = curStep(id), L = step && step.loc && world[step.loc];
+      if(step && step.kind==='find' && L && !findNpc(L, id, 'target')) addNpc(L, id, 'target', step.npc, false);
+      if(step && step.kind==='collect' && L){
+        const have = L.items.filter(i=>i.type==='sitem' && i.sid===id).length, need = step.n - (st.n||0);
+        for(let i=have;i<need;i++){ const p = storySpot(L,false); L.items.push({type:'sitem', sid:id, name:step.item, x:p.x-8, y:p.y-8, w:16, h:16}); }
+      }
+    }
+    if(state==='done') for(const L of Object.values(world)){ if(L.npcs) L.npcs = L.npcs.filter(n=>n.sid!==id); if(L.items) L.items = L.items.filter(i=>i.sid!==id); }
+  }
+}
+function storyTarget(id){
+  const step = curStep(id); if(!step) return null;
+  const S = STORIES[id], here = loc;
+  if(step.kind==='return'){
+    if(currentLocId==='town'){ const n = findNpc(world.town, id, 'giver'); if(n) return {loc:'town', x:n.x+7, y:n.y, label:S.giver.name}; }
+    return {loc:'town', label:S.giver.name};
+  }
+  if(currentLocId===step.loc){
+    if(step.kind==='find'){ const n = findNpc(loc, id, 'target'); if(n) return {loc:step.loc, x:n.x+7, y:n.y, label:n.name}; }
+    else { const pcx = player.x, pcy = player.y; let b = null, bd = 1e9; for(const i of loc.items) if(i.type==='sitem' && i.sid===id){ const d = Math.hypot(i.x-pcx,i.y-pcy); if(d<bd){ bd = d; b = i; } } if(b) return {loc:step.loc, x:b.x+8, y:b.y+8, label:step.item}; }
+    return {loc:step.loc, label:locLabel(step.loc)};
+  }
+  return {loc:step.loc};
+}
+function storyJournalText(id){
+  const step = curStep(id), st = player.stories[id]; if(!step) return '';
+  const where = step.loc ? locLabel(step.loc) : locLabel('town');
+  return step.hint+(step.kind==='collect' ? ' Собрано: '+(st.n||0)+'/'+step.n+'.' : '')+' Место: '+where+'.';
+}
+function giveReward(R){
+  const out = [];
+  if(R.gold){ player.gold += R.gold; out.push('+'+R.gold+' ◆'); }
+  if(R.mats) for(const k in R.mats){ player.mats[k] = (player.mats[k]||0)+R.mats[k]; out.push('+'+R.mats[k]+' '+MAT_INFO[k].n.toLowerCase()); }
+  if(R.elix){ const k = ELIX_KEYS[rnd(0,4)]; player.elix[k] = Math.min(ELIX_MAX, player.elix[k]+R.elix); out.push(ELIX[k].name.toLowerCase()); }
+  if(R.gear!==undefined){
+    if(player.bag.length<BAG_MAX){ const g = makeGear(Math.max(3,storyStage()+1), R.gear); player.bag.push(g); out.push(g.name+' ('+RAR[g.rar].n.toLowerCase()+')'); }
+    else { player.gold += 80; out.push('+80 ◆ вместо снаряжения'); }
+  }
+  return out.join(', ');
+}
+function finishStory(id){
+  const S = STORIES[id], st = player.stories[id]; st.done = true;
+  const txt = giveReward(S.reward);
+  addNote('✔ История завершена: «'+S.title+'». '+txt, '#7fe07f'); SFX.play('levelup');
+  storiesEnsure(); saveGame();
+}
+function advanceStory(id){
+  const S = STORIES[id], st = player.stories[id]; st.step++; st.n = 0;
+  if(st.step>=S.steps.length){ finishStory(id); return; }
+  addNote('📜 «'+S.title+'»: '+S.steps[st.step].hint, '#9ad0ff'); SFX.play('pickup');
+  storiesEnsure(); saveGame();
+}
+function talkNpc(n){
+  const S = STORIES[n.sid], st = player.stories[n.sid];
+  if(!S) return;
+  if(n.role==='giver'){
+    if(!st){
+      showDialog(n.name, S.offer, 'Принять', ()=>{ player.stories[n.sid] = {step:0, n:0}; player.track = 'story:'+n.sid; addNote('📜 Новая история: «'+S.title+'». Она в журнале (J)', '#9ad0ff'); SFX.play('levelup'); storiesEnsure(); saveGame(); });
+    } else if(!st.done){
+      const step = S.steps[st.step];
+      if(step.kind==='return') showDialog(n.name, step.talk, 'Спасибо', ()=>advanceStory(n.sid));
+      else showDialog(n.name, ['— '+S.waiting], 'Хорошо');
+    }
+  } else if(n.role==='target'){
+    const step = curStep(n.sid);
+    if(step && step.kind==='find') showDialog(n.name, step.talk, 'Дальше', ()=>advanceStory(n.sid));
+  }
+}
+function storiesTick(dt){
+  if(!player.stories) return;
+  const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
+  for(const n of (loc.npcs||[])){
+    const d = Math.hypot(pcx-(n.x+7), pcy-(n.y+7));
+    if(d>120) n.lock = false;
+    else if(d<46 && !n.lock){ n.lock = true; talkNpc(n); return; }
+  }
+  let picked = false;
+  loc.items = loc.items.filter(it=>{
+    if(it.type!=='sitem' || !overlap(it, {x:player.x,y:player.y,w:player.w,h:player.h})) return true;
+    const st = player.stories[it.sid], step = curStep(it.sid); if(!st || !step){ return false; }
+    st.n = (st.n||0)+1; picked = true; SFX.play('pickup');
+    if(st.n>=step.n){ addNote('📜 '+it.name+': собрано '+st.n+'/'+step.n+'. Возвращайтесь к просившему.', '#9ad0ff'); advanceStory(it.sid); }
+    else addNote('📜 '+it.name+': '+st.n+'/'+step.n, '#9ad0ff');
+    return false;
+  });
+  if(picked) saveGame();
+}
+function drawStoryNpc(n, camX, camY){
+  const x = n.x-camX+7, y = n.y-camY+14;
+  if(x<-40||y<-60||x>canvas.width+40||y>canvas.height+40) return;
+  const t = Date.now()/1000, st = player.stories && player.stories[n.sid];
+  ctx.save(); ctx.translate(x,y);
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ell(0,1,7,2.4); ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillStyle = '#4a3a2a'; ctx.fillRect(-4,-4,3,5); ctx.fillRect(1,-4,3,5);
+  ctx.fillStyle = n.col; rrect(-5.5,-14,11,12,3); ctx.fill(); ctx.stroke();
+  ctx.fillRect(-7.5,-13,2.4,8); ctx.fillRect(5.1,-13,2.4,8);
+  ctx.fillStyle = '#e0b890'; circ(0,-19,5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#4a3220'; ctx.beginPath(); ctx.arc(0,-20,5.2,Math.PI,0); ctx.fill();
+  ctx.fillStyle = '#2a1a10'; circ(1.6,-19,0.8); ctx.fill();
+  const hasTalk = n.role==='giver' ? (!st || (!st.done && curStep(n.sid) && curStep(n.sid).kind==='return')) : true;
+  if(hasTalk){
+    const bob = Math.sin(t*4+n.x)*2; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.lineWidth = 3;
+    const mark = n.role==='giver' && st ? '?' : '!'; ctx.strokeText(mark,0,-30+bob); ctx.fillStyle = '#ffd34a'; ctx.fillText(mark,0,-30+bob);
+  }
+  const pd = Math.hypot(player.x+11-(n.x+7), player.y+11-(n.y+7));
+  if(pd<130){ ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.lineWidth = 3; ctx.strokeText(n.name,0,-40); ctx.fillStyle = '#fff'; ctx.fillText(n.name,0,-40); }
+  ctx.restore();
+}
+function drawStoryItem(it, camX, camY){
+  const sx = it.x-camX, sy = it.y-camY; if(sx<-30||sy<-30||sx>canvas.width+30||sy>canvas.height+30) return;
+  const t = Date.now()/1000, bob = Math.sin(t*3+it.x)*1.5, locket = it.name.indexOf('едальон')>=0;
+  const gl = ctx.createRadialGradient(sx+8,sy+8,1,sx+8,sy+8,17); gl.addColorStop(0,locket?'rgba(220,230,255,0.8)':'rgba(255,120,60,0.8)'); gl.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(sx+8,sy+8+bob,17,0,6.283); ctx.fill();
+  ctx.save(); ctx.translate(sx+8,sy+8+bob); ctx.lineWidth = 1.4; ctx.strokeStyle = '#2a1208';
+  if(locket){ ctx.strokeStyle = '#8a92a8'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(-4,-9); ctx.quadraticCurveTo(0,-3,4,-9); ctx.stroke(); ctx.strokeStyle = '#3a4258'; ctx.fillStyle = '#d8dee8'; circ(0,1,5.6); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#8aa0d8'; circ(0,1,2.6); ctx.fill(); }
+  else { ctx.fillStyle = '#c0391c'; ctx.beginPath(); ctx.moveTo(-6,3); ctx.lineTo(-3,-6); ctx.lineTo(3,-7); ctx.lineTo(7,0); ctx.lineTo(4,6); ctx.lineTo(-2,7); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#ff9a4a'; ctx.beginPath(); ctx.moveTo(-3,-4); ctx.lineTo(1,-5); ctx.lineTo(2,-1); ctx.lineTo(-2,0); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+}
+// ---------- Ветки умений и крафт снаряжения ----------
+const SKILL_BRANCH = {
+  dash:  {a:{n:'Теневой разрез', d:'рывок наносит урон всем врагам на пути (70% удара)'},        b:{n:'Лёгкая поступь', d:'рывок на 25% дальше, перезарядка на 30% короче'}},
+  spin:  {a:{n:'Ураган',          d:'радиус вихря +35%, враги отлетают сильнее'},                b:{n:'Кровавый вихрь', d:'каждый задетый враг (до 4) возвращает 4% здоровья'}},
+  shield:{a:{n:'Шипастая аура',   d:'пока щит горит, касающиеся вас враги получают 60% вашего удара'}, b:{n:'Бастион',    d:'щит держится на 50% дольше и при создании лечит 20% здоровья'}},
+  might: {a:{n:'Ярость',          d:'12% шанс критического удара (двойной урон)'},               b:{n:'Закалка',        d:'получаемый урон снижен на 12%'}}
+};
+let heroPick = null;
+function branchOf(k){ const b = player.sb && player.sb[k]; return b ? SKILL_BRANCH[k][b] : null; }
+function skillUpgrade(k){
+  const l = player.skills[k];
+  if(l===1 && !(player.sb && player.sb[k]) && player.sp>0){ heroPick = k; renderHero('Выберите ветку развития — выбор окончательный.'); return; }
+  player.sp--; player.skills[k]++; refreshSkillUI(); saveGame(); SFX.play('levelup'); renderHero(SKILLS[k].name+': уровень '+player.skills[k]+'.');
+}
+function renderBranchPick(){
+  const k = heroPick, S = SKILLS[k];
+  const back = shopButton('← Назад', ()=>{ heroPick = null; renderHero(''); });
+  heroRow(S.icon+' '+S.name+': новая ветка', 'Выберите, как будет развиваться умение на втором уровне. Это нельзя изменить позже.', [back]);
+  for(const id of ['a','b']){
+    const B = SKILL_BRANCH[k][id];
+    heroRow((id==='a'?'🅰 ':'🅱 ')+B.n, 'Умение: '+B.d+'.', [shopButton('Выбрать — 1 ★', ()=>{
+      if(player.sp<1) return;
+      player.sb[k] = id; player.sp--; player.skills[k]++; heroPick = null; refreshSkillUI(); saveGame(); SFX.play('levelup'); renderHero(S.name+': ветка «'+B.n+'».');
+    })], '#9ad0ff');
+  }
+}
+// эффекты веток
+function dashDamage(){
+  if(!player.sb || player.sb.dash!=='a') return;
+  const hit = player.dashHit || (player.dashHit = []);
+  const r = {x:player.x-6, y:player.y-6, w:player.w+12, h:player.h+12};
+  for(const e of loc.enemies){
+    if(e.hp<=0 || hit.includes(e) || !overlap(e, r)) continue;
+    hit.push(e); damageEnemy(e, Math.round(playerDamage()*0.7)); SFX.play('hit');
+    burst(e.x+e.w/2, e.y+e.h/2, 6, {colors:['#cfe8ff','#ffffff','#7a8aff'], sp:100, up:20, g:100, life:300, size:2});
+    if(e.hp<=0) killEnemy(e);
+  }
+}
+function shieldReflect(e, dt){
+  e.reflCd = Math.max(0, (e.reflCd||0)-dt*1000);
+  if(player.shield>0 && player.sb && player.sb.shield==='a' && e.reflCd<=0 && e.hp>0 && overlap(e, {x:player.x-4,y:player.y-4,w:player.w+8,h:player.h+8})){
+    e.reflCd = 600; damageEnemy(e, Math.round(playerDamage()*0.6));
+    burst(e.x+e.w/2, e.y+e.h/2, 6, {colors:['#9ad0ff','#ffffff'], sp:90, up:20, g:60, life:300, size:2}); SFX.play('clang');
+    if(e.hp<=0){ killEnemy(e); return true; }
+  }
+  return false;
+}
+
+// ---------- Материалы ----------
+const MAT_INFO = {
+  scrap:  {n:'Обломки',  icon:'⚙', col:'#c8c8c8'},
+  essence:{n:'Эссенция', icon:'✨', col:'#7ad4ff'},
+  crystal:{n:'Кристалл', icon:'🔷', col:'#c06aff'}
+};
+function matsText(){ const m = player.mats||{}; return Object.keys(MAT_INFO).map(k=>MAT_INFO[k].icon+' '+(m[k]||0)).join('  '); }
+function dismantleYield(g){
+  const L = g.L||0;
+  return g.rar===0 ? {scrap:2+Math.floor(L/3)} : g.rar===1 ? {scrap:4+Math.floor(L/2), essence:1} : {scrap:6+L, essence:2, crystal:1};
+}
+function yieldText(y){ return Object.keys(y).map(k=>MAT_INFO[k].icon+y[k]).join(' '); }
+function dismantleGear(i){
+  const g = player.bag[i]; if(!g) return null;
+  const y = dismantleYield(g); player.bag.splice(i,1);
+  for(const k in y) player.mats[k] = (player.mats[k]||0)+y[k];
+  return y;
+}
+function dropMats(e){
+  if(e.minion) return;
+  const boss = BOSS_TYPES.includes(e.type);
+  let y = null;
+  if(boss) y = {scrap:4, essence:2, crystal:1};
+  else if(e.elite) y = {scrap:2, essence:1};
+  else if(Math.random()<0.07) y = {scrap:rnd(1,2)};
+  if(!y) return;
+  for(const k in y) player.mats[k] = (player.mats[k]||0)+y[k];
+  addNote('Найдено: '+yieldText(y), '#c8c8c8');
+}
+// ---------- Улучшение снаряжения ----------
+const GEAR_UP_MAX = 3;
+function rollStats(slot, rar, L){
+  const S = GEAR_SLOTS[slot], stats = {}, want = RAR[rar].k; let guard = 0;
+  while(Object.keys(stats).length<want && guard++<40){
+    const k = S.pool[rnd(0,S.pool.length-1)]; if(stats[k]) continue;
+    const I = STAT_INFO[k], raw = (I.base+I.per*L)*RAR[rar].m*(0.85+Math.random()*0.3);
+    stats[k] = k==='hp' ? Math.max(1,Math.round(raw)) : Math.round(raw*10)/10;
+  }
+  return stats;
+}
+function gearEquipped(g){ return player.gear[g.slot]===g; }
+function mutateGear(g, fn){
+  const eq = gearEquipped(g); if(eq) applyGearHp(g,-1);
+  fn(); if(eq) applyGearHp(g,1);
+}
+function gearUpCost(g){ const u = g.up||0; return {mats:{scrap:3+2*u}, gold:Math.round(40*(u+1)*(1+g.rar))}; }
+function gearReforgeCost(g){ return {mats:{essence:2+g.rar}, gold:60*(1+g.rar)}; }
+function gearAscendCost(g){ return {mats:{crystal:1+g.rar}, gold:150*(1+g.rar)}; }
+function canPay(c){ if(player.gold<c.gold) return false; for(const k in c.mats) if((player.mats[k]||0)<c.mats[k]) return false; return true; }
+function pay(c){ player.gold -= c.gold; for(const k in c.mats) player.mats[k] -= c.mats[k]; }
+function costText(c){ return c.gold+' ◆ + '+yieldText(c.mats); }
+function upgradeGear(g){
+  if((g.up||0)>=GEAR_UP_MAX) return false; const c = gearUpCost(g); if(!canPay(c)) return false; pay(c);
+  mutateGear(g, ()=>{ for(const k in g.stats){ const v = g.stats[k]*1.15; g.stats[k] = k==='hp' ? Math.max(g.stats[k]+1, Math.round(v)) : Math.round(v*10)/10; } g.up = (g.up||0)+1; });
+  return true;
+}
+function reforgeGear(g){
+  const c = gearReforgeCost(g); if(!canPay(c)) return false; pay(c);
+  mutateGear(g, ()=>{ g.stats = rollStats(g.slot, g.rar, g.L); g.up = 0; const first = Object.keys(g.stats)[0]; g.name = GEAR_SLOTS[g.slot].names[rnd(0,GEAR_SLOTS[g.slot].names.length-1)]+' '+STAT_SUFFIX[first]; });
+  return true;
+}
+function ascendGear(g){
+  if(g.rar>=2) return false; const c = gearAscendCost(g); if(!canPay(c)) return false; pay(c);
+  mutateGear(g, ()=>{ g.rar++; g.stats = rollStats(g.slot, g.rar, g.L); g.up = 0; const first = Object.keys(g.stats)[0]; g.name = GEAR_SLOTS[g.slot].names[rnd(0,GEAR_SLOTS[g.slot].names.length-1)]+' '+STAT_SUFFIX[first]; });
+  return true;
+}
+function renderGearForge(){
+  shopRow('Материалы', matsText()+'  — обломки (⚙) падают с врагов, эссенция (✨) и кристаллы (🔷) — с элитных врагов и стражей, а также при разборке снаряжения.', []);
+  const pieces = [];
+  for(const slot of ['helm','ring','amulet']) if(player.gear[slot]) pieces.push({g:player.gear[slot], eq:true});
+  player.bag.forEach((g,i)=>pieces.push({g, eq:false, i}));
+  if(!pieces.length){ shopRow('Снаряжения нет', 'Шлемы, кольца и амулеты падают из врагов. Здесь их можно улучшать, перековывать и разбирать.', []); return; }
+  for(const p of pieces){
+    const g = p.g, up = g.up||0;
+    const bUp = shopButton(up>=GEAR_UP_MAX ? 'Макс.' : '⬆ '+costText(gearUpCost(g)), ()=>{ if(upgradeGear(g)){ saveGame(); SFX.play('buy'); renderShop('Улучшено: '+g.name+' (+'+(up+1)+').'); } else renderShop('Не хватает материалов или золота.'); }, up>=GEAR_UP_MAX || !canPay(gearUpCost(g)));
+    const bRe = shopButton('♻ '+costText(gearReforgeCost(g)), ()=>{ if(reforgeGear(g)){ saveGame(); SFX.play('buy'); renderShop('Перекованы свойства: '+g.name+'.'); } }, !canPay(gearReforgeCost(g)));
+    const btns = [bUp, bRe];
+    if(g.rar<2) btns.push(shopButton('★ '+costText(gearAscendCost(g)), ()=>{ if(ascendGear(g)){ saveGame(); SFX.play('levelup'); renderShop('Возвышено: '+g.name+' — теперь '+RAR[g.rar].n.toLowerCase()+'.'); } }, !canPay(gearAscendCost(g))));
+    if(!p.eq) btns.push(shopButton('Разобрать → '+yieldText(dismantleYield(g)), ()=>{ const idx = player.bag.indexOf(g); const y = dismantleGear(idx); if(y){ saveGame(); SFX.play('buy'); renderShop('Разобрано: '+g.name+' ('+yieldText(y)+').'); } }));
+    shopRow((p.eq ? '● ' : '')+g.name+(up ? ' +'+up : '')+'  ('+GEAR_SLOTS[g.slot].n.toLowerCase()+')', RAR[g.rar].n+'. '+gearLines(g)+'. ⬆ усилить статы на 15% (до +'+GEAR_UP_MAX+'); ♻ перековать свойства; ★ повысить редкость.', btns);
+  }
+}
+// ======================= Мир: погода влияет на игру, бочки и ящики, ловушки, мосты и броды, зоны боссов =======================
+const hazards = [];                       // круги на земле: {x,y,r,t,dur,dps,kind}; t<0 — предупреждение
+const bolts = [];                         // молнии грозы: {x,y,r,t,dur}
+const wxNoted = {};
+let hazAcc = 0;
+
+// ---------- погода ----------
+function wxName(){
+  if(!OUTDOOR[currentLocId]) return 'clear';
+  const b = env.b[currentLocId];
+  return b && b.amt>0.5 ? b.name : 'clear';
+}
+function weatherSpeedMul(){ const w = wxName(); return w==='snow' ? 0.92 : w==='blizzard' ? 0.82 : w==='sand' ? 0.9 : 1; }
+function weatherAggroMul(){ const w = wxName(); return ({fog:0.7, rain:0.9, storm:0.85, blizzard:0.85, sand:0.8})[w] || 1; }
+function weatherShootMul(){ const w = wxName(); return ({fog:0.6, rain:0.9, storm:0.85, blizzard:0.8, sand:0.8})[w] || 1; }
+const WX_NOTE = {
+  rain:'🌧 Дождь гасит огонь: горение быстро проходит, огненные круги тают',
+  storm:'⛈ Гроза: красные круги на земле — удар молнии. Отойдите, пока она не ударила',
+  fog:'🌫 Туман скрывает вас: враги замечают с меньшего расстояния, стрелки бьют ближе',
+  snow:'❄ Снег замедляет шаг',
+  blizzard:'🌨 Метель: тяжело идти, враги вас почти не видят',
+  sand:'🌪 Песчаная буря: шаг медленнее, враги видят хуже'
+};
+let wxBoltCd = 6;
+function weatherTick(dt){
+  const w = wxName(); if(w==='clear') return;
+  if(!wxNoted[w] && WX_NOTE[w]){ wxNoted[w] = 1; addNote(WX_NOTE[w], '#9fd0ff'); }
+  const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
+  if(w==='rain' || w==='storm'){
+    if(player.fx.burn>0 && (player.fx.burn -= dt*1000*3) <= 0){ player.fx.burn = 0; addNote('🌧 Дождь потушил огонь', '#9fd8ff'); }
+    for(const e of loc.enemies){
+      if(e.dot && e.dot.fire && e.hp>0){ e.dot = null; burst(e.x+e.w/2, e.y+e.h/2, 6, {colors:['#dfe8f0','#aab8c8','#ffffff'], sp:40, up:30, g:-50, life:520, size:2.4}); }
+    }
+  }
+  if(w==='storm'){
+    wxBoltCd -= dt;
+    if(wxBoltCd<=0){
+      wxBoltCd = 7+Math.random()*8;
+      let x, y;
+      const near = loc.enemies.filter(e=>e.hp>0 && Math.hypot(e.x-pcx,e.y-pcy)<360);
+      if(near.length && Math.random()<0.4){ const e = near[rnd(0,near.length-1)]; x = e.x+e.w/2; y = e.y+e.h/2; }
+      else { const a = Math.random()*6.283, r = 40+Math.random()*150; x = pcx+Math.cos(a)*r; y = pcy+Math.sin(a)*r; }
+      bolts.push({x, y, r:40, t:-1000, dur:0});
+    }
+  }
+}
+function boltsTick(dt){
+  const ms = dt*1000;
+  for(let i=bolts.length-1;i>=0;i--){
+    const b = bolts[i]; b.t += ms;
+    if(!b.hit && b.t>=0){
+      b.hit = true; env.flash = 1; env.thunderIn = 0.12; SFX.play('bolt');
+      shakeT = Math.max(shakeT, 240);
+      burst(b.x, b.y, 22, {colors:['#ffffff','#cfe4ff','#ffe89a'], sp:160, up:40, g:80, life:480, size:3});
+      const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
+      if(Math.hypot(pcx-b.x, pcy-b.y) < b.r) hurtPlayer(Math.max(8, Math.round(player.maxHp*0.12)));
+      for(const e of loc.enemies){
+        if(e.hp<=0) continue;
+        if(Math.hypot(e.x+e.w/2-b.x, e.y+e.h/2-b.y) < b.r+e.w/2){ e.hp -= Math.max(30, e.maxHp*0.2); e.hitFlash = 200; if(e.hp<=0) killEnemy(e); }
+      }
+    }
+    if(b.t>=260) bolts.splice(i,1);
+  }
+}
+
+// ---------- зоны на земле ----------
+function hazardHurt(d){
+  if(player.dashT>0 || gameState!=='playing') return;
+  hazAcc += d;
+  if(hazAcc>=1){
+    const n = Math.floor(hazAcc); hazAcc -= n;
+    player.hp -= Math.max(1, Math.round(n*(player.shield>0 ? 0.3 : 1)*(player.buff.guard>0 ? 0.6 : 1)));
+    player.hitFlash = Math.max(player.hitFlash||0, 90);
+    if(player.hp<=0){ player.hp = 0; onPlayerDeath(); }
+  }
+}
+function hazardsTick(dt){
+  const ms = dt*1000, w = wxName(), rain = w==='rain' || w==='storm';
+  const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
+  for(let i=hazards.length-1;i>=0;i--){
+    const h = hazards[i];
+    h.t += ms*(h.kind==='fire' && rain && h.t>=0 ? 2.2 : 1);
+    if(h.t>=h.dur){ hazards.splice(i,1); continue; }
+    if(h.t<0) continue;
+    if(Math.random()<dt*8){
+      const a = Math.random()*6.283, r = Math.sqrt(Math.random())*h.r;
+      burst(h.x+Math.cos(a)*r, h.y+Math.sin(a)*r, 1, {colors:HZ_COL[h.kind]||HZ_COL.fire, sp:12, up:28, g:-50, life:520, size:2.2});
+    }
+    if(Math.hypot(pcx-h.x, pcy-h.y) < h.r){
+      if(h.kind==='fire'){ hazardHurt(h.dps*dt); inflictStatus('burn', 1800, h.dps*6); }
+      else if(h.kind==='poison'){ hazardHurt(h.dps*dt*0.7); inflictStatus('poison', 2500, h.dps*6); }
+      else if(h.kind==='ice'){ hazardHurt(h.dps*dt*0.5); player.slowT = Math.max(player.slowT, 450); }
+      else if(h.kind==='sand'){ hazardHurt(h.dps*dt*0.4); player.slowT = Math.max(player.slowT, 600); }
+    }
+  }
+}
+const HZ_COL = { fire:['#ff7a1a','#ffd34a','#ff4a1a'], poison:['#8aff4a','#4a9a1a'], ice:['#bfeaff','#7ad4ff','#ffffff'], sand:['#e8c878','#c9a050'] };
+const HZ_FILL = { fire:'255,90,30', poison:'110,210,60', ice:'140,210,255', sand:'214,176,96' };
+
+// ---------- генерация: бочки, ящики, ловушки, мосты ----------
+const PROP_R = 9;
+function specialNear(L, x, y, rad){
+  for(let dy=-rad;dy<=rad;dy++) for(let dx=-rad;dx<=rad;dx++){
+    const r = L.grid[y+dy]; if(!r) continue; const t = r[x+dx];
+    if(t && t!=='.' && t!=='#' && t!=='~' && t!=='^') return true;
+  }
+  return false;
+}
+function openTile(L, x, y){
+  for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const r = L.grid[y+dy]; if(!r || r[x+dx]!=='.') return false; }
+  return true;
+}
+function ensureMapExtras(wd){
+  for(const id in wd){
+    const L = wd[id];
+    if(!L || L.extras || !L.grid) continue;
+    L.extras = 1;
+    if(L.type==='overworld'){ makeBridges(L); continue; }
+    if(L.type!=='dungeon' || L.safe || L.biome==='town' || L.biome==='house') continue;
+    const T = TILE, W = L.width, H = L.height, lair = !!LAIR[id], lv = L.level||1;
+    L.props = []; L.traps = [];
+    const sx = L.spawn.x/T, sy = L.spawn.y/T;
+    const keyPts = []; if(L.portal) keyPts.push([L.portal.tx,L.portal.ty]); if(L.exit) keyPts.push([L.exit.tx,L.exit.ty]); for(const d of (L.doors||[])) keyPts.push([d.tx,d.ty]);
+    const nProps = Math.min(16, Math.max(4, Math.floor(W*H/200))), nTraps = lair ? 0 : Math.min(8, Math.max(2, Math.floor(W*H/450)));
+    let tries = 0;
+    while((L.props.length<nProps || L.traps.length<nTraps) && tries++<2500){
+      const x = rnd(2,W-3), y = rnd(2,H-3);
+      if(!openTile(L,x,y) || Math.hypot(x-sx,y-sy)<6 || specialNear(L,x,y,3)) continue;
+      if(keyPts.some(k=>Math.hypot(x-k[0],y-k[1])<6)) continue;
+      const cx = x*T+T/2, cy = y*T+T/2;
+      if(L.enemies.some(e=>Math.hypot(e.x+e.w/2-cx, e.y+e.h/2-cy)<44)) continue;
+      if(L.items.some(i=>Math.hypot(i.x-cx,i.y-cy)<40)) continue;
+      if(L.props.some(p=>Math.hypot(p.x-cx,p.y-cy)<T*3) || L.traps.some(p=>Math.hypot(p.x-cx,p.y-cy)<T*3)) continue;
+      if(L.props.length<nProps && (L.traps.length>=nTraps || Math.random()<0.65)) L.props.push({x:cx, y:cy, k:Math.random()<0.55 ? 'barrel' : 'crate', hp:1});
+      else if(L.traps.length<nTraps){
+        if(Math.random()<0.6) L.traps.push({k:'spikes', x:cx, y:cy, ph:rnd(0,2999)});
+        else L.traps.push({k:'plate', x:cx, y:cy, cd:0});
+      }
+    }
+  }
+}
+function makeBridges(L){
+  L.bridges = [];
+  const W = L.width, H = L.height, G = L.grid, ok = (x,y)=>G[y] && G[y][x]==='.' ;
+  const far = (x,y)=>L.bridges.every(b=>Math.hypot(b.x0-x,b.y0-y)>18);
+  const tryRun = (x0,y0,dx,dy,k)=>{
+    let n = 0; while(G[y0+dy*n] && G[y0+dy*n][x0+dx*n]==='~' && n<10) n++;
+    if(n<3 || n>8) return false;
+    if(!ok(x0-dx,y0-dy) || !ok(x0+dx*n,y0+dy*n)) return false;
+    for(let i=0;i<n;i++){                      // это переправа через озеро, а не лужа: по бокам тоже вода или берег
+      const sx = x0+dx*i+dy, sy = y0+dy*i+dx, ex = x0+dx*i-dy, ey = y0+dy*i-dx;
+      if(!G[sy] || !G[ey] || G[sy][sx]!=='~' || G[ey][ex]!=='~') return false;
+    }
+    if(!far(x0,y0)) return false;
+    for(let i=0;i<n;i++) G[y0+dy*i][x0+dx*i] = '.';
+    L.bridges.push({x0, y0, dx, dy, n, k:n>=5 ? 'bridge' : 'ford'});
+    return true;
+  };
+  let guard = 0;
+  for(let y=3;y<H-3 && L.bridges.length<7 && guard<4000;y+=1){
+    for(let x=3;x<W-3;x++){
+      guard++;
+      if(G[y][x]==='~' && ok(x-1,y) && Math.random()<0.35 && tryRun(x,y,1,0)) { x += 12; }
+      else if(G[y][x]==='~' && ok(x,y-1) && Math.random()<0.35 && tryRun(x,y,0,1)) { x += 3; }
+    }
+  }
+}
+function fordAt(x,y){
+  const B = loc.bridges; if(!B || !B.length) return false;
+  const tx = Math.floor(x/TILE), ty = Math.floor(y/TILE);
+  for(const b of B) if(b.k==='ford'){ const i = b.dx ? tx-b.x0 : ty-b.y0; if(i>=0 && i<b.n && (b.dx ? ty===b.y0 : tx===b.x0)) return true; }
+  return false;
+}
+
+// ---------- столкновения с бочками и ящиками ----------
+function propBlocks(L, x, y, w, h){
+  const P = L.props;
+  for(let i=0;i<P.length;i++){
+    const p = P[i];
+    if(x < p.x+PROP_R && x+w > p.x-PROP_R && y < p.y+PROP_R && y+h > p.y-PROP_R) return true;
+  }
+  return false;
+}
+function breakProp(i){
+  const p = loc.props[i]; if(!p) return;
+  loc.props.splice(i,1);
+  SFX.play('barrel');
+  burst(p.x, p.y, 14, {colors:p.k==='barrel' ? ['#8a5a2a','#c28a4a','#5a3a1a'] : ['#b88a4a','#d8b070','#6a4a24'], sp:110, up:40, g:240, life:520, size:2.6, shape:'r'});
+  const lv = loc.level||1, r = Math.random();
+  const mk = o=>Object.assign({x:p.x-7+rnd(-8,8), y:p.y-7+rnd(-8,8), w:14, h:14}, o);
+  if(r<0.5){ loc.items.push(mk({type:'gold', value:Math.max(2, Math.round(rnd(3,9)*(1+lv*0.35)))})); }
+  else if(r<0.62 && player.potions<8){ loc.items.push(mk({type:'potion', value:1})); }
+  else if(r<0.68){ const ks = ['speed','might','guard']; loc.items.push(mk({type:'elixir', kind:ks[rnd(0,2)]})); }
+  else if(r<0.8 && player.mats){ player.mats.scrap = (player.mats.scrap||0)+1; addNote('+1 ⚙ Лом', '#c9d3dd'); }
+}
+function propsStrike(hb){
+  const P = loc.props; if(!P || !P.length) return;
+  for(let i=P.length-1;i>=0;i--){ const p = P[i]; if(p.x+PROP_R > hb.x && p.x-PROP_R < hb.x+hb.w && p.y+PROP_R > hb.y && p.y-PROP_R < hb.y+hb.h) breakProp(i); }
+}
+function breakPropsRadius(cx, cy, R){
+  const P = loc.props; if(!P || !P.length) return;
+  for(let i=P.length-1;i>=0;i--) if(Math.hypot(P[i].x-cx, P[i].y-cy) < R+PROP_R) breakProp(i);
+}
+
+// ---------- ловушки ----------
+const SPIKE_CYCLE = 3200;
+function spikeState(tr, now){
+  const t = (now+tr.ph) % SPIKE_CYCLE;
+  return t < 1900 ? 0 : t < 2500 ? 1 : 2;           // 0 — убраны, 1 — предупреждение, 2 — подняты
+}
+function trapsTick(dt){
+  const T = loc.traps; if(!T || !T.length) return;
+  const pcx = player.x+player.w/2, pcy = player.y+player.h/2, now = Date.now(), lv = loc.level||1;
+  for(const tr of T){
+    if(Math.abs(tr.x-pcx)>TILE*1.2 || Math.abs(tr.y-pcy)>TILE*1.2){ if(tr.cd>0) tr.cd = Math.max(0,tr.cd-dt*1000); continue; }
+    const d = Math.hypot(tr.x-pcx, tr.y-pcy);
+    if(tr.k==='spikes'){
+      const st = spikeState(tr, now);
+      if(st===2 && d<17 && hurtPlayer(8+lv*2)){ burst(tr.x, tr.y, 8, {colors:['#d02a2a','#ffffff'], sp:80, up:30, g:200, life:360, size:2}); SFX.play('spikes'); if(!wxNoted.spikes){ wxNoted.spikes = 1; addNote('⚠ Шипы в полу! Следите за плитами с дырочками', '#ff9f4a'); } }
+    } else {
+      tr.cd = Math.max(0, (tr.cd||0)-dt*1000);
+      if(d<14 && !(tr.cd>0)){
+        tr.cd = 9000; tr.on = 380; SFX.play('plate');
+        for(let i=0;i<3;i++){ const a = i*2.094+Math.random(), r = i ? 62 : 0; aoes.push({x:pcx+Math.cos(a)*r, y:pcy+Math.sin(a)*r, r:44, t:0, dur:1000+i*180, dmg:10+lv*3, col:'#ff8a3a'}); }
+        if(!wxNoted.plate){ wxNoted.plate = 1; addNote('🔻 Плита-нажим! Скорее прочь от красных кругов', '#ff9f4a'); }
+      }
+      if(tr.on>0) tr.on -= dt*1000;
+    }
+  }
+}
+
+// ---------- общий тик и отрисовка ----------
+function worldExtrasTick(dt){
+  weatherTick(dt); boltsTick(dt); hazardsTick(dt); trapsTick(dt);
+}
+function clearWorldFx(){ hazards.length = 0; bolts.length = 0; }
+function drawWorldExtras(camX, camY){
+  const cw = canvas.width, ch = canvas.height, t = Date.now(), now = t;
+  const vis = (x,y,m)=>x-camX>-m && x-camX<cw+m && y-camY>-m && y-camY<ch+m;
+  // мосты и броды
+  if(loc.bridges) for(const b of loc.bridges){
+    const x0 = b.x0*TILE, y0 = b.y0*TILE, L = b.n*TILE;
+    if(!vis(x0+(b.dx?L/2:0), y0+(b.dy?L/2:0), L+40)) continue;
+    const sx = x0-camX, sy = y0-camY;
+    ctx.save(); ctx.translate(sx, sy);
+    if(b.dy){ ctx.translate(TILE,0); ctx.rotate(Math.PI/2); }       // вертикальный мост: поворот
+    if(b.k==='bridge'){
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(-2, 4, L+4, TILE-2);
+      ctx.fillStyle = '#8a5e32'; ctx.fillRect(-4, 2, L+8, TILE-4);
+      for(let i=0;i<L;i+=8){ ctx.fillStyle = (i/8)%2 ? '#a97a46' : '#b98a52'; ctx.fillRect(i, 3, 7, TILE-6); }
+      ctx.fillStyle = '#5a3a1c'; ctx.fillRect(-4, 0, L+8, 3); ctx.fillRect(-4, TILE-3, L+8, 3);
+      for(let i=0;i<=L;i+=TILE){ ctx.fillRect(i-2, -2, 4, 6); ctx.fillRect(i-2, TILE-4, 4, 6); }
+    } else {
+      for(let i=0;i<b.n;i++){
+        for(let k=0;k<2;k++){
+          const cx = i*TILE+10+k*14+((i*7+k*3)%5), cy = 8+k*14+((i*5+k)%4);
+          ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(cx+1, cy+3, 9, 5, 0, 0, 6.283); ctx.fill();
+          ctx.fillStyle = k ? '#8d96a0' : '#a5adb6'; ctx.beginPath(); ctx.ellipse(cx, cy, 8.5, 5.5, 0, 0, 6.283); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+        }
+      }
+    }
+    ctx.restore();
+  }
+  // ловушки
+  if(loc.traps) for(const tr of loc.traps){
+    if(!vis(tr.x, tr.y, 30)) continue;
+    const x = tr.x-camX, y = tr.y-camY;
+    if(tr.k==='spikes'){
+      const st = spikeState(tr, now);
+      ctx.fillStyle = 'rgba(30,24,20,0.8)'; ctx.fillRect(x-14, y-14, 28, 28);
+      ctx.fillStyle = '#15110e'; for(let a=0;a<3;a++) for(let c=0;c<3;c++){ ctx.beginPath(); ctx.arc(x-8+a*8, y-8+c*8, 1.8, 0, 6.283); ctx.fill(); }
+      if(st>0){
+        const h = st===2 ? 11 : 4+2*Math.sin(now/60);
+        ctx.fillStyle = st===2 ? '#d7dce2' : '#8f949b';
+        for(let a=0;a<3;a++) for(let c=0;c<3;c++){ const px = x-8+a*8, py = y-8+c*8; ctx.beginPath(); ctx.moveTo(px-3, py+3); ctx.lineTo(px, py+3-h); ctx.lineTo(px+3, py+3); ctx.closePath(); ctx.fill(); }
+        if(st===1){ ctx.strokeStyle = 'rgba(255,80,50,0.6)'; ctx.lineWidth = 1.5; ctx.strokeRect(x-14, y-14, 28, 28); }
+      }
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x-13, y-11, 26, 24);
+      const on = tr.on>0 || tr.cd>0;
+      ctx.fillStyle = on ? '#4a4038' : '#7c6e5c'; ctx.fillRect(x-13, y-13, 26, 24);
+      ctx.strokeStyle = on ? '#2e2620' : '#a3937c'; ctx.lineWidth = 1.5; ctx.strokeRect(x-11.5, y-11.5, 23, 21);
+      ctx.fillStyle = on ? '#3a3028' : '#c25a3a'; ctx.beginPath(); ctx.arc(x, y-2, 4, 0, 6.283); ctx.fill();
+    }
+  }
+  // зоны
+  for(const h of hazards){
+    if(!vis(h.x, h.y, h.r+10)) continue;
+    const x = h.x-camX, y = h.y-camY, col = HZ_FILL[h.kind] || HZ_FILL.fire;
+    if(h.t<0){
+      const p = 1+h.t/900;
+      ctx.fillStyle = 'rgba('+col+','+(0.08+0.12*p)+')'; ctx.beginPath(); ctx.arc(x, y, h.r, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = 'rgba('+col+',0.9)'; ctx.lineWidth = 2; ctx.setLineDash([6,5]); ctx.beginPath(); ctx.arc(x, y, h.r*(0.5+0.5*p), 0, 6.283); ctx.stroke(); ctx.beginPath(); ctx.arc(x, y, h.r, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
+    } else {
+      const fade = Math.min(1, (h.dur-h.t)/700), pul = 0.5+0.5*Math.sin(now/180);
+      ctx.fillStyle = 'rgba('+col+','+((0.28+0.1*pul)*fade)+')'; ctx.beginPath(); ctx.arc(x, y, h.r, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = 'rgba('+col+','+(0.85*fade)+')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, h.r-1, 0, 6.283); ctx.stroke();
+    }
+  }
+  // бочки и ящики
+  if(loc.props) for(const p of loc.props){
+    if(!vis(p.x, p.y, 24)) continue;
+    const x = p.x-camX, y = p.y-camY;
+    ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(x, y+9, 11, 4.5, 0, 0, 6.283); ctx.fill();
+    if(p.k==='barrel'){
+      ctx.fillStyle = '#8a5a2a'; ctx.beginPath(); ctx.ellipse(x, y, 10, 12, 0, 0, 6.283); ctx.fill();
+      ctx.fillStyle = '#a97440'; ctx.beginPath(); ctx.ellipse(x-2.5, y-1, 4.5, 10, 0, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = '#3a3a40'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 10, 12, 0, 0, 6.283); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x-10, y-4); ctx.lineTo(x+10, y-4); ctx.moveTo(x-10, y+4); ctx.lineTo(x+10, y+4); ctx.stroke();
+    } else {
+      ctx.fillStyle = '#b88a4a'; ctx.fillRect(x-10, y-10, 20, 20);
+      ctx.strokeStyle = '#5a3c1c'; ctx.lineWidth = 2; ctx.strokeRect(x-9, y-9, 18, 18);
+      ctx.beginPath(); ctx.moveTo(x-9, y-9); ctx.lineTo(x+9, y+9); ctx.moveTo(x+9, y-9); ctx.lineTo(x-9, y+9); ctx.stroke();
+    }
+  }
+  // истории: NPC и предметы
+  if(typeof drawStoryItem==='function') for(const it of loc.items) if(it.type==='sitem' && vis(it.x, it.y, 30)) drawStoryItem(it, camX, camY);
+  if(typeof drawStoryNpc==='function' && loc.npcs) for(const n of loc.npcs) if(vis(n.x, n.y, 40)) drawStoryNpc(n, camX, camY);
+  // молнии
+  for(const b of bolts){
+    const x = b.x-camX, y = b.y-camY;
+    if(b.t<0){
+      const p = 1+b.t/1000;
+      ctx.strokeStyle = 'rgba(200,225,255,'+(0.5+0.4*Math.sin(now/50))+')'; ctx.lineWidth = 2; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.arc(x, y, b.r, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(210,230,255,'+(0.08+0.2*p)+')'; ctx.beginPath(); ctx.arc(x, y, b.r*p, 0, 6.283); ctx.fill();
+    } else {
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.shadowColor = '#9fc8ff'; ctx.shadowBlur = 14;
+      ctx.beginPath(); let px = x+rnd(-6,6), py = y-ch; ctx.moveTo(px, py);
+      for(let i=1;i<=9;i++){ px = x+rnd(-14,14)*(i<9 ? 1 : 0); py = y-ch+(ch*i/9); ctx.lineTo(px, py); }
+      ctx.stroke(); ctx.shadowBlur = 0;
+    }
   }
 }
 // ---------- Игровой цикл ----------
@@ -5813,6 +6732,7 @@ function loop(now){
   draw();
   heroBtn.classList.toggle('hidden', gameState!=='playing' && gameState!=='hero');
   codexBtn.classList.toggle('hidden', gameState!=='playing' && gameState!=='codex');
+  questBtn.classList.toggle('hidden', gameState!=='playing' && gameState!=='journal');
   requestAnimationFrame(loop);
 }
 
@@ -5844,7 +6764,7 @@ function enterPlaying(){
   document.getElementById('deathScreen').classList.add('hidden');
   document.getElementById('winScreen').classList.add('hidden');
   document.getElementById('shopScreen').classList.add('hidden');
-  heroScreen.classList.add('hidden'); document.getElementById('codexScreen').classList.add('hidden'); refreshSkillUI();
+  heroScreen.classList.add('hidden'); document.getElementById('codexScreen').classList.add('hidden'); document.getElementById('questScreen').classList.add('hidden'); refreshSkillUI();
   menuBtn.classList.remove('hidden');
   if(fsSupported) fullscreenBtn.classList.remove('hidden');
   if(isTouchDevice) touchControls.classList.remove('hidden');
@@ -5888,12 +6808,13 @@ function resetHero(){
   player.cd = {dash:0,spin:0,shield:0}; player.shield = 0; player.dashT = 0; player.dvx = 0; player.dvy = 0; player.spinFx = 0; player.spinR = 0; player.vamp = 0;
   player.elix = {big:0,speed:0,might:0,guard:0,swim:0}; player.buff = {speed:0,might:0,guard:0,swim:0}; player.slowT = 0; player.boots = false; player.fx = {freeze:0,freezeImm:0,burn:0,burnDps:0,poison:0,poisonDps:0,acc:0};
   aoes.length = 0;
+  player.sb = {}; player.mats = {scrap:0,essence:0,crystal:0}; player.visited = {overworld:1}; player.track = 'main'; player.stories = {}; player.dashHit = [];
 }
 function gearStat(k){
   let v = 0; for(const s in player.gear){ const g = player.gear[s]; if(g && g.stats[k]) v += g.stats[k]; }
   return k==='spd' ? Math.min(30,v) : k==='vamp' ? Math.min(20,v) : v;
 }
-function spdNow(){ return player.speed*(1+gearStat('spd')/100)*(player.buff.speed>0 ? 1.4 : 1)*(player.slowT>0 ? 0.6 : 1)*(player.boots ? 1.18 : 1)*(onWater() ? 0.7 : 1); }
+function spdNow(){ return player.speed*(1+gearStat('spd')/100)*(player.buff.speed>0 ? 1.4 : 1)*(player.slowT>0 ? 0.6 : 1)*(player.boots ? 1.18 : 1)*(onWater() ? 0.7 : 1)*weatherSpeedMul()*(fordAt(player.x+player.w/2, player.y+player.h/2) ? 0.85 : 1); }
 function weaponMul(){ return 1+0.12*((player.wLvl||{})[player.weapon]||0); }
 
 // ---------- Снаряжение ----------
@@ -5974,9 +6895,11 @@ const ENCH = {
   venom: {n:'Яд',    icon:'☠',  col:['#b8e84a','#7ac22a','#f4ffd0'], desc:'отравляет: 80% урона удара за 5 с'}
 };
 function damageEnemy(e, dmg){
+  if(player.sb && player.sb.might==='a' && Math.random()<0.12){ dmg *= 2; burst(e.x+e.w/2, e.y+e.h/2, 8, {colors:['#ffd34a','#ffffff','#ff7a2a'], sp:120, up:30, g:100, life:380, size:2.4}); }
   const raw = dmg; dmg = dmg/diffMul('hp');
   if(guardBlocks(e)){
     dmg *= 0.25; e.ai.gf = 220; burst(e.x+e.w/2+Math.cos(e.ai.g)*12, e.y+e.h/2+Math.sin(e.ai.g)*9, 5, {colors:['#ffffff','#cfd8e8','#ffd34a'], sp:90, up:20, g:60, life:300, size:2});
+    SFX.play('clang');
     if(!guardHint){ guardHint = true; addNote('🛡 Щит гасит удар — заходите сбоку и со спины или отскочите рывком', '#9ad0ff'); }
   }
   e.hp -= dmg; e.hitFlash = 150;
@@ -5985,7 +6908,7 @@ function damageEnemy(e, dmg){
   const en = (player.ench||{})[player.weapon];
   if(en && e.hp>0){
     const d = ENCH[en];
-    if(en==='fire') e.dot = {t:3000, dps:dmg*0.6/3, col:d.col};
+    if(en==='fire') e.dot = {t:3000, dps:dmg*0.6/3, col:d.col, fire:true};
     else if(en==='venom') e.dot = {t:5000, dps:dmg*0.8/5, col:d.col};
     else e.slow = 2500, e.slowCol = d.col;
     burst(e.x+e.w/2, e.y+e.h/2, 4, {colors:d.col, sp:60, up:20, g:-30, life:420, size:2.2});
@@ -6000,24 +6923,27 @@ function useSkill(name, mx, my){
   if(name==='dash'){
     let dx = mx, dy = my;
     if(!dx && !dy){ dx = player.dir==='left'?-1:player.dir==='right'?1:0; dy = player.dir==='up'?-1:player.dir==='down'?1:0; }
-    const l = Math.hypot(dx,dy)||1, dist = 80+24*lvl, T = 0.16;
+    const l = Math.hypot(dx,dy)||1, dB = player.sb.dash==='b', dist = (80+24*lvl)*(dB?1.25:1), T = 0.16;
+    player.dashHit = [];
     player.dvx = dx/l*dist/T; player.dvy = dy/l*dist/T; player.dashT = T*1000;
     player.invuln = Math.max(player.invuln, 250+100*lvl);
-    player.cd.dash = 4500-700*lvl; SFX.play('swing');
+    player.cd.dash = (4500-700*lvl)*(dB?0.7:1); SFX.play('swing');
   } else if(name==='spin'){
-    const R = 58+8*lvl, mult = 0.9+0.4*lvl, pcx = player.x+player.w/2, pcy = player.y+player.h/2;
-    player.spinFx = 380; player.spinR = R; player.cd.spin = 8000-1000*lvl; SFX.play('swing');
+    const sA = player.sb.spin==='a', sB = player.sb.spin==='b', R = (58+8*lvl)*(sA?1.35:1), mult = 0.9+0.4*lvl, pcx = player.x+player.w/2, pcy = player.y+player.h/2; let healed = 0;
+    breakPropsRadius(pcx, pcy, R); player.spinFx = 380; player.spinR = R; player.cd.spin = 8000-1000*lvl; SFX.play('swing');
     for(const e of loc.enemies){
       if(e.hp<=0) continue;
       const ex = e.x+e.w/2, ey = e.y+e.h/2, d = Math.hypot(ex-pcx,ey-pcy);
       if(d > R+e.w/2) continue;
       damageEnemy(e, Math.round(playerDamage()*mult));
       SFX.play('hit'); burst(ex,ey,5,{colors:['#fff6c8','#ffd34a','#ffffff'],sp:90,up:20,g:200,life:260,size:1.8});
-      const l = d||1; tryPush(e, (ex-pcx)/l*22, (ey-pcy)/l*22, loc);
+      const l = d||1; tryPush(e, (ex-pcx)/l*(sA?40:22), (ey-pcy)/l*(sA?40:22), loc);
+      if(sB && healed<4){ healed++; player.hp = Math.min(player.maxHp, player.hp+player.maxHp*0.04); burst(pcx,pcy,3,{colors:['#d02a4a','#ff7a8a'],sp:50,up:40,g:-40,life:450,size:2.2}); }
       if(e.hp<=0) killEnemy(e);
     }
   } else if(name==='shield'){
-    player.shield = 3000+800*lvl; player.cd.shield = 18000-2000*lvl; SFX.play('levelup');
+    const bB = player.sb.shield==='b'; player.shield = (3000+800*lvl)*(bB?1.5:1); player.cd.shield = 18000-2000*lvl; SFX.play('levelup');
+    if(bB) player.hp = Math.min(player.maxHp, player.hp+player.maxHp*0.2);
   }
   return true;
 }
@@ -6292,7 +7218,7 @@ function renderHero(msg){
   document.getElementById('heroMsg').textContent = msg || '';
   document.getElementById('heroInfo').textContent = heroTab==='skills'
     ? `★ Очков навыков: ${player.sp}  (по 1 за новый уровень)`
-    : `Сумка: ${player.bag.length}/${BAG_MAX}  •  Золото: ${player.gold}`;
+    : `Сумка: ${player.bag.length}/${BAG_MAX}  •  Золото: ${player.gold}  •  ${matsText()}`;
   heroTabsEl.innerHTML = '';
   [['gear','🎒 Снаряжение'],['skills','★ Навыки'+(player.sp>0?' ('+player.sp+')':'')]].forEach(([id,label])=>{
     const t = document.createElement('button'); t.className = 'tabBtn'+(heroTab===id?' active':''); t.textContent = label;
@@ -6300,15 +7226,15 @@ function renderHero(msg){
   });
   heroList.innerHTML = '';
   if(heroTab==='skills'){
+    if(heroPick){ renderBranchPick(); return; }
     for(const k of ['dash','spin','shield','might']){
       const S = SKILLS[k], l = player.skills[k];
       const cur = l>0 ? 'Сейчас: '+S.desc(l) : 'Не изучено.';
       const nxt = l<SKILL_MAX ? ' Следующий уровень: '+S.desc(l+1) : ' Максимальный уровень.';
       const key = S.code ? ' Клавиша: '+S.key+'.' : '';
-      const b = shopButton(l>=SKILL_MAX ? 'Макс.' : (l ? 'Улучшить' : 'Изучить')+' — 1 ★', ()=>{
-        player.sp--; player.skills[k]++; refreshSkillUI(); saveGame(); SFX.play('levelup'); renderHero(S.name+': уровень '+player.skills[k]+'.');
-      }, player.sp<1 || l>=SKILL_MAX);
-      heroRow(S.icon+' '+S.name+'  ['+l+'/'+SKILL_MAX+']', cur+nxt+key, [b]);
+      const br = branchOf(k), brTxt = br ? ' Ветка «'+br.n+'»: '+br.d+'.' : (l===1 ? ' На 2 уровне — выбор ветки развития.' : '');
+      const b = shopButton(l>=SKILL_MAX ? 'Макс.' : (l ? 'Улучшить' : 'Изучить')+' — 1 ★', ()=>skillUpgrade(k), player.sp<1 || l>=SKILL_MAX);
+      heroRow(S.icon+' '+S.name+'  ['+l+'/'+SKILL_MAX+']', cur+nxt+key+brTxt, [b]);
     }
   } else {
     const sum = ['hp','dmg','def','spd','vamp'].filter(k=>gearStat(k)>0).map(k=>STAT_INFO[k].txt(Math.round(gearStat(k)*10)/10)).join('; ');
@@ -6323,12 +7249,14 @@ function renderHero(msg){
       const eq = shopButton('Надеть', ()=>{ equipGear(i); saveGame(); SFX.play('buy'); renderHero('Надето: '+g.name+'.'); });
       const price = gearSellPrice(g);
       const sell = shopButton('Продать — '+price+' ◆', ()=>{ sellGear(i); saveGame(); SFX.play('buy'); renderHero('Продано: '+g.name+' (+'+price+' ◆).'); });
-      heroRow(g.name+'  ('+GEAR_SLOTS[g.slot].n.toLowerCase()+')', RAR[g.rar].n+'. '+gearLines(g)+(cur ? '  Сейчас надето: '+cur.name+'.' : ''), [eq, sell], RAR[g.rar].c);
+      const dis = shopButton('Разобрать → '+yieldText(dismantleYield(g)), ()=>{ const y = dismantleGear(i); saveGame(); SFX.play('buy'); renderHero('Разобрано: '+g.name+' ('+yieldText(y)+').'); });
+      heroRow(g.name+(g.up ? ' +'+g.up : '')+'  ('+GEAR_SLOTS[g.slot].n.toLowerCase()+')', RAR[g.rar].n+'. '+gearLines(g)+(cur ? '  Сейчас надето: '+cur.name+'.' : ''), [eq, dis, sell], RAR[g.rar].c);
     });
   }
 }
 function openHero(){
   if(gameState!=='playing') return;
+  heroPick = null;
   for(const k in keys) keys[k] = false;
   gameState = 'hero'; heroTab = player.sp>0 ? 'skills' : 'gear'; renderHero(''); heroScreen.classList.remove('hidden');
 }
@@ -6383,6 +7311,7 @@ function renderForge(){
     }, en===k));
     shopRow('Зачарование: '+W.name, en ? 'Сейчас: '+ENCH[en].n+' — '+ENCH[en].desc+'.' : '🔥 огонь — поджигает; ❄ лёд — замедляет; ☠ яд — отравляет. Новое зачарование заменяет старое.', btns);
   }
+  renderGearForge();
 }
 
 // ======================= Бой, мир, сложность, звук (v2) =======================
@@ -6426,12 +7355,13 @@ function hasLOS(x1,y1,x2,y2){
 function bfsDist(tx,ty,maxD){
   const W = loc.width, H = loc.height, dist = new Int16Array(W*H).fill(-1), bl = blockedTiles(loc.type);
   if(tx<0||ty<0||tx>=W||ty>=H) return dist;
+  const pb = new Set(); if(loc.props) for(const p of loc.props) pb.add(Math.floor(p.x/TILE)+Math.floor(p.y/TILE)*W);   // бочки и ящики — как стены
   const q = [tx+ty*W]; dist[tx+ty*W] = 0;
   for(let h=0; h<q.length; h++){
     const c = q[h], x = c%W, y = (c/W)|0, d = dist[c]; if(d>=maxD) continue;
     for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
       const nx = x+dx, ny = y+dy; if(nx<0||ny<0||nx>=W||ny>=H) continue;
-      const k = nx+ny*W; if(dist[k]>=0 || bl.has(loc.grid[ny][nx])) continue;
+      const k = nx+ny*W; if(dist[k]>=0 || bl.has(loc.grid[ny][nx]) || pb.has(k)) continue;
       dist[k] = d+1; q.push(k);
     }
   }
@@ -6476,6 +7406,7 @@ function unstick(e){
 function distMul(d){ return 1.45 - 0.7*clamp((d-14)/34,0,1); }          // вплотную ×1.45, на краю удара ×0.75
 const CHARGE_MS = 700;
 function meleeStrike(hb, mult, push){
+  propsStrike(hb);
   const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
   for(const e of loc.enemies){
     if(e.hp<=0 || !overlap(hb,e)) continue;
@@ -6586,7 +7517,7 @@ renderDiff(); renderQuality();
 const SAVE_KEY = 'eldoria_save_v1';                      // автосохранение
 const SLOT_KEYS = ['eldoria_slot_1','eldoria_slot_2','eldoria_slot_3'];   // ручные слоты
 try{ localStorage.setItem('__eldoria_t','1'); localStorage.removeItem('__eldoria_t'); storageOK=true; }catch(e){ storageOK=false; }
-const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex','boots'];
+const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','visited','track','stories'];
 const savesBtn = document.getElementById('savesBtn');
 const loadBtn = document.getElementById('loadBtn');
 const saveInfoEl = document.getElementById('saveInfo');
@@ -6679,6 +7610,7 @@ function loadGame(key){
     player.cd = {dash:0,spin:0,shield:0}; player.shield = 0; player.dashT = 0; player.spinFx = 0;
     if(!WEAPONS[player.weapon]) player.weapon='sword';
     if(!ARMORS[player.armor]) player.armor='none';
+    ensureNewPlayerFields(); storiesEnsure();
     if(!('quest' in d.player)) player.quest = null;
     if(!('questsDone' in d.player)) player.questsDone = {};
     player.codex = Object.assign({e:{},a:{},k:{}}, player.codex||{});

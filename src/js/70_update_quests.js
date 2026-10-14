@@ -115,7 +115,7 @@ function questKill(type){
 }
 
 function killEnemy(e){
-  startDeathFx(e); onEnemyDeath(e);
+  startDeathFx(e); onEnemyDeath(e); dropMats(e);
   const gx = Math.round(e.xp*diffMul('reward')), gg = Math.round(e.gold*diffMul('reward'));
   player.xp += gx; player.gold += gg;
   questKill(e.type); if(player.codex){ player.codex.e[e.type] = 1; player.codex.k[e.type] = (player.codex.k[e.type]||0)+1; }
@@ -167,6 +167,7 @@ function update(dt){
     const n = Math.ceil(Math.hypot(player.dvx,player.dvy)*dt/8)||1;
     for(let i=0;i<n;i++) tryMove(player, player.dvx*dt/n, player.dvy*dt/n, loc);
     burst(player.x+player.w/2, player.y+player.h/2, 2, {colors:['#cfe8ff','#ffffff'], sp:15, up:0, g:0, life:280, size:3.2});
+    dashDamage();
   } else tryMove(player, mx*spdNow()*dt*(player.chargeT>200?0.8:1), my*spdNow()*dt*(player.chargeT>200?0.8:1), loc);
   if(mx!==0||my!==0){ player.walkT=(player.walkT||0)+dt*11; stepT -= dt; if(stepT<=0){ SFX.play('step'); footstep(); stepT = 0.3; } } else { player.walkT=0; stepT = 0; }
 
@@ -198,7 +199,7 @@ function update(dt){
   }
   if(!keys['KeyE']) potionKeyLatch = false;
   skillTick(dt, mx, my); elixTick(dt); folkTick(dt); statusTick(dt); rescuePlayer(); if(gameState!=='playing') return;
-  updateAoes(dt); updateFlow(dt); respawnTick(dt);
+  updateAoes(dt); updateFlow(dt); respawnTick(dt); worldExtrasTick(dt); if(gameState!=='playing') return;
   updateSkillButtons();
 
   // враги
@@ -206,9 +207,10 @@ function update(dt){
   let safeZone = false;                                                // у входа в пещеру и у выхода из неё враги не нападают
   if(loc.exit && Math.hypot(pcx-(loc.exit.tx+0.5)*TILE, pcy-(loc.exit.ty+0.5)*TILE)<SAFE) safeZone = true;
   if(loc.entrances) for(const en of loc.entrances) if(Math.hypot(pcx-(en.tx+0.5)*TILE, pcy-(en.ty+0.5)*TILE)<SAFE) safeZone = true;
-  const nightAggro = loc.type==='overworld' ? 1+0.3*darkness() : 1;   // ночью на поверхности звери злее
+  const nightAggro = (loc.type==='overworld' ? 1+0.3*darkness() : 1)*weatherAggroMul(), wShoot = weatherShootMul();   // ночью на поверхности звери злее
   for(const e of loc.enemies){
     if(e.hp<=0) continue;
+    if(!e.ab){ const bb = ENEMY_BASE[e.type]; if(bb && bb.ab) e.ab = bb.ab; }
     e.hitFlash = Math.max(0, e.hitFlash-dt*1000);
     e.cooldown = Math.max(0, e.cooldown-dt*1000);
     if(e.dot){
@@ -234,16 +236,17 @@ function update(dt){
       if(spd>0) tryMove(e, nx*spd*dt, ny*spd*dt, loc);
       e.moving = spd>0; e.walkT = (e.walkT||0) + dt*9;
       if(Math.abs(dx)>3) e.face = dx<0 ? 'left' : 'right';
-      if(e.shoot && dist<e.shoot.range){
+      if(e.shoot && dist<e.shoot.range*wShoot){
         e.shotCd = (e.shotCd===undefined ? rnd(500,e.shoot.cd) : e.shotCd) - dt*1000;
         if(e.shotCd<=0){ enemyShoot(e,dx,dy); e.shotCd = e.shoot.cd; }
       }
     } else { e.moving = false; }
+    if(player.shield>0 && shieldReflect(e,dt)) continue;
     if(e.dmg>0 && overlap(e, {x:player.x,y:player.y,w:player.w,h:player.h}) && e.cooldown<=0){
       const dashing = e.ai && e.ai.st==='dash';
       if(hurtPlayer(dashing ? Math.round(e.dmg*1.5) : e.dmg)){
         if(e.inflict && Math.random()<(e.inflict.chance||1)) inflictStatus(e.inflict.kind, e.inflict.ms, e.dmg);
-        if(e.ab && e.ab.leech){ e.hp = Math.min(e.maxHp, e.hp+e.dmg*e.ab.leech); burst(e.x+e.w/2, e.y+e.h/2, 6, {colors:['#d02a4a','#ff7a8a'], sp:40, up:30, g:-40, life:500, size:2.4}); }
+        if(e.ab && e.ab.leech){ sfxNear(e,'bite'); e.hp = Math.min(e.maxHp, e.hp+e.dmg*e.ab.leech); burst(e.x+e.w/2, e.y+e.h/2, 6, {colors:['#d02a4a','#ff7a8a'], sp:40, up:30, g:-40, life:500, size:2.4}); }
         if(dashing){ e.ai.st = null; e.ai.cd = e.ab.charge.cd; shakeT = Math.max(shakeT, 160); }
       }
       e.cooldown = 900;
@@ -333,7 +336,7 @@ function update(dt){
     }
   }
 
-  placesTick(dt); codexTick(dt);
+  placesTick(dt); codexTick(dt); storiesTick(dt); if(gameState!=='playing') return;
   eventsTick(dt); if(gameState!=='playing') return;
   // торговец: лавка открывается, когда игрок подходит вплотную
   if(loc.merchant){

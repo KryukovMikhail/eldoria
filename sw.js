@@ -1,5 +1,5 @@
 // Офлайн-кэш «Легенд Эльдории». При выходе новой сборки поменяйте номер в CACHE.
-const CACHE = 'eldoria-D001.035';
+const CACHE = 'eldoria-D001.037';
 const FILES = ['./', 'eldoria_rpg.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => Promise.all(FILES.map(f => c.add(f).catch(() => {})))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

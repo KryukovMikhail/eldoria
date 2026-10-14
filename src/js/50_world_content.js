@@ -344,6 +344,7 @@ function resetGame(){
   fullInvNoticeTimer = 0;
   resetHero();
   resetEnv();
+  ensureMapExtras(world); storiesEnsure();
 }
 
 // старые сохранения: достраиваем новые уровни и спуск из Провала
@@ -578,7 +579,7 @@ function ensureWorldExtras(){
   if(!world.town || !world.house1 || !world.house2) Object.assign(world, makeTownSet());
   if(world.overworld && !world.overworld.entrances.some(en=>en.dungeon==='town')) placeTownGate(world.overworld, world.overworld.entrances[0]);
   for(const id of CHAIN) if(!world[id]) world[id] = genLoc(id);
-  ensureSecrets(world); ensurePOIs(world);
+  ensureSecrets(world); ensurePOIs(world); ensureMapExtras(world);
 }
 
 const CHAIN = ['lair1','dungeon1','lair2','dungeon3','lair3','lava','lair4','desert','lair5','ice','lair6','grave','lair7','jungle','lair8','city','lair9','manor','lair10'];
@@ -633,6 +634,9 @@ function goTo(locId, x, y, message){
   player.x = x; player.y = y;
   transitionCooldown = 700;
   clearFx(); SFX.play('portal');
+  if(player.visited) player.visited[locId] = 1;
+  storiesEnsure();
+  if(loc.npcs) for(const n of loc.npcs) n.lock = false;
   if(message) addNote(message);
   if(LAIR[locId] && loc.boss && loc.boss.hp>0 && LAIR_TAUNT[locId]) addNote(LAIR_TAUNT[locId], '#ff9f4a');
   saveGame(); // контрольная точка при каждом переходе

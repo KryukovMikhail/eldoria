@@ -24,6 +24,9 @@ function freeSpotAround(cx, cy, w, h, minR, maxR, tries){
   return null;
 }
 let guardHint = false;
+function sfxNear(e,n){ if(Math.hypot(e.x-player.x,e.y-player.y)<420) SFX.play(n); }
+const zoneHint = {};
+const ZONE_NOTE = {fire:'🔥 Земля вспыхивает: не стойте в огненных кругах!', ice:'❄ Лёд сковывает землю: круги замедляют героя', poison:'☠ Ядовитые лужи: выходите из кругов', sand:'🏜 Зыбучий песок: круги замедляют героя'};
 // щитоносец: удар с лицевой стороны ослаблен
 function guardBlocks(e){
   if(!e.ab || !e.ab.guard || !e.ai || e.ai.g===undefined) return false;
@@ -48,27 +51,36 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
     ai.cd = (ai.cd===undefined ? 600+Math.random()*c.cd : ai.cd) - ms;
     if(ai.st==='wind'){
       ai.t -= ms; out.spd = 0;
-      if(ai.t<=0){ ai.st = 'dash'; ai.t = c.dash; const l = Math.hypot(dx,dy)||1; ai.dx = dx/l; ai.dy = dy/l; }
+      if(ai.t<=0){ ai.st = 'dash'; ai.t = c.dash; const l = Math.hypot(dx,dy)||1; ai.dx = dx/l; ai.dy = dy/l; sfxNear(e,'charge'); }
     } else if(ai.st==='dash'){
       ai.t -= ms; out.nx = ai.dx; out.ny = ai.dy; out.spd = e.speed*c.mul;
       if(Math.random()<dt*20) burst(ecx, e.y+e.h-2, 1, {colors:['#cdbf9a','#a89a78'], sp:30, up:14, g:60, life:380, size:3});
       if(ai.t<=0){ ai.st = null; ai.cd = c.cd; }
-    } else if(ai.cd<=0 && dist<c.range && dist>70 && e.los!==false){ ai.st = 'wind'; ai.t = c.wind; }
+    } else if(ai.cd<=0 && dist<c.range && dist>70 && e.los!==false){ ai.st = 'wind'; ai.t = c.wind; sfxNear(e,'roar'); }
   }
   if(ab.summon){
     const s = ab.summon;
     ai.sc = (ai.sc===undefined ? 1500 : ai.sc) - ms; if(ai.sa>0) ai.sa -= ms;
-    if(ai.sc<=0 && dist<s.range){
+    if(ai.sc<=0 && dist<s.range && (e.phase||1)>=(s.minPhase||1)){
       if(!e.uid) e.uid = Math.floor(Math.random()*1e9)+1;
       const alive = loc.enemies.filter(m=>m.hp>0 && m.owner===e.uid).length;
       if(alive<s.max && loc.enemies.length<90){
         const p = freeSpotAround(ecx, ecy, 24, 24, 30, 60, 10);
         if(p){
           const m = makeEnemy(s.type, p.x, p.y, loc.level||1); m.minion = true; m.owner = e.uid; m.xp = 0; m.gold = 0; m.hp = m.maxHp = Math.round(m.maxHp*0.6);
-          loc.enemies.push(m); ai.sa = 700; burst(p.x+12, p.y+12, 12, {colors:['#46d68a','#9affc0','#1c4a30'], sp:60, up:40, g:-30, life:600, size:2.6});
+          loc.enemies.push(m); ai.sa = 700; sfxNear(e,'summon'); burst(p.x+12, p.y+12, 12, {colors:['#46d68a','#9affc0','#1c4a30'], sp:60, up:40, g:-30, life:600, size:2.6});
           ai.sc = s.cd;
         } else ai.sc = 1200;
       } else ai.sc = 1500;
+    }
+  }
+  if(ab.zones){
+    const z = ab.zones; ai.zc = (ai.zc===undefined ? 2500 : ai.zc) - ms;
+    if(ai.zc<=0 && dist<z.range){
+      const n = (e.phase||1)>=3 ? 2 : 1;
+      for(let i=0;i<n;i++){ const a = Math.random()*6.283, rr = i ? 70 : 0; hazards.push({x:pcx+Math.cos(a)*rr, y:pcy+Math.sin(a)*rr, r:z.r, t:-900, dur:z.dur, dps:z.dps, kind:z.kind}); }
+      ai.zc = z.cd; sfxNear(e,'summon');
+      if(!zoneHint[z.kind]){ zoneHint[z.kind] = 1; addNote(ZONE_NOTE[z.kind], '#ff9f4a'); }
     }
   }
   if(ab.bomb){
@@ -78,9 +90,9 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
       if(ai.f<=0){
         aoes.push({x:ecx, y:ecy, r:b.r, t:0, dur:1, dmg:b.dmg, col:'#ff7a1a'});
         burst(ecx, ecy, 26, {colors:['#ff7a1a','#ffd34a','#3a2a20'], sp:150, up:30, g:40, life:560, size:3.4});
-        e.hp = 0; killEnemy(e); out.dead = true;
+        sfxNear(e,'boom'); shakeT = Math.max(shakeT, 300); e.hp = 0; killEnemy(e); out.dead = true;
       }
-    } else if(dist<38){ ai.f = b.fuse; }
+    } else if(dist<38){ ai.f = b.fuse; sfxNear(e,'fuse'); }
   }
   if(ab.heal){
     const h = ab.heal;
@@ -93,7 +105,7 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
         m.hp = Math.min(m.maxHp, m.hp+m.maxHp*h.pct); healed++;
         burst(m.x+m.w/2, m.y+m.h/2, 6, {colors:['#7aff9a','#d8ffe0'], sp:30, up:40, g:-50, life:600, size:2.4});
       }
-      if(healed){ ai.hf = 600; ai.hc = h.cd; } else ai.hc = 700;
+      if(healed){ ai.hf = 600; ai.hc = h.cd; sfxNear(e,'heal'); } else ai.hc = 700;
     }
   }
   if(ab.blink){
@@ -103,7 +115,7 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
       const p = freeSpotAround(pcx, pcy, e.w, e.h, b.minR, b.maxR, 14);
       if(p){
         burst(ecx, ecy, 12, {colors:['#d8f4ff','#7ab8f0'], sp:70, up:30, g:-20, life:500, size:2.6});
-        e.x = p.x; e.y = p.y; ai.bl = 450; ai.bc = b.cd;
+        e.x = p.x; e.y = p.y; ai.bl = 450; ai.bc = b.cd; sfxNear(e,'blink');
         burst(e.x+e.w/2, e.y+e.h/2, 12, {colors:['#d8f4ff','#7ab8f0'], sp:70, up:30, g:-20, life:500, size:2.6});
       } else ai.bc = 1000;
     }
@@ -113,7 +125,7 @@ function aiExtra(e, dt, dist, dx, dy, nx, ny, spd){
     ai.mc = (ai.mc===undefined ? 800+Math.random()*m.cd : ai.mc) - ms; if(ai.mf>0) ai.mf -= ms;
     if(ai.mc<=0 && dist<m.range && e.los!==false){
       aoes.push({x:pcx, y:pcy, r:m.r, t:0, dur:m.delay, dmg:Math.round(m.dmg*(e.dmg/ENEMY_BASE[e.type].dmg||1)), col:'#caa43a'});
-      ai.mc = m.cd; ai.mf = 350; SFX.play('swing');
+      ai.mc = m.cd; ai.mf = 350; sfxNear(e,'mortar');
     }
   }
   return out;
@@ -127,8 +139,23 @@ function onEnemyDeath(e){
       const s = ENEMY_BASE[ab.split.type], p = freeSpotAround(cx, cy, s.size, s.size, 4, 22, 10) || {x:e.x, y:e.y};
       const m = makeEnemy(ab.split.type, p.x, p.y, loc.level||1); m.minion = true; m.xp = 2; m.gold = 0; m.cooldown = 600; loc.enemies.push(m);
     }
+    sfxNear(e,'splat');
   }
   if(ab.summon && e.uid){
     for(const m of loc.enemies) if(m.owner===e.uid && m.hp>0){ m.hp = 0; startDeathFx(m); }
   }
 }
+// у стражей логов свои умения (см. ниже): призыв, щит, зоны на земле, рывок, телепорт
+const BOSS_AB = {
+  boss:       {summon:{type:'skeleton',  cd:7500, max:3, range:360, minPhase:2}},
+  spiderqueen:{summon:{type:'webspider', cd:8500, max:2, range:360, minPhase:1}},
+  shadowlord: {guard:true},
+  lavalord:   {zones:{kind:'fire',   cd:5200, r:46, dur:6500, dps:11, range:420}},
+  pharaoh:    {summon:{type:'mummy', cd:9000, max:2, range:360, minPhase:2}, zones:{kind:'sand', cd:7000, r:50, dur:5000, dps:5, range:420}},
+  frostking:  {zones:{kind:'ice',    cd:5600, r:50, dur:6000, dps:6,  range:420}},
+  lich:       {summon:{type:'skelarcher', cd:8000, max:2, range:380, minPhase:1}},
+  treant:     {zones:{kind:'poison', cd:5000, r:48, dur:6500, dps:9,  range:420}},
+  warlord:    {guard:true, charge:{wind:900, dash:700, mul:3, cd:5200, range:320}},
+  phantom:    {blink:{cd:5200, minR:70, maxR:130}, summon:{type:'cursedbook', cd:8500, max:2, range:380, minPhase:1}}
+};
+for(const k in BOSS_AB) ENEMY_BASE[k].ab = BOSS_AB[k];

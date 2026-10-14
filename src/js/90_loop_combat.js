@@ -8,6 +8,7 @@ function loop(now){
   draw();
   heroBtn.classList.toggle('hidden', gameState!=='playing' && gameState!=='hero');
   codexBtn.classList.toggle('hidden', gameState!=='playing' && gameState!=='codex');
+  questBtn.classList.toggle('hidden', gameState!=='playing' && gameState!=='journal');
   requestAnimationFrame(loop);
 }
 
@@ -39,7 +40,7 @@ function enterPlaying(){
   document.getElementById('deathScreen').classList.add('hidden');
   document.getElementById('winScreen').classList.add('hidden');
   document.getElementById('shopScreen').classList.add('hidden');
-  heroScreen.classList.add('hidden'); document.getElementById('codexScreen').classList.add('hidden'); refreshSkillUI();
+  heroScreen.classList.add('hidden'); document.getElementById('codexScreen').classList.add('hidden'); document.getElementById('questScreen').classList.add('hidden'); refreshSkillUI();
   menuBtn.classList.remove('hidden');
   if(fsSupported) fullscreenBtn.classList.remove('hidden');
   if(isTouchDevice) touchControls.classList.remove('hidden');
@@ -83,12 +84,13 @@ function resetHero(){
   player.cd = {dash:0,spin:0,shield:0}; player.shield = 0; player.dashT = 0; player.dvx = 0; player.dvy = 0; player.spinFx = 0; player.spinR = 0; player.vamp = 0;
   player.elix = {big:0,speed:0,might:0,guard:0,swim:0}; player.buff = {speed:0,might:0,guard:0,swim:0}; player.slowT = 0; player.boots = false; player.fx = {freeze:0,freezeImm:0,burn:0,burnDps:0,poison:0,poisonDps:0,acc:0};
   aoes.length = 0;
+  player.sb = {}; player.mats = {scrap:0,essence:0,crystal:0}; player.visited = {overworld:1}; player.track = 'main'; player.stories = {}; player.dashHit = [];
 }
 function gearStat(k){
   let v = 0; for(const s in player.gear){ const g = player.gear[s]; if(g && g.stats[k]) v += g.stats[k]; }
   return k==='spd' ? Math.min(30,v) : k==='vamp' ? Math.min(20,v) : v;
 }
-function spdNow(){ return player.speed*(1+gearStat('spd')/100)*(player.buff.speed>0 ? 1.4 : 1)*(player.slowT>0 ? 0.6 : 1)*(player.boots ? 1.18 : 1)*(onWater() ? 0.7 : 1); }
+function spdNow(){ return player.speed*(1+gearStat('spd')/100)*(player.buff.speed>0 ? 1.4 : 1)*(player.slowT>0 ? 0.6 : 1)*(player.boots ? 1.18 : 1)*(onWater() ? 0.7 : 1)*weatherSpeedMul()*(fordAt(player.x+player.w/2, player.y+player.h/2) ? 0.85 : 1); }
 function weaponMul(){ return 1+0.12*((player.wLvl||{})[player.weapon]||0); }
 
 // ---------- Снаряжение ----------
@@ -169,9 +171,11 @@ const ENCH = {
   venom: {n:'Яд',    icon:'☠',  col:['#b8e84a','#7ac22a','#f4ffd0'], desc:'отравляет: 80% урона удара за 5 с'}
 };
 function damageEnemy(e, dmg){
+  if(player.sb && player.sb.might==='a' && Math.random()<0.12){ dmg *= 2; burst(e.x+e.w/2, e.y+e.h/2, 8, {colors:['#ffd34a','#ffffff','#ff7a2a'], sp:120, up:30, g:100, life:380, size:2.4}); }
   const raw = dmg; dmg = dmg/diffMul('hp');
   if(guardBlocks(e)){
     dmg *= 0.25; e.ai.gf = 220; burst(e.x+e.w/2+Math.cos(e.ai.g)*12, e.y+e.h/2+Math.sin(e.ai.g)*9, 5, {colors:['#ffffff','#cfd8e8','#ffd34a'], sp:90, up:20, g:60, life:300, size:2});
+    SFX.play('clang');
     if(!guardHint){ guardHint = true; addNote('🛡 Щит гасит удар — заходите сбоку и со спины или отскочите рывком', '#9ad0ff'); }
   }
   e.hp -= dmg; e.hitFlash = 150;
@@ -180,7 +184,7 @@ function damageEnemy(e, dmg){
   const en = (player.ench||{})[player.weapon];
   if(en && e.hp>0){
     const d = ENCH[en];
-    if(en==='fire') e.dot = {t:3000, dps:dmg*0.6/3, col:d.col};
+    if(en==='fire') e.dot = {t:3000, dps:dmg*0.6/3, col:d.col, fire:true};
     else if(en==='venom') e.dot = {t:5000, dps:dmg*0.8/5, col:d.col};
     else e.slow = 2500, e.slowCol = d.col;
     burst(e.x+e.w/2, e.y+e.h/2, 4, {colors:d.col, sp:60, up:20, g:-30, life:420, size:2.2});
@@ -195,24 +199,27 @@ function useSkill(name, mx, my){
   if(name==='dash'){
     let dx = mx, dy = my;
     if(!dx && !dy){ dx = player.dir==='left'?-1:player.dir==='right'?1:0; dy = player.dir==='up'?-1:player.dir==='down'?1:0; }
-    const l = Math.hypot(dx,dy)||1, dist = 80+24*lvl, T = 0.16;
+    const l = Math.hypot(dx,dy)||1, dB = player.sb.dash==='b', dist = (80+24*lvl)*(dB?1.25:1), T = 0.16;
+    player.dashHit = [];
     player.dvx = dx/l*dist/T; player.dvy = dy/l*dist/T; player.dashT = T*1000;
     player.invuln = Math.max(player.invuln, 250+100*lvl);
-    player.cd.dash = 4500-700*lvl; SFX.play('swing');
+    player.cd.dash = (4500-700*lvl)*(dB?0.7:1); SFX.play('swing');
   } else if(name==='spin'){
-    const R = 58+8*lvl, mult = 0.9+0.4*lvl, pcx = player.x+player.w/2, pcy = player.y+player.h/2;
-    player.spinFx = 380; player.spinR = R; player.cd.spin = 8000-1000*lvl; SFX.play('swing');
+    const sA = player.sb.spin==='a', sB = player.sb.spin==='b', R = (58+8*lvl)*(sA?1.35:1), mult = 0.9+0.4*lvl, pcx = player.x+player.w/2, pcy = player.y+player.h/2; let healed = 0;
+    breakPropsRadius(pcx, pcy, R); player.spinFx = 380; player.spinR = R; player.cd.spin = 8000-1000*lvl; SFX.play('swing');
     for(const e of loc.enemies){
       if(e.hp<=0) continue;
       const ex = e.x+e.w/2, ey = e.y+e.h/2, d = Math.hypot(ex-pcx,ey-pcy);
       if(d > R+e.w/2) continue;
       damageEnemy(e, Math.round(playerDamage()*mult));
       SFX.play('hit'); burst(ex,ey,5,{colors:['#fff6c8','#ffd34a','#ffffff'],sp:90,up:20,g:200,life:260,size:1.8});
-      const l = d||1; tryPush(e, (ex-pcx)/l*22, (ey-pcy)/l*22, loc);
+      const l = d||1; tryPush(e, (ex-pcx)/l*(sA?40:22), (ey-pcy)/l*(sA?40:22), loc);
+      if(sB && healed<4){ healed++; player.hp = Math.min(player.maxHp, player.hp+player.maxHp*0.04); burst(pcx,pcy,3,{colors:['#d02a4a','#ff7a8a'],sp:50,up:40,g:-40,life:450,size:2.2}); }
       if(e.hp<=0) killEnemy(e);
     }
   } else if(name==='shield'){
-    player.shield = 3000+800*lvl; player.cd.shield = 18000-2000*lvl; SFX.play('levelup');
+    const bB = player.sb.shield==='b'; player.shield = (3000+800*lvl)*(bB?1.5:1); player.cd.shield = 18000-2000*lvl; SFX.play('levelup');
+    if(bB) player.hp = Math.min(player.maxHp, player.hp+player.maxHp*0.2);
   }
   return true;
 }
@@ -487,7 +494,7 @@ function renderHero(msg){
   document.getElementById('heroMsg').textContent = msg || '';
   document.getElementById('heroInfo').textContent = heroTab==='skills'
     ? `★ Очков навыков: ${player.sp}  (по 1 за новый уровень)`
-    : `Сумка: ${player.bag.length}/${BAG_MAX}  •  Золото: ${player.gold}`;
+    : `Сумка: ${player.bag.length}/${BAG_MAX}  •  Золото: ${player.gold}  •  ${matsText()}`;
   heroTabsEl.innerHTML = '';
   [['gear','🎒 Снаряжение'],['skills','★ Навыки'+(player.sp>0?' ('+player.sp+')':'')]].forEach(([id,label])=>{
     const t = document.createElement('button'); t.className = 'tabBtn'+(heroTab===id?' active':''); t.textContent = label;
@@ -495,15 +502,15 @@ function renderHero(msg){
   });
   heroList.innerHTML = '';
   if(heroTab==='skills'){
+    if(heroPick){ renderBranchPick(); return; }
     for(const k of ['dash','spin','shield','might']){
       const S = SKILLS[k], l = player.skills[k];
       const cur = l>0 ? 'Сейчас: '+S.desc(l) : 'Не изучено.';
       const nxt = l<SKILL_MAX ? ' Следующий уровень: '+S.desc(l+1) : ' Максимальный уровень.';
       const key = S.code ? ' Клавиша: '+S.key+'.' : '';
-      const b = shopButton(l>=SKILL_MAX ? 'Макс.' : (l ? 'Улучшить' : 'Изучить')+' — 1 ★', ()=>{
-        player.sp--; player.skills[k]++; refreshSkillUI(); saveGame(); SFX.play('levelup'); renderHero(S.name+': уровень '+player.skills[k]+'.');
-      }, player.sp<1 || l>=SKILL_MAX);
-      heroRow(S.icon+' '+S.name+'  ['+l+'/'+SKILL_MAX+']', cur+nxt+key, [b]);
+      const br = branchOf(k), brTxt = br ? ' Ветка «'+br.n+'»: '+br.d+'.' : (l===1 ? ' На 2 уровне — выбор ветки развития.' : '');
+      const b = shopButton(l>=SKILL_MAX ? 'Макс.' : (l ? 'Улучшить' : 'Изучить')+' — 1 ★', ()=>skillUpgrade(k), player.sp<1 || l>=SKILL_MAX);
+      heroRow(S.icon+' '+S.name+'  ['+l+'/'+SKILL_MAX+']', cur+nxt+key+brTxt, [b]);
     }
   } else {
     const sum = ['hp','dmg','def','spd','vamp'].filter(k=>gearStat(k)>0).map(k=>STAT_INFO[k].txt(Math.round(gearStat(k)*10)/10)).join('; ');
@@ -518,12 +525,14 @@ function renderHero(msg){
       const eq = shopButton('Надеть', ()=>{ equipGear(i); saveGame(); SFX.play('buy'); renderHero('Надето: '+g.name+'.'); });
       const price = gearSellPrice(g);
       const sell = shopButton('Продать — '+price+' ◆', ()=>{ sellGear(i); saveGame(); SFX.play('buy'); renderHero('Продано: '+g.name+' (+'+price+' ◆).'); });
-      heroRow(g.name+'  ('+GEAR_SLOTS[g.slot].n.toLowerCase()+')', RAR[g.rar].n+'. '+gearLines(g)+(cur ? '  Сейчас надето: '+cur.name+'.' : ''), [eq, sell], RAR[g.rar].c);
+      const dis = shopButton('Разобрать → '+yieldText(dismantleYield(g)), ()=>{ const y = dismantleGear(i); saveGame(); SFX.play('buy'); renderHero('Разобрано: '+g.name+' ('+yieldText(y)+').'); });
+      heroRow(g.name+(g.up ? ' +'+g.up : '')+'  ('+GEAR_SLOTS[g.slot].n.toLowerCase()+')', RAR[g.rar].n+'. '+gearLines(g)+(cur ? '  Сейчас надето: '+cur.name+'.' : ''), [eq, dis, sell], RAR[g.rar].c);
     });
   }
 }
 function openHero(){
   if(gameState!=='playing') return;
+  heroPick = null;
   for(const k in keys) keys[k] = false;
   gameState = 'hero'; heroTab = player.sp>0 ? 'skills' : 'gear'; renderHero(''); heroScreen.classList.remove('hidden');
 }

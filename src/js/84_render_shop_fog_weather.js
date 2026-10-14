@@ -230,7 +230,7 @@ function draw(){
     }
   }
 
-  drawChest(camX, camY); drawFolk(camX, camY); drawSage(camX, camY); drawEvents(camX, camY);
+  drawChest(camX, camY); drawFolk(camX, camY); drawSage(camX, camY); drawEvents(camX, camY); drawWorldExtras(camX, camY);
   // торговец и прилавок
   if(loc.merchant){ drawStallBack(camX, camY); drawMerchant(loc.merchant, camX, camY); drawStallFront(camX, camY); }
 
@@ -283,6 +283,7 @@ function draw(){
     }
   }
 
+  drawTrackArrow(camX, camY);
   drawHUD();
   drawSkillBar(); drawElixHUD();
   if(loc.type==='overworld') drawMinimap();

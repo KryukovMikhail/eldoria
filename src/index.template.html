@@ -26,6 +26,7 @@
     <button id="fullscreenBtn" class="hidden">⛶</button>
     <button id="soundBtn" title="Звук">🔊</button>
     <button id="heroBtn" class="hidden" title="Герой (I)">🎒</button>
+    <button id="questBtn" class="hidden" title="Журнал (J)">📜</button>
     <button id="codexBtn" class="hidden" title="Энциклопедия (K)">📖</button>
   </div>
 
@@ -41,8 +42,8 @@
   </div>
 
   <div id="startScreen" class="overlay">
+    <div id="buildTag">сборка D001.037</div>
     <div class="scroll"><div class="scrollIn">
-    <div id="buildTag" style="font-size:10px;color:#8a7f5c;letter-spacing:1px;margin:-4px 0 2px">сборка D001.035</div>
     <h2>Легенды Эльдории</h2>
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
@@ -81,6 +82,14 @@
     <button class="startBtn" id="shopClose">Уйти</button>
   </div>
 
+  <div id="questScreen" class="overlay hidden">
+    <h2>📜 Журнал</h2>
+    <p id="questMsg" style="min-height:18px"></p>
+    <div id="questInfo" style="color:#e0c23a;font-weight:bold"></div>
+    <div class="shopTabs" id="questTabs"></div>
+    <div id="questList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <button class="startBtn" id="questClose">Закрыть</button>
+  </div>
   <div id="codexScreen" class="overlay hidden">
     <h2>📖 Энциклопедия</h2>
     <p id="codexMsg" style="min-height:18px"></p>
