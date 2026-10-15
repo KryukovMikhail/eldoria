@@ -3,6 +3,8 @@
 2D RPG на Canvas в одном файле `index.html` (играть: https://kryukovmikhail.github.io/eldoria/).
 Работает на десктопе, iOS и Android, устанавливается как PWA.
 
+Технический стек и устройство проекта: [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Структура
 
 ```
