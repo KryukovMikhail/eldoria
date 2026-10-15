@@ -121,6 +121,7 @@ function advanceStory(id){
   storiesEnsure(); saveGame();
 }
 function talkNpc(n){
+  if(n.fn){ metaTalk(n); return; }
   const S = STORIES[n.sid], st = player.stories[n.sid];
   if(!S) return;
   if(n.role==='giver'){

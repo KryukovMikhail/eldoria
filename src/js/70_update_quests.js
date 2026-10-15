@@ -12,7 +12,7 @@ const eshots = [];
 const SHOT_COL = { web:['#eef2fa','#aab4c8','#ffffff'], wail:['#d8b8ff','#9a6aff','#ffffff'], curse:['#7aff9a','#2fd06a','#e8ffe8'], spore:['#b8e84a','#7ac22a','#f4ffd0'], fire:['#ff9a2a','#ffd34a','#ff4a1a'], ice:['#bfeaff','#7ad4ff','#ffffff'], sand:['#e8c878','#c9a050','#fff0c0'], knife:['#dfe4ea','#9aa2ae','#ffffff'], arrow:['#caa86a','#8a6a3a','#f4e4b0'], dart:['#8aff6a','#3f9a2a','#e8ffd8'], bolt:['#dfe4ea','#7a7f8c','#ffffff'] };
 function hurtPlayer(d){
   if(player.invuln>0 || gameState!=='playing') return false;
-  player.hp -= incomingDamage(d); player.invuln = 700; player.hitFlash = 250;
+  player.hp -= incomingDamage(d); player.invuln = 700; player.hitFlash = 250; metaHurt();
   SFX.play('hurt');
   if(player.hp<=0){ player.hp=0; onPlayerDeath(); }
   return true;
@@ -115,13 +115,13 @@ function questKill(type){
 }
 
 function killEnemy(e){
-  startDeathFx(e); onEnemyDeath(e); dropMats(e);
+  startDeathFx(e); onEnemyDeath(e); dropMats(e); metaKill(e);
   const gx = Math.round(e.xp*diffMul('reward')), gg = Math.round(e.gold*diffMul('reward'));
   player.xp += gx; player.gold += gg;
   questKill(e.type); if(player.codex){ player.codex.e[e.type] = 1; player.codex.k[e.type] = (player.codex.k[e.type]||0)+1; }
   maybeDropGear(e); maybeDropElixir(e);
   addNote(`Повержен враг: +${gx} опыта, +${gg} золота`, '#e0c96a');
-  if(BOSS_TYPES.includes(e.type)){
+  if(BOSS_TYPES.includes(e.type) && !loc.arena){
     if(e.type==='phantom') loc.items.push(makeItem('treasure', e.x, e.y));
     else if(loc.portal){
       loc.grid[loc.portal.ty][loc.portal.tx]='v'; loc.portal.open=true;
@@ -191,7 +191,7 @@ function update(dt){
   if(keys['KeyE'] && !potionKeyLatch){
     potionKeyLatch = true;
     if(player.potions>0 && player.hp<player.maxHp){
-      player.potions--; player.hp = Math.min(player.maxHp, player.hp+30);
+      player.potions--; metaPotion(); player.hp = Math.min(player.maxHp, player.hp+30);
       addNote('Выпит эликсир здоровья (+30 HP)', '#7fe07f'); SFX.play('drink');
     } else if(player.potions<=0){
       addNote('Нет эликсиров здоровья!', '#e07f7f'); SFX.play('deny');
@@ -205,7 +205,7 @@ function update(dt){
   // враги
   const pcx = player.x+player.w/2, pcy = player.y+player.h/2, SAFE = 7*TILE;
   let safeZone = false;                                                // у входа в пещеру и у выхода из неё враги не нападают
-  if(loc.exit && Math.hypot(pcx-(loc.exit.tx+0.5)*TILE, pcy-(loc.exit.ty+0.5)*TILE)<SAFE) safeZone = true;
+  if(loc.exit && !loc.noSafeZone && Math.hypot(pcx-(loc.exit.tx+0.5)*TILE, pcy-(loc.exit.ty+0.5)*TILE)<SAFE) safeZone = true;
   if(loc.entrances) for(const en of loc.entrances) if(Math.hypot(pcx-(en.tx+0.5)*TILE, pcy-(en.ty+0.5)*TILE)<SAFE) safeZone = true;
   const nightAggro = (loc.type==='overworld' ? 1+0.3*darkness() : 1)*weatherAggroMul(), wShoot = weatherShootMul();   // ночью на поверхности звери злее
   for(const e of loc.enemies){
@@ -286,6 +286,7 @@ function update(dt){
         if(fullInvNoticeTimer<=0){ addNote('Достаточно таких (макс. '+ELIX_MAX+')', '#e0a03a'); fullInvNoticeTimer = 1500; }
         return true;
       }
+      else if(it.type==='herb'){ metaHerb(); return false; }
       else if(it.type==='treasure'){ onWin(); return false; }
     }
     return true;
@@ -336,7 +337,7 @@ function update(dt){
     }
   }
 
-  placesTick(dt); codexTick(dt); storiesTick(dt); if(gameState!=='playing') return;
+  placesTick(dt); codexTick(dt); storiesTick(dt); metaTick(dt); if(gameState!=='playing') return;
   eventsTick(dt); if(gameState!=='playing') return;
   // торговец: лавка открывается, когда игрок подходит вплотную
   if(loc.merchant){
@@ -366,7 +367,7 @@ function onWin(){
   setTimeout(renderDiff,0);
   SFX.play('win');
   gameState='won';
-  clearSave(); refreshSaveUI();
+  metaWin(); clearSave(); refreshSaveUI();
   document.getElementById('winStats').textContent =
     `Вы изгнали Эфирия, забрали Сердце Эльдории и победили всех десятерых боссов — свет вернулся в Эльдорию! Уровень: ${player.level}  •  Золото: ${player.gold}`;
   document.getElementById('winScreen').classList.remove('hidden');

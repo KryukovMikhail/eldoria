@@ -116,7 +116,7 @@ function ensureMapExtras(wd){
     if(!L || L.extras || !L.grid) continue;
     L.extras = 1;
     if(L.type==='overworld'){ makeBridges(L); continue; }
-    if(L.type!=='dungeon' || L.safe || L.biome==='town' || L.biome==='house') continue;
+    if(L.type!=='dungeon' || L.safe || L.arena || L.biome==='town' || L.biome==='house') continue;
     const T = TILE, W = L.width, H = L.height, lair = !!LAIR[id], lv = L.level||1;
     L.props = []; L.traps = [];
     const sx = L.spawn.x/T, sy = L.spawn.y/T;
@@ -184,7 +184,7 @@ function propBlocks(L, x, y, w, h){
 function breakProp(i){
   const p = loc.props[i]; if(!p) return;
   loc.props.splice(i,1);
-  SFX.play('barrel');
+  SFX.play('barrel'); bump('barrels');
   burst(p.x, p.y, 14, {colors:p.k==='barrel' ? ['#8a5a2a','#c28a4a','#5a3a1a'] : ['#b88a4a','#d8b070','#6a4a24'], sp:110, up:40, g:240, life:520, size:2.6, shape:'r'});
   const lv = loc.level||1, r = Math.random();
   const mk = o=>Object.assign({x:p.x-7+rnd(-8,8), y:p.y-7+rnd(-8,8), w:14, h:14}, o);

@@ -64,6 +64,8 @@ function makeEnemy(type,x,y,level=1){
   if(base.erratic) e.erratic = true;
   if(base.inflict) e.inflict = base.inflict;
   if(base.ab) e.ab = base.ab;
+  const g = 1+0.4*(player.ngp||0);                   // «Новая игра+»: враги крепче
+  if(g>1){ e.hp *= g; e.maxHp *= g; e.dmg = Math.round(e.dmg*(1+(g-1)*0.8)); e.xp = Math.round(e.xp*(1+(g-1)*0.5)); }
   return e;
 }
 // на карте золота стало заметно меньше: потион выпадает как раньше, золото — лишь в части точек

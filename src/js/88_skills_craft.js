@@ -50,7 +50,9 @@ function shieldReflect(e, dt){
 const MAT_INFO = {
   scrap:  {n:'Обломки',  icon:'⚙', col:'#c8c8c8'},
   essence:{n:'Эссенция', icon:'✨', col:'#7ad4ff'},
-  crystal:{n:'Кристалл', icon:'🔷', col:'#c06aff'}
+  crystal:{n:'Кристалл', icon:'🔷', col:'#c06aff'},
+  herb:   {n:'Трава',    icon:'🌿', col:'#7fe07f'},
+  fish:   {n:'Рыба',     icon:'🐟', col:'#9fd8ff'}
 };
 function matsText(){ const m = player.mats||{}; return Object.keys(MAT_INFO).map(k=>MAT_INFO[k].icon+' '+(m[k]||0)).join('  '); }
 function dismantleYield(g){

@@ -5,7 +5,8 @@ function ensureNewPlayerFields(){
   if(!player.track) player.track = 'main';
   if(!player.stories) player.stories = {};
   if(!player.mats) player.mats = {scrap:0, essence:0, crystal:0};
-  player.mats = Object.assign({scrap:0, essence:0, crystal:0}, player.mats);
+  player.mats = Object.assign({scrap:0, essence:0, crystal:0, herb:0, fish:0}, player.mats);
+  ensureMetaFields();
   if(!player.sb) player.sb = {};
   player.visited[currentLocId] = 1;
 }
@@ -153,13 +154,16 @@ function trackBtn(key, label){
 function renderJournal(msg){
   document.getElementById('questMsg').textContent = msg || '';
   ensureNewPlayerFields();
+  if(journalTab==='ach' || journalTab==='party'){ questTabsEl.innerHTML = ''; }
   document.getElementById('questInfo').textContent = journalTab==='travel' ? 'Золото: '+player.gold+' ◆' : 'Убито стражей: '+storyStage()+' из '+LAIR_ORDER.length;
   questTabsEl.innerHTML = '';
-  [['journal','📜 Задания'],['travel','🧭 Перенос']].forEach(([id,label])=>{
+  [['journal','📜 Задания'],['travel','🧭 Перенос'],['ach','🏅 Награды'],['party','🛡 Отряд']].forEach(([id,label])=>{
     const t = document.createElement('button'); t.className = 'tabBtn'+(journalTab===id?' active':''); t.textContent = label;
     t.addEventListener('click', ()=>{ journalTab = id; renderJournal(''); }); questTabsEl.appendChild(t);
   });
   questList.innerHTML = '';
+  if(journalTab==='ach'){ renderAchTab(); return; }
+  if(journalTab==='party'){ renderPartyTab(); return; }
   if(journalTab==='travel'){
     const why = travelBlock();
     if(why) jRow('Сейчас перенос недоступен', why, []);

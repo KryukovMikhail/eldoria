@@ -129,6 +129,7 @@
   #dashBtn { right:calc(22px + env(safe-area-inset-right)); }
   #spinBtn { right:calc(76px + env(safe-area-inset-right)); }
   #shieldBtn { right:calc(130px + env(safe-area-inset-right)); }
+  #fishBtn { right:calc(104px + env(safe-area-inset-right)); bottom:calc(84px + env(safe-area-inset-bottom)); width:52px; height:52px; background: rgba(60,140,210,0.4); border-color: rgba(190,225,255,0.8); font-size:20px; }
   #potionBtn:active { background: rgba(60,180,90,0.6); }
 
   @media (max-width: 480px) {

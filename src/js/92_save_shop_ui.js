@@ -2,7 +2,7 @@
 const SAVE_KEY = 'eldoria_save_v1';                      // автосохранение
 const SLOT_KEYS = ['eldoria_slot_1','eldoria_slot_2','eldoria_slot_3'];   // ручные слоты
 try{ localStorage.setItem('__eldoria_t','1'); localStorage.removeItem('__eldoria_t'); storageOK=true; }catch(e){ storageOK=false; }
-const PLAYER_KEYS = ['x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','visited','track','stories'];
+const PLAYER_KEYS = ['ach','stat','ngp','comp','x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','visited','track','stories'];
 const savesBtn = document.getElementById('savesBtn');
 const loadBtn = document.getElementById('loadBtn');
 const saveInfoEl = document.getElementById('saveInfo');
@@ -58,6 +58,7 @@ function fmtSave(info){
   return `Уровень ${info.player.level} • Золото ${info.player.gold} • ${info.locName} • ${when}`;
 }
 function refreshSaveUI(){
+  if(typeof refreshNgpUI==='function') refreshNgpUI();
   loadBtn.classList.toggle('hidden', !latestSaveKey());
   if(!storageOK){
     saveInfoEl.textContent = 'Сохранение недоступно в этом браузере (возможно, включён приватный режим).';

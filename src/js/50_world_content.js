@@ -331,6 +331,7 @@ function drawKeyItem(sx, sy){
 }
 
 function resetGame(){
+  player.ngp = ngpKeep;
   world = buildWorld();
   Object.assign(world, makeTownSet()); eventsReset(); folk = []; folkLoc = null; bedLock = false; restFade = 0;
   currentLocId = 'overworld';
@@ -344,7 +345,7 @@ function resetGame(){
   fullInvNoticeTimer = 0;
   resetHero();
   resetEnv();
-  ensureMapExtras(world); storiesEnsure();
+  ensureMetaWorld(world); ensureMapExtras(world); ensureHerbs(world); ensureNewPlayerFields(); storiesEnsure();
 }
 
 // старые сохранения: достраиваем новые уровни и спуск из Провала
@@ -579,7 +580,7 @@ function ensureWorldExtras(){
   if(!world.town || !world.house1 || !world.house2) Object.assign(world, makeTownSet());
   if(world.overworld && !world.overworld.entrances.some(en=>en.dungeon==='town')) placeTownGate(world.overworld, world.overworld.entrances[0]);
   for(const id of CHAIN) if(!world[id]) world[id] = genLoc(id);
-  ensureSecrets(world); ensurePOIs(world); ensureMapExtras(world);
+  ensureSecrets(world); ensurePOIs(world); ensureMetaWorld(world); ensureMapExtras(world); ensureHerbs(world);
 }
 
 const CHAIN = ['lair1','dungeon1','lair2','dungeon3','lair3','lava','lair4','desert','lair5','ice','lair6','grave','lair7','jungle','lair8','city','lair9','manor','lair10'];
@@ -633,7 +634,7 @@ function goTo(locId, x, y, message){
   }
   player.x = x; player.y = y;
   transitionCooldown = 700;
-  clearFx(); SFX.play('portal');
+  clearFx(); SFX.play('portal'); metaEnter(prevLoc);
   if(player.visited) player.visited[locId] = 1;
   storiesEnsure();
   if(loc.npcs) for(const n of loc.npcs) n.lock = false;

@@ -211,6 +211,7 @@ function draw(){
     else if(it.type==='potion'){ ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(sx+8,sy+15,6,2.2,0,0,Math.PI*2); ctx.fill();
       drawPotionIcon(sx+8, sy+7+Math.sin(Date.now()/380+it.x)*1.3, 1.05, true); }
     else if(it.type==='gold'){ drawCoinPile(sx+8, sy+8, it.value); }
+    else if(it.type==='herb'){ drawHerb(sx, sy, it); }
     else if(it.type==='gear'){ drawGearItem(sx,sy,it.gear); }
     else if(it.type==='elixir'){ ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(sx+8,sy+15,6,2.2,0,0,Math.PI*2); ctx.fill(); drawElixirIcon(sx+8, sy+7+Math.sin(Date.now()/380+it.x)*1.3, 1.1, it.kind, true); }
     else if(it.type==='amulet'){
@@ -230,7 +231,7 @@ function draw(){
     }
   }
 
-  drawChest(camX, camY); drawFolk(camX, camY); drawSage(camX, camY); drawEvents(camX, camY); drawWorldExtras(camX, camY);
+  drawChest(camX, camY); drawFolk(camX, camY); drawSage(camX, camY); drawEvents(camX, camY); drawWorldExtras(camX, camY); drawMeta(camX, camY);
   // торговец и прилавок
   if(loc.merchant){ drawStallBack(camX, camY); drawMerchant(loc.merchant, camX, camY); drawStallFront(camX, camY); }
 
@@ -283,7 +284,7 @@ function draw(){
     }
   }
 
-  drawTrackArrow(camX, camY);
+  drawTrackArrow(camX, camY); drawMetaHUD();
   drawHUD();
   drawSkillBar(); drawElixHUD();
   if(loc.type==='overworld') drawMinimap();
@@ -307,6 +308,7 @@ function drawHUD(){
 
   ctx.fillStyle='#f0e6c8'; ctx.font='bold 13px sans-serif';
   ctx.fillText(`Уровень ${player.level}`, 16, 24);
+  if(player.ngp>0){ ctx.fillStyle='#ffd34a'; ctx.font='bold 11px sans-serif'; ctx.textAlign='right'; ctx.fillText(`НИ+${player.ngp}`, 232, 24); ctx.textAlign='left'; ctx.font='bold 13px sans-serif'; ctx.fillStyle='#f0e6c8'; }
   if(player.sp>0){ ctx.fillStyle='#ffd34a'; ctx.font='bold 11px sans-serif'; ctx.fillText(`★ Очки навыков: ${player.sp}`, 92, 24); ctx.fillStyle='#f0e6c8'; }
 
   drawHPBar(16,30,150,12, player.hp/player.maxHp, '#d9534f');
