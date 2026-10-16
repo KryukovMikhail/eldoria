@@ -9,6 +9,7 @@ function ensureMetaFields(){
   player.stat = Object.assign({kills:0, bosses:0, barrels:0, potions:0, runPotions:0, herbs:0, fish:0, brewed:0, arena:0, hired:0}, player.stat||{});
   if(!player.ngp) player.ngp = 0;
   if(player.comp===undefined) player.comp = null;
+  if(!player.secrets) player.secrets = {};
 }
 function bump(k, n){ if(!player.stat) ensureMetaFields(); player.stat[k] = (player.stat[k]||0)+(n===undefined ? 1 : n); }
 
@@ -29,7 +30,7 @@ const ACH = [
   {id:'arena5',  i:'🏟', n:'Гладиатор',          d:'Дойти до 5-й волны на арене.',                   g:150, t:()=>player.stat.arena>=5, p:()=>[player.stat.arena,5]},
   {id:'arena10', i:'🏆', n:'Чемпион арены',      d:'Дойти до 10-й волны на арене.',                  g:350, t:()=>player.stat.arena>=10, p:()=>[player.stat.arena,10]},
   {id:'comp',    i:'🤝', n:'Не один в поле',     d:'Нанять напарника в трактире.',                   g:40,  t:()=>player.stat.hired>=1},
-  {id:'story',   i:'📖', n:'Добрая душа',        d:'Завершить все 4 истории жителей.',               g:200, t:()=>stDone()>=4, p:()=>[stDone(),4]},
+  {id:'story',   i:'📖', n:'Добрая душа',        d:'Завершить все истории жителей.',               g:200, t:()=>stDone()>=Object.keys(STORIES).length, p:()=>[stDone(),Object.keys(STORIES).length]},
   {id:'veteran', i:'🎖', n:'Ветеран',            d:'Достичь 15-го уровня.',                          g:150, t:()=>player.level>=15, p:()=>[player.level,15]},
   {id:'rich',    i:'💰', n:'Богач',              d:'Накопить 5000 золота.',                          g:0,   t:()=>player.gold>=5000, p:()=>[Math.min(player.gold,5000),5000]},
   {id:'win',     i:'🌟', n:'Герой Эльдории',     d:'Забрать Сердце Эльдории.',                       g:500, t:()=>false},
@@ -50,11 +51,13 @@ function renderAchTab(){
     const ok = !!player.ach[a.id], pr = !ok && a.p ? a.p() : null;
     jRow((ok ? '✔ ' : '🔒 ')+a.i+' '+a.n, a.d+(pr ? ' ('+pr[0]+'/'+pr[1]+')' : '')+(a.g ? ' Награда: '+a.g+' ◆.' : ''), [], ok ? '#7fe07f' : '#b8ad88');
   }
+  jRow('🍃 Сезон: '+seasonLabel().replace(/^\S+\s/,''), SEASONS[seasonIdx()].d+' Сезон меняется каждые '+SEASON_DAYS+' игровых суток.', [], '#9ad0ff');
+  for(const h of secretHints()) jRow((h.st===2 ? '✔ ' : '❔ ')+h.S.name, h.st===2 ? 'Секретный босс повержен.' : h.S.hint, [], h.st===2 ? '#7fe07f' : '#e0c98a');
 }
 function metaHurt(){ if(LAIR[currentLocId]) lairHit = true; }
 function metaPotion(){ bump('potions'); bump('runPotions'); }
 function metaKill(e){
-  bump('kills');
+  bump('kills'); extraKill(e);
   if(BOSS_TYPES.includes(e.type) && !loc.arena){ bump('bosses'); if(LAIR[currentLocId] && !lairHit) unlockAch('untouched'); }
   achCheck();
 }
@@ -327,7 +330,7 @@ function fishTick(dt){
       if(fish.t<=0){ fish = null; addNote('Сорвалась…', '#e0a03a'); }
     }
   } else if(press && nw){
-    fish = {ph:'wait', t:rnd(2200,5500), bx:nw.x, by:nw.y, px:player.x, py:player.y}; SFX.play('cast');
+    fish = {ph:'wait', t:rnd(2200,5500)*seasonMul('fish'), bx:nw.x, by:nw.y, px:player.x, py:player.y}; SFX.play('cast');
     if(!fishHint){ fishHint = true; addNote('🎣 Дождитесь поклёвки и нажмите F, когда поплавок нырнёт', '#9fd0ff'); }
   }
 }
@@ -344,10 +347,12 @@ function drawFishing(camX, camY){
 
 // ---------- травы ----------
 const HERB_TARGET = {overworld:34, jungle:14};
+let herbSeenFor = null, herbSeen = null;
 function herbSpot(L, avoid){
+  if(herbSeenFor!==L){ const T = TILE; herbSeen = floodFrom(L.grid, Math.floor(L.spawn.x/T), Math.floor(L.spawn.y/T), L.type==='overworld' ? '~^#SBo' : '#LSBo'); herbSeenFor = L; }
   for(let k=0;k<300;k++){
     const x = rnd(2,L.width-3), y = rnd(2,L.height-3);
-    if(L.grid[y][x]!=='.') continue;
+    if(L.grid[y][x]!=='.' || !herbSeen[x+y*L.width]) continue;
     const px = x*TILE+TILE/2, py = y*TILE+TILE/2;
     if(avoid && Math.hypot(px-avoid.x, py-avoid.y)<avoid.r) continue;
     if(L.props && L.props.some(p=>Math.hypot(p.x-px,p.y-py)<24)) continue;
@@ -364,7 +369,7 @@ function ensureHerbs(wd){
   }
 }
 function herbTick(dt){
-  herbAcc += dt; if(herbAcc<20) return; herbAcc = 0;
+  herbAcc += dt; if(herbAcc<20/seasonMul('herb')) return; herbAcc = 0;
   const tgt = loc.type==='overworld' ? HERB_TARGET.overworld : loc.biome==='jungle' ? HERB_TARGET.jungle : 0; if(!tgt) return;
   const have = loc.items.filter(i=>i.type==='herb').length; if(have>=tgt*0.7) return;
   const p = herbSpot(loc, {x:player.x, y:player.y, r:420}); if(p) loc.items.push({type:'herb', x:p.x, y:p.y, w:14, h:14});
@@ -416,6 +421,6 @@ function metaEnter(prev){
 }
 function metaTick(dt){
   achAcc += dt; if(achAcc>1){ achAcc = 0; achCheck(); }
-  arenaTick(dt); compTick(dt); fishTick(dt); herbTick(dt);
+  arenaTick(dt); compTick(dt); fishTick(dt); herbTick(dt); extraTick(dt);
 }
-function drawMeta(camX, camY){ drawCompanion(camX, camY); drawFishing(camX, camY); }
+function drawMeta(camX, camY){ drawSeason(); drawCompanion(camX, camY); drawFishing(camX, camY); drawExtra(camX, camY); }

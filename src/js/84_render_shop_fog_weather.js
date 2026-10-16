@@ -524,14 +524,14 @@ const WEATHER_OPTS = {
   town:[['clear',70],['rain',20],['fog',10]],
   city:[['fog',45],['rain',35],['clear',20]]
 };
-const env = { t:0.3, b:{}, flash:0, thunderIn:-1, lightCd:6 };
+const env = { t:0.3, day:0, b:{}, flash:0, thunderIn:-1, lightCd:6 };
 function pickWeather(biome, not){
-  const opts = WEATHER_OPTS[biome].filter(o=>o[0]!==not), tot = opts.reduce((a,o)=>a+o[1],0);
+  const opts = (seasonId()==='winter' && (biome==='overworld'||biome==='town') ? [['clear',30],['snow',55],['fog',15]] : WEATHER_OPTS[biome]).filter(o=>o[0]!==not), tot = opts.reduce((a,o)=>a+o[1],0);
   let r = Math.random()*tot; for(const o of opts){ r -= o[1]; if(r<=0) return o[0]; }
   return opts[0][0];
 }
 function resetEnv(){
-  env.t = 0.3; env.flash = 0; env.thunderIn = -1; env.lightCd = 6;
+  env.t = 0.3; env.day = 0; env.flash = 0; env.thunderIn = -1; env.lightCd = 6;
   env.b = {
     overworld:{name:'clear', amt:1, next:null, timer:60+Math.random()*60, opts:true},
     desert:{name:'clear', amt:1, next:null, timer:40+Math.random()*40, opts:true},
@@ -544,19 +544,19 @@ function resetEnv(){
   };
 }
 resetEnv();
-function packEnv(){ const w = {}; for(const k in env.b) w[k] = env.b[k].name; return {t:env.t, w}; }
+function packEnv(){ const w = {}; for(const k in env.b) w[k] = env.b[k].name; return {t:env.t, d:env.day, w}; }
 function loadEnv(o){
   resetEnv();
   if(!o || typeof o.t!=='number') return;
-  env.t = ((o.t%1)+1)%1;
-  for(const k in (o.w||{})) if(env.b[k] && env.b[k].opts && WEATHER_OPTS[k].some(x=>x[0]===o.w[k])) env.b[k].name = o.w[k];
+  env.t = ((o.t%1)+1)%1; env.day = Math.max(0, o.d|0);
+  for(const k in (o.w||{})) if(env.b[k] && env.b[k].opts && (WEATHER_OPTS[k].some(x=>x[0]===o.w[k]) || (o.w[k]==='snow' && (k==='overworld'||k==='town')))) env.b[k].name = o.w[k];
 }
 function sunLevel(){ return Math.sin((env.t-0.25)*Math.PI*2); }     // 1 в полдень, -1 в полночь
 function darkness(){ const d = sstep(0,1, clamp((0.12-sunLevel())/0.55,0,1)); return currentLocId==='grave' ? Math.max(d,0.6) : d; }
 function twilight(){ return clamp(1-Math.abs(sunLevel()-0.02)/0.36,0,1); }
 function weatherName(){ const b = env.b[currentLocId]; return b ? b.name : 'none'; }
 function updateEnv(dt){
-  env.t = (env.t + dt/DAY_LEN) % 1;
+  const t0 = env.t; env.t = (env.t + dt/DAY_LEN) % 1; if(env.t<t0) env.day++;
   const b = env.b[currentLocId];
   if(b && b.opts){
     if(b.next){
@@ -580,7 +580,7 @@ function timeLabel(){ const dk = darkness(), sun = sunLevel(); return dk>0.6 ? '
 function atmoLabel(){
   if(!OUTDOOR[currentLocId]) return '';
   const b = env.b[currentLocId], w = b && b.amt>0.4 ? WLABEL[b.name] : '';
-  return '  •  '+timeLabel()+(w ? '  '+w : '');
+  return '  •  '+seasonLabel().split(' ')[0]+' '+timeLabel()+(w ? '  '+w : '');
 }
 
 const RN = new Float32Array(900); for(let i=0;i<RN.length;i++) RN[i] = Math.random();

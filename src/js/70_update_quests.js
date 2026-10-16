@@ -353,7 +353,7 @@ function update(dt){
 
 function onPlayerDeath(){
   setTimeout(renderDiff,0);
-  gameState='dead';
+  gameState='dead'; showDeathTip();
   SFX.play('death');
   refreshSaveUI();
   document.getElementById('deathStats').textContent =

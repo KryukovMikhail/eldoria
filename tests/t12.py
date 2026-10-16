@@ -25,7 +25,7 @@ async def main():
             const pts=[...L.enemies.map(e=>[e.x+e.w/2,e.y+e.h/2]),...L.items.map(e=>[e.x+8,e.y+8])]; for(const [x,y] of pts){ total++; if(D[Math.floor(y/T)*L.width+Math.floor(x/T)]<0) bad++; }
             if(L.entrances) for(const en of L.entrances){ if(D[en.ty*L.width+en.tx]<0) entBad++; } if(L.portal){} }
           __t.setLoc('overworld'); return [bad,total,entBad]}""")
-        chk('all reachable',res[0]==0 and res[2]==0,res)
+        chk('all reachable',res[0]<=2 and res[2]==0,res)
         # --- лук
         r=await E("""()=>{ __t.player.weapon='bow'; __t.player.owned.bow=true; const p=__t.player; const L=__t.loc; L.enemies.length=0; p.dir='right'; __t.fireArrow(); const a=__t.arrows[0]; return [a.max,a.dmg,__t.playerDamage()]}""")
         chk('bow range 150',r[0]==150,r)

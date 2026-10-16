@@ -381,6 +381,7 @@ function drawEnemy(e, sx, sy){
   const sw = Math.sin(t)*2.5;
   const face = e.face==='left' ? -1 : 1;
   ctx.save(); ctx.translate(cx,cy);
+  if(e.big){ secretAura(e); ctx.scale(e.big,e.big); }
   ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,0.4)';
 
   if(e.type==='wolf'||e.type==='icewolf'){

@@ -28,7 +28,7 @@ async def main():
           P.level=15; t.achCheck(); out.vet=!!P.ach.veteran;
           t.openJournal('ach'); out.rows=document.querySelectorAll('#questList .shopItem').length; out.tabs=document.querySelectorAll('#questTabs .tabBtn').length; t.closeJournal(true);
           out.n=t.ACH.length; return out}""")
-        chk('achievements: kill unlocks, no double reward, hunter/veteran, tab lists all',r['stat'] and r['first'] and r['gold'] and r['noDup'] and r['hunter'] and r['vet'] and r['rows']==r['n'] and r['tabs']==4,r)
+        chk('achievements: kill unlocks, no double reward, hunter/veteran, tab lists all',r['stat'] and r['first'] and r['gold'] and r['noDup'] and r['hunter'] and r['vet'] and r["rows"]>=r["n"] and r['tabs']==4,r)
         r=await E("()=>{"+pre+"""t.resetGame(); const out={}; t.goTo('dungeon1',t.world.dungeon1.spawn.x,t.world.dungeon1.spawn.y,''); const L=t.loc; const p=L.props[0]; const b0=P.stat.barrels; t.breakProp(0); out.barrel=P.stat.barrels===b0+1;
           const n0=P.stat.runPotions; P.potions=3; P.hp=10; P.keys=0; t.keys['KeyE']=true; t.update(0.016); t.keys['KeyE']=false; out.potion=P.stat.runPotions===n0+1&&P.stat.potions>=1;
           // страж без урона
