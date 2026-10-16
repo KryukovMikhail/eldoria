@@ -51,6 +51,9 @@
   .tabBtn { padding:7px 14px; font-size:14px; font-weight:bold; cursor:pointer; background:#2a2316; color:#e8c873; border:2px solid #5c4415; border-radius:6px; }
   .tabBtn.active { background:linear-gradient(#e8c873,#b8892f); color:#2b1d05; }
   .shopBtns { display:flex; gap:8px; }
+  .menuGrid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; width:100%; max-width:420px; margin-left:auto; margin-right:auto; }
+  .menuGrid button.startBtn { width:100%; margin:0; padding:9px 4px; font-size:14px; line-height:1.2; box-sizing:border-box; min-width:0; overflow-wrap:normal; }
+  @media (max-width:520px){ .menuGrid button.startBtn { font-size:10.5px; padding:8px 1px; letter-spacing:-0.2px; } }
   .btnRow { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
   #rotateHint { position:absolute; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:rgba(10,8,4,.96); color:#e8c873; text-align:center; font-size:18px; pointer-events:none; }
   #rotateHint span { font-size:54px; }
