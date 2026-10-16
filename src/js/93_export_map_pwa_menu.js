@@ -148,7 +148,36 @@ let deferredInstall = null;
 window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredInstall = e; const b = document.getElementById('installBtn'); if(b && !isStandalone) b.classList.remove('hidden'); });
 window.addEventListener('appinstalled', ()=>{ deferredInstall = null; document.getElementById('installBtn').classList.add('hidden'); });
 document.getElementById('installBtn').addEventListener('click', ()=>{ if(!deferredInstall) return; deferredInstall.prompt(); deferredInstall = null; document.getElementById('installBtn').classList.add('hidden'); });
-try{ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }catch(e){}
+// ---------- плашка «Доступна новая версия» ----------
+const updateBar = document.createElement('div');
+updateBar.id = 'updateBar'; updateBar.className = 'hidden';
+updateBar.innerHTML = '<span>🔄 Доступна новая версия игры</span><button id="updateNow" type="button">Обновить</button><button id="updateLater" type="button" title="Позже">✕</button>';
+document.getElementById('gameWrap').appendChild(updateBar);
+let swReloading = false, swWanted = false;
+function showUpdateBar(worker){
+  updateBar.classList.remove('hidden');
+  document.getElementById('updateNow').onclick = ()=>{
+    try{ if(gameState==='playing') saveGame(); }catch(e){}
+    document.getElementById('updateNow').textContent = 'Обновляю…'; swWanted = true;
+    if(worker) worker.postMessage('skipWaiting'); else location.reload();
+  };
+  document.getElementById('updateLater').onclick = ()=>updateBar.classList.add('hidden');
+}
+try{
+  if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').then(reg=>{
+        const watch = w=>{ if(!w) return; w.addEventListener('statechange', ()=>{ if(w.state==='installed' && navigator.serviceWorker.controller) showUpdateBar(w); }); };
+        if(reg.waiting && navigator.serviceWorker.controller) showUpdateBar(reg.waiting);
+        reg.addEventListener('updatefound', ()=>watch(reg.installing));
+        const check = ()=>{ try{ reg.update().catch(()=>{}); }catch(e){} };
+        setInterval(check, 30*60*1000);
+        document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) check(); });
+      }).catch(()=>{});
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(!swWanted || swReloading) return; swReloading = true; location.reload(); });
+  }
+}catch(e){}
 loadBtn.addEventListener('click', ()=>{ loadGame(latestSaveKey()); });
 refreshSaveUI();
 document.getElementById('restartBtn').addEventListener('click', newGameWithIntro);
