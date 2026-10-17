@@ -87,6 +87,8 @@ const virtualMove = {x:0, y:0};
   bindHoldButton(attackBtn, 'Space');
   bindHoldButton(potionBtn, 'KeyE');
   bindHoldButton(document.getElementById('fishBtn'), 'KeyF');
+  bindHoldButton(document.getElementById('rollBtn'), 'KeyV');
+  bindHoldButton(document.getElementById('tameBtn'), 'KeyG');
 })();
 
 // ---------- Коллизии ----------

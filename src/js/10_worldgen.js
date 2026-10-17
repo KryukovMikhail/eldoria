@@ -330,7 +330,7 @@ function generateTown(){
 function generateHouse(kind){
   const W = 14, H = 11, grid = makeGrid(W,H,'.');
   for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(x===0||y===0||x===W-1||y===H-1) grid[y][x] = '#';
-  const L = { type:'dungeon', level:10, biome:'house', kind, title: kind==='inn' ? 'Трактир «Дремлющий Грифон»' : 'Лавка «Дымный Тигель»', safe:true, nofog:true, fog:'9'.repeat(W*H),
+  const L = { type:'dungeon', level:10, biome:'house', kind, title: kind==='inn' ? 'Трактир «Дремлющий Грифон»' : kind==='home' ? 'Ваш дом' : 'Лавка «Дымный Тигель»', safe:true, nofog:true, fog:'9'.repeat(W*H),
     grid, width:W, height:H, enemies:[], items:[], furn:[], portal:null, spawn:{x:7*TILE+5, y:7*TILE}, exit:{tx:7, ty:H-2} };
   const F = (k,tx,ty,w,h,block)=>{ L.furn.push({k,tx,ty,w,h}); if(block!==false) for(let y=ty;y<ty+h;y++) for(let x=tx;x<tx+w;x++) grid[y][x] = 'B'; };
   if(kind==='inn'){
@@ -338,6 +338,12 @@ function generateHouse(kind){
     F('stool',4,3,1,1,false); F('stool',8,4,1,1,false); F('rug',5,6,5,2,false); F('plant',12,8,1,1);
     F('chestbox',11,7,1,1);
     L.chest = {tx:11, ty:7, opened:false};
+    L.bed = {x:2*TILE, y:3*TILE};
+  } else if(kind==='home'){
+    F('bed',1,2,2,2); F('fire',9,1,3,1); F('table',5,3,3,2); F('shelf',3,1,4,1); F('barrel',12,3,1,1); F('plant',12,8,1,1); F('plant',1,8,1,1);
+    F('stool',4,3,1,1,false); F('stool',8,4,1,1,false); F('rug',4,6,6,2,false);
+    F('chestbox',11,7,1,1);
+    L.chest = {tx:11, ty:7, opened:true, home:true};
     L.bed = {x:2*TILE, y:3*TILE};
   } else {
     F('shelf',2,1,10,1); F('counter',3,3,8,1); F('cauldron',11,5,2,2); F('table',1,6,2,1); F('plant',1,8,1,1); F('rug',4,6,6,2,false); F('barrel',12,8,1,1);

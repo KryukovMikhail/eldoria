@@ -1,6 +1,6 @@
 // ---------- Обновление ----------
 function attackHitbox(scale){
-  const s = (player.weapon==='axe' ? 46 : 34)*(scale||1);
+  const s = (player.weapon==='axe' ? 46 : player.weapon==='hammer' ? 54 : player.weapon==='dagger' ? 28 : 34)*(scale||1);
   if(player.dir==='up')    return {x:player.x+player.w/2-s/2, y:player.y-s+6, w:s, h:s};
   if(player.dir==='down')  return {x:player.x+player.w/2-s/2, y:player.y+player.h-6, w:s, h:s};
   if(player.dir==='left')  return {x:player.x-s+6, y:player.y+player.h/2-s/2, w:s, h:s};
@@ -11,6 +11,7 @@ function attackHitbox(scale){
 const eshots = [];
 const SHOT_COL = { web:['#eef2fa','#aab4c8','#ffffff'], wail:['#d8b8ff','#9a6aff','#ffffff'], curse:['#7aff9a','#2fd06a','#e8ffe8'], spore:['#b8e84a','#7ac22a','#f4ffd0'], fire:['#ff9a2a','#ffd34a','#ff4a1a'], ice:['#bfeaff','#7ad4ff','#ffffff'], sand:['#e8c878','#c9a050','#fff0c0'], knife:['#dfe4ea','#9aa2ae','#ffffff'], arrow:['#caa86a','#8a6a3a','#f4e4b0'], dart:['#8aff6a','#3f9a2a','#e8ffd8'], bolt:['#dfe4ea','#7a7f8c','#ffffff'] };
 function hurtPlayer(d){
+  if(player.rollT>0 && gameState==='playing'){ rollDodged(); return false; }
   if(player.invuln>0 || gameState!=='playing') return false;
   player.hp -= incomingDamage(d); player.invuln = 700; player.hitFlash = 250; metaHurt();
   SFX.play('hurt');
@@ -162,7 +163,8 @@ function update(dt){
   }
   if(!usingVirtual && mx!==0 && my!==0){ mx*=0.7071; my*=0.7071; }
   if(player.fx.freeze>0){ mx = 0; my = 0; player.dashT = 0; }
-  if(player.dashT>0){
+  if(rollMove(dt, mx, my)){ /* перекат */ }
+  else if(player.dashT>0){
     player.dashT -= dt*1000;
     const n = Math.ceil(Math.hypot(player.dvx,player.dvy)*dt/8)||1;
     for(let i=0;i<n;i++) tryMove(player, player.dvx*dt/n, player.dvy*dt/n, loc);
@@ -173,14 +175,15 @@ function update(dt){
 
   // атака
   player.attackTimer = Math.max(0, player.attackTimer-dt*1000);
-  if(keys['Space'] && !attackKeyLatch && player.attackTimer<=0){
+  if(keys['Space'] && !attackKeyLatch && player.attackTimer<=0 && !(player.rollT>0)){
     attackKeyLatch = true;
-    player.attackTimer = WEAPONS[player.weapon].cooldown;
+    const cs = WEAPONS[player.weapon].ranged ? null : comboStep();
+    player.attackTimer = Math.round(WEAPONS[player.weapon].cooldown*(cs ? cs.cdMul : 1));
     player.attacking = true;
-    setTimeout(()=>{ player.attacking=false; }, player.weapon==='axe' ? 230 : 140);
+    setTimeout(()=>{ player.attacking=false; }, player.weapon==='axe'||player.weapon==='hammer' ? 230 : 140);
     SFX.play(WEAPON_SFX[player.weapon] || 'swing');
     if(WEAPONS[player.weapon].ranged) fireArrow();
-    if(!WEAPONS[player.weapon].ranged) meleeStrike(attackHitbox(), 1, 14);
+    else { meleeStrike(attackHitbox(cs.scale), cs.mult, cs.push); comboFx(cs); }
   }
   if(keys['Space']) player.chargeT = (player.chargeT||0)+dt*1000;
   else { if(player.chargeT>=CHARGE_MS && player.attackTimer<=0) heavyAttack(); player.chargeT = 0; }
@@ -190,7 +193,8 @@ function update(dt){
   // зелье
   if(keys['KeyE'] && !potionKeyLatch){
     potionKeyLatch = true;
-    if(player.potions>0 && player.hp<player.maxHp){
+    if(potionBlocked()){ addNote('🚫 Сегодня на арене эликсиры под запретом', '#e07f7f'); SFX.play('deny'); }
+    else if(player.potions>0 && player.hp<player.maxHp){
       player.potions--; metaPotion(); player.hp = Math.min(player.maxHp, player.hp+30);
       addNote('Выпит эликсир здоровья (+30 HP)', '#7fe07f'); SFX.play('drink');
     } else if(player.potions<=0){
@@ -220,6 +224,7 @@ function update(dt){
       if(e.hp<=0){ killEnemy(e); continue; }
     }
     if(e.slow>0) e.slow -= dt*1000;
+    if(e.stun>0){ e.stun -= dt*1000; e.moving = false; continue; }
     const dx = (player.x+player.w/2)-(e.x+e.w/2), dy=(player.y+player.h/2)-(e.y+e.h/2);
     const dist = Math.hypot(dx,dy);
     if(BOSS_TYPES.includes(e.type)) bossTick(e, dt, dist, player.x+player.w/2, player.y+player.h/2);
@@ -317,7 +322,7 @@ function update(dt){
     } else if(loc.type==='dungeon'){
       const dr = loc.doors && loc.doors.find(d=>d.tx===centerTX && d.ty===centerTY);
       if(dr){
-        goTo(dr.to, world[dr.to].spawn.x, world[dr.to].spawn.y, dr.msg);
+        if(!homeGate(dr)) goTo(dr.to, world[dr.to].spawn.x, world[dr.to].spawn.y, dr.msg);
       } else if(loc.backTo && loc.exit.tx===centerTX && loc.exit.ty===centerTY){
         goTo(loc.backTo.loc, loc.backTo.x, loc.backTo.y, loc.backTo.msg || 'Вы выходите на улицу');
       } else if(loc.portal && loc.portal.open && NEXT_LOC[currentLocId] && loc.portal.tx===centerTX && loc.portal.ty===centerTY){

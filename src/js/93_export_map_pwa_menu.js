@@ -44,6 +44,7 @@ function mapTitle(id){
   if(id==='overworld') return 'Оверворлд';
   if(id==='town') return 'Город Лиссарен';
   if(id==='house1') return 'Трактир «Дремлющий Грифон»';
+  if(id==='home') return 'Ваш дом';
   if(id==='house2') return 'Лавка «Дымный Тигель»';
   if(id==='secret1') return 'Грот Мудреца Орбина';
   if(id==='secret2') return 'Тайник Забытых Эхо';

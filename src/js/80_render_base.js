@@ -226,6 +226,7 @@ const HERO_PAL = {
 };
 function heldWeapon(kind, hx, hy, side){
   ctx.save();
+  if(kind==='hammer'||kind==='dagger'||kind==='staff'){ heldNew(kind, hx, hy, side); ctx.restore(); return; }
   if(kind==='axe'){
     ctx.fillStyle='#6a4a2a';
     if(side){
@@ -333,7 +334,8 @@ function drawAttackFx(sx,sy){
   const vx = player.dir==='left'?-1:player.dir==='right'?1:0, vy = player.dir==='up'?-1:player.dir==='down'?1:0;
   const ang = Math.atan2(vy,vx);
   ctx.save(); ctx.lineCap='round';
-  if(player.weapon==='musket'){
+  if(newAttackFx(cx,cy,vx,vy,ang)){ /* новое оружие */ }
+  else if(player.weapon==='musket'){
     ctx.fillStyle='rgba(255,238,170,0.95)'; ctx.beginPath(); ctx.arc(cx+vx*26,cy+vy*26,7,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='rgba(255,170,60,0.8)'; ctx.beginPath(); ctx.arc(cx+vx*32,cy+vy*32,4.5,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='#4a4e58'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(cx+vx*6,cy+vy*6); ctx.lineTo(cx+vx*22,cy+vy*22); ctx.stroke();

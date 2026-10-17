@@ -1,7 +1,7 @@
 // ======================= Достижения и «Новая игра+», арена, напарник, рыбалка, травы и варка =======================
 let ngpKeep = 0, lairHit = false, achAcc = 0, herbAcc = 0;
 const NGP_KEY = 'eldoria_ngp';
-const NGP_KEYS = ['maxHp','atk','level','xp','xpNext','gold','potions','weapon','owned','armor','ownedArmor','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','ach','stat','comp'];
+const NGP_KEYS = ['maxHp','atk','level','xp','xpNext','gold','potions','weapon','owned','armor','ownedArmor','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','ach','stat','comp','stash','home','pet','daily'];
 function ngMul(){ return 1+0.4*(player.ngp||0); }
 
 function ensureMetaFields(){
@@ -10,6 +10,10 @@ function ensureMetaFields(){
   if(!player.ngp) player.ngp = 0;
   if(player.comp===undefined) player.comp = null;
   if(!player.secrets) player.secrets = {};
+  if(!player.stash) player.stash = [];
+  if(player.home===undefined) player.home = false;
+  if(player.pet===undefined) player.pet = null;
+  if(!player.daily) player.daily = {};
 }
 function bump(k, n){ if(!player.stat) ensureMetaFields(); player.stat[k] = (player.stat[k]||0)+(n===undefined ? 1 : n); }
 
@@ -102,6 +106,7 @@ function generateArena(){
 function ensureMetaWorld(wd){
   const T = wd.town; if(!T || !wd.house1) return;
   if(!wd.arena) wd.arena = generateArena();
+  ensureHomeWorld(wd);
   if(!T.doors.some(d=>d.to==='arena')){
     const h = T.houses.find(q=>q.x===26 && q.y===4 && !q.to);
     if(h){ h.to = 'arena'; h.sign = 'arena'; h.kind = 'arena'; T.grid[h.y+3][h.x+3] = 'D'; T.doors.push({tx:h.x+3, ty:h.y+3, to:'arena', msg:'Вы входите на арену Лиссарена'}); }
@@ -111,8 +116,8 @@ function ensureMetaWorld(wd){
   const A = npcsOf(wd.arena); if(!A.some(n=>n.fn==='arena')) A.push({sid:'_meta', fn:'arena', role:'npc', name:'Распорядитель Тарвос', col:'#8a2a2a', x:12*TILE-7+16, y:3*TILE+10});
   const I = npcsOf(wd.house1); if(!I.some(n=>n.fn==='recruit')) I.push({sid:'_meta', fn:'recruit', role:'npc', name:'Трактирщик Бруно', col:'#9a5a2a', x:9*TILE+9, y:3*TILE+9});
 }
-function arenaStart(){
-  loc.run = {wave:0, state:'rest', t:3500}; loc.enemies = [];
+function arenaStart(daily){
+  loc.run = {wave:0, state:'rest', t:3500, daily:daily===true}; loc.enemies = [];
   addNote('🏟 Испытание началось! Первая волна через несколько секунд', '#ff9f4a'); SFX.play('horn');
 }
 function arenaSpawn(n){
@@ -124,7 +129,7 @@ function arenaSpawn(n){
   for(const ty of list){
     const sz = ENEMY_BASE[ty].size;
     const p = freeSpotAround(pcx, pcy, sz, sz, 150, 340, 40) || {x:pcx+120, y:pcy};
-    const e = makeEnemy(ty, p.x, p.y, lv); e.aggro = 2000; e.arenaMob = true; loc.enemies.push(e);
+    const e = makeEnemy(ty, p.x, p.y, lv); e.aggro = 2000; e.arenaMob = true; dailyEnemy(e); loc.enemies.push(e);
     burst(p.x+sz/2, p.y+sz/2, 8, {colors:['#ff9f4a','#ffd34a','#ffffff'], sp:70, up:30, g:-20, life:500, size:2.4});
   }
   SFX.play(boss ? 'boss' : 'horn');
@@ -144,13 +149,14 @@ function arenaTick(dt){
     if(R.t<=0){ R.wave++; loc.enemies = loc.enemies.filter(e=>e.hp>0); arenaSpawn(R.wave); R.state = 'wave'; }
   } else if(R.state==='wave'){
     if(!loc.enemies.some(e=>e.hp>0)){
-      arenaReward(R.wave); if(R.wave>player.stat.arena){ player.stat.arena = R.wave; addNote('🏟 Новый рекорд арены: волна '+R.wave, '#ffd34a'); }
+      arenaReward(R.wave); dailyProgress(R.wave); if(R.wave>player.stat.arena){ player.stat.arena = R.wave; addNote('🏟 Новый рекорд арены: волна '+R.wave, '#ffd34a'); }
       player.hp = Math.min(player.maxHp, player.hp+player.maxHp*0.25); achCheck();
       R.state = 'rest'; R.t = 5000; SFX.play('levelup'); saveGame();
     }
   }
 }
 function drawMetaHUD(){
+  drawComboHUD();
   const W = canvas.width; ctx.save(); ctx.textAlign = 'center'; ctx.font = 'bold 14px sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.85)';
   const say = (t,y,c)=>{ ctx.strokeText(t, W/2, y); ctx.fillStyle = c; ctx.fillText(t, W/2, y); };
   if(loc.arena && loc.run){
@@ -188,6 +194,7 @@ function dismissComp(){ if(player.comp){ addNote('Вы распустили на
 function renderPartyTab(){
   document.getElementById('questInfo').textContent = 'Золото: '+player.gold+' ◆';
   const c = player.comp;
+  renderPetSection();
   jHead('Ваш напарник');
   if(c){
     const S = compStats(c.type);
@@ -198,6 +205,7 @@ function renderPartyTab(){
     const C = COMP[k], S = compStats(k), here = currentLocId==='house1';
     jRow(C.name+' — '+C.price+' ◆', C.desc+' Здоровье '+S.maxHp+', урон '+S.dmg+'.'+(c ? ' Новый наёмник заменит текущего.' : ''), [shopButton(here ? 'Нанять — '+C.price+' ◆' : 'В трактире', ()=>{ if(hireComp(k)) renderJournal('Наёмник теперь с вами.'); }, !here || player.gold<C.price || (c && c.type===k))]);
   }
+  renderRecords();
 }
 function compSpawn(){
   const S = compStats(player.comp.type), pcx = player.x+player.w/2, pcy = player.y+player.h/2;
@@ -412,7 +420,7 @@ function metaTalk(n){
   if(n.fn==='arena'){
     const best = (player.stat && player.stat.arena)||0;
     if(loc.run) showDialog(n.name, ['— Испытание идёт! Не стой столбом: волна '+(loc.run.wave||1)+'.'], 'К бою');
-    else showDialog(n.name, ['— Добро пожаловать на арену Лиссарена! Волны врагов, каждая сильнее прежней, а каждая пятая — со стражем.','— За каждую волну платят золотом и материалами для кузнеца. Выйдешь с арены — испытание закончится, но награды останутся.'+(best ? ' Твой рекорд: волна '+best+'.' : '')], 'Начать испытание', arenaStart);
+    else showDialog(n.name, ['— Добро пожаловать на арену Лиссарена! Волны врагов, каждая сильнее прежней, а каждая пятая — со стражем.','— За каждую волну платят золотом и материалами для кузнеца. Выйдешь с арены — испытание закончится, но награды останутся.'+(best ? ' Твой рекорд: волна '+best+'.' : '')], 'Начать испытание', ()=>arenaChoice(n));
   }
 }
 function metaEnter(prev){

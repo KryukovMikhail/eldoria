@@ -119,7 +119,8 @@ function meleeStrike(hb, mult, push){
     const ex = e.x+e.w/2, ey = e.y+e.h/2;
     if(!hasLOS(pcx,pcy,ex,ey)) continue;                                // через деревья и стены бить нельзя
     const d = Math.hypot(ex-pcx,ey-pcy), dm = distMul(d);
-    damageEnemy(e, Math.round(playerDamage()*mult*dm));
+    damageEnemy(e, Math.round(playerDamage()*mult*dm*meleeCrit(e)));
+    meleeHitFx(e, mult);
     SFX.play('hit');
     burst(ex,ey,dm>1.25 ? 9 : 5,{colors:dm>1.25?['#ffffff','#ffe28a','#ff9a3a']:['#fff6c8','#ffd34a','#ffffff'], sp:90, up:20, g:200, life:260, size:dm>1.25?2.4:1.8});
     const l = d||1; tryPush(e, (ex-pcx)/l*push, (ey-pcy)/l*push, loc);

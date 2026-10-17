@@ -100,7 +100,7 @@ function updateArrows(dt){
         if(e.hp<=0 || (a.hit && a.hit.includes(e))) continue;
         if(a.x>e.x && a.x<e.x+e.w && a.y>e.y && a.y<e.y+e.h){
           if(a.hit) a.hit.push(e);
-          damageEnemy(e, Math.round(a.dmg*(1.5-0.75*Math.min(1,a.dist/a.max)))); SFX.play('hit');
+          damageEnemy(e, Math.round(a.dmg*(1.5-0.75*Math.min(1,a.dist/a.max)))); SFX.play('hit'); if(a.proj==='orb') orbSplash(a, e);
           burst(a.x,a.y,5,{colors:['#fff6c8','#ffd34a','#ffffff'],sp:90,up:20,g:200,life:260,size:1.8});
           tryPush(e, a.vx*0.03, a.vy*0.03, loc);
           if(e.hp<=0) killEnemy(e);
@@ -118,6 +118,13 @@ function drawArrows(camX,camY){
       ctx.strokeStyle='rgba(255,236,170,0.5)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-34,0); ctx.lineTo(-3,0); ctx.stroke();
       ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(-50,0); ctx.lineTo(-20,0); ctx.stroke();
       ctx.fillStyle='#3a3a40'; ctx.beginPath(); ctx.arc(0,0,3.2,0,6.283); ctx.fill(); ctx.fillStyle='#d8d8e0'; ctx.beginPath(); ctx.arc(-0.8,-0.8,1.3,0,6.283); ctx.fill();
+      ctx.restore(); continue;
+    }
+    if(a.proj==='orb'){
+      const t = Date.now()/1000, g = ctx.createRadialGradient(0,0,1,0,0,13);
+      g.addColorStop(0,'rgba(255,255,255,0.95)'); g.addColorStop(0.35,'rgba(170,140,255,0.85)'); g.addColorStop(1,'rgba(110,80,230,0)');
+      ctx.strokeStyle = 'rgba(180,150,255,0.35)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-30,0); ctx.lineTo(-4,0); ctx.stroke();
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0,0,11+Math.sin(t*20)*1.2,0,6.283); ctx.fill();
       ctx.restore(); continue;
     }
     if(a.proj==='bolt'){

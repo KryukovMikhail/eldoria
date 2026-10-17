@@ -84,7 +84,7 @@ function resetHero(){
   player.cd = {dash:0,spin:0,shield:0}; player.shield = 0; player.dashT = 0; player.dvx = 0; player.dvy = 0; player.spinFx = 0; player.spinR = 0; player.vamp = 0;
   player.elix = {big:0,speed:0,might:0,guard:0,swim:0}; player.buff = {speed:0,might:0,guard:0,swim:0}; player.slowT = 0; player.boots = false; player.fx = {freeze:0,freezeImm:0,burn:0,burnDps:0,poison:0,poisonDps:0,acc:0};
   aoes.length = 0;
-  player.sb = {}; player.mats = {scrap:0,essence:0,crystal:0,herb:0,fish:0}; player.ach = {}; player.stat = {}; player.comp = null; player.secrets = {}; player.ngp = ngpKeep; player.visited = {overworld:1}; player.track = 'main'; player.stories = {}; player.dashHit = [];
+  player.sb = {}; player.mats = {scrap:0,essence:0,crystal:0,herb:0,fish:0}; player.ach = {}; player.stat = {}; player.comp = null; player.secrets = {}; player.stash = []; player.home = false; player.pet = null; player.daily = {}; player.ngp = ngpKeep; player.visited = {overworld:1}; player.track = 'main'; player.stories = {}; player.dashHit = [];
 }
 function gearStat(k){
   let v = 0; for(const s in player.gear){ const g = player.gear[s]; if(g && g.stats[k]) v += g.stats[k]; }
@@ -171,6 +171,7 @@ const ENCH = {
   venom: {n:'Яд',    icon:'☠',  col:['#b8e84a','#7ac22a','#f4ffd0'], desc:'отравляет: 80% урона удара за 5 с'}
 };
 function damageEnemy(e, dmg){
+  dmg *= dailyMul('out');
   if(player.sb && player.sb.might==='a' && Math.random()<0.12){ dmg *= 2; burst(e.x+e.w/2, e.y+e.h/2, 8, {colors:['#ffd34a','#ffffff','#ff7a2a'], sp:120, up:30, g:100, life:380, size:2.4}); }
   const raw = dmg; dmg = dmg/diffMul('hp');
   if(guardBlocks(e)){

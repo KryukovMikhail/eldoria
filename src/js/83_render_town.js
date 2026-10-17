@@ -47,6 +47,7 @@ function townHouse(g,h){
     g.strokeStyle = '#2a1a0c'; g.lineWidth = 2; g.beginPath(); g.moveTo(sx-6,sy-4); g.lineTo(sx+14,sy-4); g.stroke();
     g.fillStyle = '#4e3b2a'; rrectG(g,sx,sy-2,24,20,3); g.fill(); g.strokeStyle = '#241a10'; g.lineWidth = 1; g.stroke();
     if(h.sign==='inn'){ g.fillStyle = '#e8c873'; g.fillRect(sx+7,sy+4,9,10); g.strokeStyle = '#e8c873'; g.lineWidth = 2; g.beginPath(); g.arc(sx+17,sy+9,3.2,-1.4,1.4); g.stroke(); g.fillStyle = '#fff'; g.fillRect(sx+7,sy+4,9,3); }
+    else if(h.sign==='home'){ g.strokeStyle = '#e8c873'; g.lineWidth = 2.2; g.beginPath(); g.arc(sx+9,sy+9,4,0,6.283); g.moveTo(sx+13,sy+9); g.lineTo(sx+20,sy+9); g.moveTo(sx+17,sy+9); g.lineTo(sx+17,sy+14); g.moveTo(sx+20,sy+9); g.lineTo(sx+20,sy+13); g.stroke(); }
     else if(h.sign==='arena'){ g.strokeStyle = '#e8c873'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(sx+5,sy+4); g.lineTo(sx+19,sy+16); g.moveTo(sx+19,sy+4); g.lineTo(sx+5,sy+16); g.stroke(); g.fillStyle = '#c0392b'; g.beginPath(); g.arc(sx+12,sy+10,2.4,0,6.283); g.fill(); }
     else { g.fillStyle = '#8ad8a8'; g.beginPath(); g.arc(sx+12,sy+11,5.5,0,6.283); g.fill(); g.fillStyle = '#d9e6ee'; g.fillRect(sx+10,sy+2,4,6); g.fillStyle = '#fff'; g.fillRect(sx+8,sy+9,2,2); }
   }

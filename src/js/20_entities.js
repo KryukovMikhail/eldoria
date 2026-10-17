@@ -83,11 +83,14 @@ const WEAPONS = {
   axe:   { name:'Боевой топор', mult:2.5, price:130, cooldown:620, desc:'Тяжёлый удар по большой площади, но заметно медленнее.' },
   bow:   { name:'Лук',          mult:1.6, price:90,  cooldown:560, ranged:true, proj:'arrow', pspeed:430, prange:150, desc:'Стреляет стрелами примерно на 4,5 клетки. Перезарядка дольше.' },
   crossbow:{ name:'Арбалет',     mult:3.0, price:300, cooldown:860, ranged:true, proj:'bolt',  pspeed:540, prange:200, desc:'Мощные болты летят дальше и бьют сильнее лука. Перезаряжается медленно.' },
-  musket:{ name:'Мушкет',        mult:5.0, price:700, cooldown:1400,ranged:true, proj:'bullet',pspeed:900, prange:300, desc:'Самое мощное оружие: пуля летит почти через весь экран. Долгая перезарядка.' }
+  musket:{ name:'Мушкет',        mult:5.0, price:700, cooldown:1400,ranged:true, proj:'bullet',pspeed:900, prange:300, desc:'Самое мощное оружие: пуля летит почти через весь экран. Долгая перезарядка.' },
+  dagger:{ name:'Парные кинжалы', mult:0.8, price:110, cooldown:230, desc:'Очень быстрые удары по короткой дуге; каждый четвёртый удар — критический (×2).' },
+  hammer:{ name:'Боевой молот', mult:3.9, price:520, cooldown:1050, desc:'Сокрушительный удар по большой площади: оглушает врагов (боссов — ненадолго).' },
+  staff: { name:'Посох чародея', mult:2.9, price:900, cooldown:700, ranged:true, proj:'orb', pspeed:360, prange:190, desc:'Магический шар взрывается при попадании и ранит врагов вокруг цели.' }
 };
-const WEAPON_SFX = { sword:'swing', spear:'spear', axe:'axe', bow:'bow', crossbow:'crossbow', musket:'musket' };
+const WEAPON_SFX = { sword:'swing', spear:'spear', axe:'axe', bow:'bow', crossbow:'crossbow', musket:'musket', dagger:'swing', hammer:'axe', staff:'crossbow' };
 // оружие открывается постепенно: число побеждённых стражей-боссов, нужное для покупки
-const WEAPON_UNLOCK = { sword:0, spear:1, bow:2, axe:3, crossbow:4, musket:5 };
+const WEAPON_UNLOCK = { sword:0, spear:1, bow:2, axe:3, crossbow:4, musket:5, dagger:2, hammer:6, staff:7 };
 const BOSS_NAME_BY_STAGE = ['Мортракс','Шелиба','Ноктурн','Игнаррок','Хар-Атеп','Криомир','Морвейн','Ольхарон','Вархаал','Эфирий'];
 const ARMOR_UNLOCK = { none:0, leather:0, chain:1, plate:2 };
 function armorUnlocked(id){ return (ARMOR_UNLOCK[id]||0) <= storyStage(); }
@@ -117,9 +120,9 @@ const player = {
 };
 function incomingDamage(d){
   const red = Math.min(0.85, ARMORS[player.armor].reduce + gearStat('def')/100);
-  return Math.max(1, Math.round(d * (1-red) * (player.shield>0 ? 0.2 : 1) * (player.buff.guard>0 ? 0.5 : 1) * (player.sb && player.sb.might==='b' ? 0.88 : 1) * diffMul('dmg')));
+  return Math.max(1, Math.round(d * (1-red) * (player.shield>0 ? 0.2 : 1) * (player.buff.guard>0 ? 0.5 : 1) * (player.sb && player.sb.might==='b' ? 0.88 : 1) * diffMul('dmg') * dailyMul('inn')));
 }
-function playerDamage(){ return Math.round(player.atk * WEAPONS[player.weapon].mult * weaponMul() * (1 + (gearStat('dmg') + 6*player.skills.might + (player.buff.might>0 ? 50 : 0))/100)); }
+function playerDamage(){ return Math.round(player.atk * WEAPONS[player.weapon].mult * weaponMul() * (1 + (gearStat('dmg') + 6*player.skills.might + (player.buff.might>0 ? 50 : 0))/100) * (player.counterT>0 ? 1.5 : 1)); }
 
 // ---------- Эликсиры ----------
 const ELIX = {
