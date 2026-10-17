@@ -25,7 +25,7 @@ async def main():
         await pg.screenshot(path=SC+'x_codex0.png')
         await E("()=>__t.closeCodex()")
         # weapons unlock
-        r=await E("()=>Object.keys(__t.WEAPON_UNLOCK).map(k=>[k,__t.weaponUnlocked(k)])"); chk('only sword unlocked at stage 0',r==[['sword',True],['spear',False],['bow',False],['axe',False],['crossbow',False],['musket',False]],r)
+        r=await E("()=>Object.keys(__t.WEAPON_UNLOCK).map(k=>[k,__t.weaponUnlocked(k)])"); chk('only sword unlocked at stage 0',r[0]==['sword',True] and not any(x[1] for x in r[1:]),r)
         # shop shows lock
         await E("()=>{__t.player.gold=5000; __t.setShopTab&&0}")
         # unlock stages via boss kills simulation: open lair portals

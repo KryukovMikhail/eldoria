@@ -17,6 +17,8 @@ async def main():
         async def close_dlg():
             for i in range(10):
                 if await E("()=>__t.state")!='dialog': break
+                if await E("()=>!document.getElementById('choiceScreen').classList.contains('hidden')"):
+                    await pg.click('#choiceScreen button'); await pg.wait_for_timeout(30); break
                 await pg.click('#dlgBtn'); await pg.wait_for_timeout(30)
         pre="const t=__t,P=t.player; P.invuln=0; P.hp=P.maxHp=1000;"
         calm="{ const wb=t.env.b[t.locId]; if(wb){ wb.name='clear'; wb.amt=1; wb.next=null; wb.timer=1e9; } }"
