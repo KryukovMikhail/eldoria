@@ -16,7 +16,7 @@ async def main():
         await pg.evaluate("()=>{__t.beginNewGame()}"); await pg.wait_for_timeout(300)
         E=lambda js,a=None: pg.evaluate(js,a)
         r=await E("()=>[__t.CHAIN.length, __t.CHAIN.every(id=>__t.world[id]), __t.world.overworld.entrances.map(e=>e.dungeon).join(','), !!__t.world.town, !__t.world.dungeon2]")
-        chk('world has 19 chain locations, entrance->lair1',r==[19,True,'lair1,town,secret1,secret2',True,True],r)
+        chk('world has 19 chain locations, entrance->lair1',r==[19,True,'lair1,town,secret1,secret2,deep,sky',True,True],r)
         r=await E("""()=>{ const exp={lair1:'boss',lair2:'spiderqueen',lair3:'shadowlord',lair4:'lavalord',lair5:'pharaoh',lair6:'frostking',lair7:'lich',lair8:'treant',lair9:'warlord',lair10:'phantom'}; const bad=[];
           for(const id of __t.CHAIN){ const L=__t.world[id]; const bs=L.enemies.filter(e=>__t.BOSS_TYPES.includes(e.type)).map(e=>e.type);
             if(exp[id]){ if(bs.join()!==exp[id]||!L.boss||L.boss.type!==exp[id]) bad.push(id+':boss '+bs); } else if(bs.length) bad.push(id+':unexpected boss');
@@ -56,7 +56,7 @@ async def main():
             d.world.dungeon2=d.world.dungeon1; delete d.world.lair1; d.world.overworld.entrances.forEach(e=>{ if(e.dungeon==='lair1') e.dungeon='dungeon1'; });
             localStorage.setItem(k,JSON.stringify(d)); const res=__t.loadGame(k);
             return [res,__t.locId,__t.player.level,__t.player.gold,!!__t.world.lair1&&!!__t.world.city&&!!__t.world.manor&&!__t.world.dungeon2,__t.world.overworld.entrances.map(e=>e.dungeon).join(','), Math.round(__t.player.x/32)+','+Math.round(__t.player.y/32)] }""")
-        chk('legacy save migrates: hero kept, back on surface',r[0]==True and r[1]=='overworld' and r[2]==7 and r[3]==777 and r[4]==True and r[5]=='lair1,town,secret1,secret2',r)
+        chk('legacy save migrates: hero kept, back on surface',r[0]==True and r[1]=='overworld' and r[2]==7 and r[3]==777 and r[4]==True and r[5]=='lair1,town,secret1,secret2,deep,sky',r)
         # сохранение/загрузка нового мира с лairами
         r=await E("""()=>{ __t.goTo('lair5',100,100,''); __t.saveGame(); const k=__t.latestSaveKey(); const ok=__t.loadGame(k); return [ok,__t.locId,!!__t.loc.boss,__t.loc.boss&&__t.loc.boss.type,__t.loc.title] }""")
         chk('new save round-trip in lair (boss restored)',r[0]==True and r[1]=='lair5' and r[3]=='pharaoh' and r[4]=='Логово Хар-Атепа',r)

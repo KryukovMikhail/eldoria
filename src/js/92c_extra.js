@@ -95,7 +95,7 @@ function secretsTick(dt){
 }
 function extraKill(e){
   if(seasonMul('gold')>1 && !loc.arena) player.gold += Math.ceil(e.gold*(seasonMul('gold')-1));
-  petXp(e);
+  petXp(e); festKill(e);
   const S = secretOf(e); if(!S) return;
   player.secrets[S.id] = 2; bump('secrets');
   const txt = giveReward(S.reward);
@@ -280,10 +280,10 @@ async function parseSaveCode(code){
 
 // ---------- тик и отрисовка ----------
 function extraTick(dt){
-  seasonTick(); secretsTick(dt); tipsTick(dt); tickD(dt);
+  seasonTick(); secretsTick(dt); tipsTick(dt); tickD(dt); tickE(dt);
   setAcc += dt; if(setAcc>0.5){ setAcc = 0; applySettings(); }
 }
-function drawExtra(camX, camY){ drawPet(camX, camY); drawSecretBars(camX, camY); drawNums(camX, camY); }
+function drawExtra(camX, camY){ drawPet(camX, camY); drawFest(camX, camY); drawPlaces(camX, camY); drawSecretBars(camX, camY); drawNums(camX, camY); }
 ACH.push(
   {id:'seasons', i:'🍃', n:'Круговорот', d:'Увидеть все четыре сезона на равнине или в городе.', g:150, t:()=>((player.stat.seasons||0)&15)===15},
   {id:'secret1', i:'🌙', n:'Охотник за тайнами', d:'Победить секретного босса.', g:300, t:()=>(player.stat.secrets||0)>=1},

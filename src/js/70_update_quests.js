@@ -314,6 +314,7 @@ function update(dt){
       for(const en of loc.entrances){
         if(en.hidden && !en.found) continue;
         if(en.tx===centerTX && en.ty===centerTY){
+          if(entranceGate(en.dungeon)) break;
           const d = world[en.dungeon];
           goTo(en.dungeon, d.spawn.x, d.spawn.y, en.dungeon==='town' ? 'Вы входите в Город Лиссарен' : ENTER_MSG[en.dungeon] || 'Вы входите в пещеру...');
           break;

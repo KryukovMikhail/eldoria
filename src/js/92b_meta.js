@@ -106,7 +106,7 @@ function generateArena(){
 function ensureMetaWorld(wd){
   const T = wd.town; if(!T || !wd.house1) return;
   if(!wd.arena) wd.arena = generateArena();
-  ensureHomeWorld(wd);
+  ensureHomeWorld(wd); ensureForkNpc(wd);
   if(!T.doors.some(d=>d.to==='arena')){
     const h = T.houses.find(q=>q.x===26 && q.y===4 && !q.to);
     if(h){ h.to = 'arena'; h.sign = 'arena'; h.kind = 'arena'; T.grid[h.y+3][h.x+3] = 'D'; T.doors.push({tx:h.x+3, ty:h.y+3, to:'arena', msg:'Вы входите на арену Лиссарена'}); }
@@ -156,7 +156,7 @@ function arenaTick(dt){
   }
 }
 function drawMetaHUD(){
-  drawComboHUD();
+  drawComboHUD(); drawPlacesHUD(); drawFestHUD();
   const W = canvas.width; ctx.save(); ctx.textAlign = 'center'; ctx.font = 'bold 14px sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.85)';
   const say = (t,y,c)=>{ ctx.strokeText(t, W/2, y); ctx.fillStyle = c; ctx.fillText(t, W/2, y); };
   if(loc.arena && loc.run){
@@ -205,7 +205,7 @@ function renderPartyTab(){
     const C = COMP[k], S = compStats(k), here = currentLocId==='house1';
     jRow(C.name+' — '+C.price+' ◆', C.desc+' Здоровье '+S.maxHp+', урон '+S.dmg+'.'+(c ? ' Новый наёмник заменит текущего.' : ''), [shopButton(here ? 'Нанять — '+C.price+' ◆' : 'В трактире', ()=>{ if(hireComp(k)) renderJournal('Наёмник теперь с вами.'); }, !here || player.gold<C.price || (c && c.type===k))]);
   }
-  renderRecords();
+  renderRecords(); renderForkSection();
 }
 function compSpawn(){
   const S = compStats(player.comp.type), pcx = player.x+player.w/2, pcy = player.y+player.h/2;
@@ -416,6 +416,7 @@ function renderBrewing(){
 
 // ---------- разговоры и вход в локацию ----------
 function metaTalk(n){
+  if(n.fn==='fork'){ forkTalk(n); return; }
   if(n.fn==='recruit'){ openJournal('party'); return; }
   if(n.fn==='arena'){
     const best = (player.stat && player.stat.arena)||0;
@@ -424,7 +425,7 @@ function metaTalk(n){
   }
 }
 function metaEnter(prev){
-  fish = null; compObj = null; lairHit = false;
+  fish = null; compObj = null; lairHit = false; enterE();
   if(prev && prev.arena && prev.run){ prev.run = null; prev.enemies.length = 0; addNote('🏟 Испытание закончено', '#c8c8c8'); }
 }
 function metaTick(dt){

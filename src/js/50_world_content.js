@@ -131,7 +131,7 @@ function pickEventSpot(){
 }
 function spawnAmbush(){
   const pl = player.level, pool = pl<8 ? ['bandit','bandit','boar'] : pl<14 ? ['bandit','bandit','wolf','boar'] : ['bandit','bandit','darkknight'];
-  const n = 3 + (pl>=10?1:0) + (pl>=18?1:0), lv = Math.min(4, 1+Math.floor(pl/5));
+  const n = Math.max(2, 3 + (pl>=10?1:0) + (pl>=18?1:0) - (player.forks && player.forks.f1==='A' ? 1 : 0)), lv = Math.min(4, 1+Math.floor(pl/5));
   const pcx = player.x+player.w/2, pcy = player.y+player.h/2;
   if((loc.entrances||[]).some(e=>Math.hypot(pcx/TILE-e.tx, pcy/TILE-e.ty)<14)) return false;
   if(loc.exit && Math.hypot(pcx/TILE-loc.exit.tx, pcy/TILE-loc.exit.ty)<12) return false;
@@ -580,7 +580,7 @@ function ensureWorldExtras(){
   if(!world.town || !world.house1 || !world.house2) Object.assign(world, makeTownSet());
   if(world.overworld && !world.overworld.entrances.some(en=>en.dungeon==='town')) placeTownGate(world.overworld, world.overworld.entrances[0]);
   for(const id of CHAIN) if(!world[id]) world[id] = genLoc(id);
-  ensureSecrets(world); ensurePOIs(world); ensureMetaWorld(world); ensureMapExtras(world); ensureHerbs(world);
+  ensureSecrets(world); ensureAirWater(world); ensurePOIs(world); ensureMetaWorld(world); ensureMapExtras(world); ensureHerbs(world);
 }
 
 const CHAIN = ['lair1','dungeon1','lair2','dungeon3','lair3','lava','lair4','desert','lair5','ice','lair6','grave','lair7','jungle','lair8','city','lair9','manor','lair10'];
@@ -608,7 +608,7 @@ const BACK_MSG = {};
 for(const id of CHAIN){ if(LAIR[id]) ENTER_MSG[id] = '⚔ '+LAIR[id].title+': здесь вас ждёт могучий враг'; BACK_MSG[id] = 'Вы возвращаетесь: '+LOC_NAME[id]; }
 const PORTAL_KIND = { lair1:'dungeon1', dungeon1:'dungeon2', lair2:'abyss', dungeon3:'dungeon2', lair3:'lavaGate', lava:'dungeon2', lair4:'tomb', desert:'dungeon2', lair5:'iceGate', ice:'dungeon2',
   lair6:'graveGate', grave:'dungeon2', lair7:'jungleGate', jungle:'dungeon2', lair8:'cityGate', city:'dungeon2', lair9:'manorGate', manor:'dungeon2' };
-ENTER_MSG.secret1 = 'Вы входите в Грот Мудреца Орбина...'; ENTER_MSG.secret2 = 'Вы спускаетесь в Тайник Забытых Эхо...';
+ENTER_MSG.secret1 = 'Вы входите в Грот Мудреца Орбина...'; ENTER_MSG.secret2 = 'Вы спускаетесь в Тайник Забытых Эхо...'; ENTER_MSG.deep = '🫧 Вы ныряете в Жемчужный Провал — следите за воздухом'; ENTER_MSG.sky = '☁ Вы поднимаетесь на Небесные Террасы — держитесь от молний подальше';
 const BOSS_TYPES = ['boss','shadowlord','lavalord','pharaoh','frostking','lich','treant','spiderqueen','warlord','phantom'];
 const BOSS_LABEL = { boss:'МОРТРАКС', shadowlord:'НОКТУРН', lavalord:'ИГНАРРОК', pharaoh:'ХАР-АТЕП', frostking:'КРИОМИР', lich:'МОРВЕЙН', treant:'ОЛЬХАРОН', spiderqueen:'ШЕЛИБА', warlord:'ВАРХААЛ', phantom:'ЭФИРИЙ' };
 const BOSS_NOTE = {

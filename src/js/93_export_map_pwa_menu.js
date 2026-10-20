@@ -48,6 +48,8 @@ function mapTitle(id){
   if(id==='house2') return 'Лавка «Дымный Тигель»';
   if(id==='secret1') return 'Грот Мудреца Орбина';
   if(id==='secret2') return 'Тайник Забытых Эхо';
+  if(id==='deep') return 'Жемчужный Провал';
+  if(id==='sky') return 'Небесные Террасы';
   const pd = POI_DEFS.find(d=>d.id===id); if(pd) return pd.title;
   return LOC_NAME[id] || id;
 }
@@ -57,7 +59,7 @@ function renderMap(){
   const cur = hasActiveGame ? currentLocId : null;
   const mainIds = ['overworld', ...CHAIN];
   const lairsBefore = id=>{ let n = 0; for(const c of CHAIN){ if(c===id) break; if(LAIR[c]) n++; } return n; };
-  const subs = {overworld:['poi_cabin','town','secret1','secret2']};
+  const subs = {overworld:['poi_cabin','town','secret1','secret2','deep','sky']};
   for(const pd of POI_DEFS) if(pd.parent!=='overworld') subs[pd.parent] = [pd.id];
   const esc = t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
   const rnd = (i,k)=>hash2(i,k,777);

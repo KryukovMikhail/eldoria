@@ -84,7 +84,7 @@ function resetHero(){
   player.cd = {dash:0,spin:0,shield:0}; player.shield = 0; player.dashT = 0; player.dvx = 0; player.dvy = 0; player.spinFx = 0; player.spinR = 0; player.vamp = 0;
   player.elix = {big:0,speed:0,might:0,guard:0,swim:0}; player.buff = {speed:0,might:0,guard:0,swim:0}; player.slowT = 0; player.boots = false; player.fx = {freeze:0,freezeImm:0,burn:0,burnDps:0,poison:0,poisonDps:0,acc:0};
   aoes.length = 0;
-  player.sb = {}; player.mats = {scrap:0,essence:0,crystal:0,herb:0,fish:0}; player.ach = {}; player.stat = {}; player.comp = null; player.secrets = {}; player.stash = []; player.home = false; player.pet = null; player.daily = {}; player.ngp = ngpKeep; player.visited = {overworld:1}; player.track = 'main'; player.stories = {}; player.dashHit = [];
+  player.sb = {}; player.mats = {scrap:0,essence:0,crystal:0,herb:0,fish:0}; player.ach = {}; player.stat = {}; player.comp = null; player.secrets = {}; player.stash = []; player.forks = {}; player.home = false; player.pet = null; player.daily = {}; player.ngp = ngpKeep; player.visited = {overworld:1}; player.track = 'main'; player.stories = {}; player.dashHit = [];
 }
 function gearStat(k){
   let v = 0; for(const s in player.gear){ const g = player.gear[s]; if(g && g.stats[k]) v += g.stats[k]; }

@@ -268,7 +268,7 @@ function genLoc(id){
 function buildWorld(ow){
   const w = { overworld: ow || generateOverworld() };
   for(const id of CHAIN) w[id] = genLoc(id);
-  ensureSecrets(w); ensurePOIs(w);
+  ensureSecrets(w); ensureAirWater(w); ensurePOIs(w);
   return w;
 }
 // ======================= Сюжет, тайники и мини-события =======================
