@@ -440,14 +440,22 @@ function buildDungeonLayer(L){
       gr.addColorStop(0,'rgba(255,110,20,0.34)'); gr.addColorStop(1,'rgba(255,110,20,0)');
       g.fillStyle = gr; g.fillRect(cx-52,cy-52,104,104);
     }
-    for(const [rad,col] of [[19.5,'#24090a'],[16.5,'#c43a0a']]){
+    const blob = (cx,cy,rad,sd)=>{                                  // неровное пятно без прямых углов
+      const N = 12, pts = [];
+      for(let i=0;i<N;i++){ const a = i/N*Math.PI*2, r = rad*(0.78+0.42*hash2(sd,i,710)); pts.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); }
+      g.beginPath(); g.moveTo((pts[0][0]+pts[N-1][0])/2,(pts[0][1]+pts[N-1][1])/2);
+      for(let i=0;i<N;i++){ const a = pts[i], b = pts[(i+1)%N]; g.quadraticCurveTo(a[0],a[1],(a[0]+b[0])/2,(a[1]+b[1])/2); }
+      g.closePath(); g.fill();
+    };
+    for(const [rad,col,dx] of [[21,'rgba(120,34,10,0.85)',0],[17,'#c43a0a',1]]){
       g.fillStyle = col;
       for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
         if(!isL(tx,ty)) continue;
-        const cx = tx*TILE+16, cy = ty*TILE+16;
-        g.beginPath(); g.arc(cx,cy,rad,0,Math.PI*2); g.fill();
-        if(isL(tx+1,ty)) g.fillRect(cx,cy-rad,TILE,rad*2);
-        if(isL(tx,ty+1)) g.fillRect(cx-rad,cy,rad*2,TILE);
+        const sd = tx*131+ty*17+dx, jx = (hash2(tx,ty,720)-0.5)*7, jy = (hash2(tx,ty,721)-0.5)*7, cx = tx*TILE+16+jx, cy = ty*TILE+16+jy;
+        blob(cx,cy,rad*(0.92+0.2*hash2(tx,ty,722)),sd);
+        if(isL(tx+1,ty)) blob(tx*TILE+32+(hash2(tx,ty,723)-0.5)*5,ty*TILE+16+(hash2(tx,ty,724)-0.5)*8,rad*0.86,sd+5);
+        if(isL(tx,ty+1)) blob(tx*TILE+16+(hash2(tx,ty,725)-0.5)*8,ty*TILE+32+(hash2(tx,ty,726)-0.5)*5,rad*0.86,sd+9);
+        if(isL(tx+1,ty+1) && isL(tx+1,ty) && isL(tx,ty+1)) blob(tx*TILE+32,ty*TILE+32,rad*0.8,sd+13);
       }
     }
     for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
@@ -468,6 +476,28 @@ function buildDungeonLayer(L){
   for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
     if(isF(tx,ty)) continue;
     const R = (k)=>hash2(tx,ty,500+k);
+    if(L.biome==='city' && L.level===11 && tx>=2 && ty>=2 && tx<L.width-2 && ty<L.height-2){                       // дома с крышами (вид сверху)
+      const x0 = tx*TILE, y0 = ty*TILE, wl = (x,y)=>!isF(x,y);
+      const cols = [[176,76,54],[128,92,70],[78,92,120],[138,62,62],[98,114,88],[150,112,66]];
+      const c = cols[(hash2(tx>>2,ty>>2,777)*cols.length)|0], sh = 0.92+0.16*hash2(tx,ty,778);
+      g.fillStyle = 'rgb('+((c[0]*sh)|0)+','+((c[1]*sh)|0)+','+((c[2]*sh)|0)+')'; g.fillRect(x0,y0,TILE,TILE);
+      for(let k=0;k<4;k++){                                                                                     // ряды черепицы
+        const yy = y0+k*8, off = (k+tx)%2*8;
+        g.strokeStyle = 'rgba(0,0,0,0.3)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x0,yy+7.5); g.lineTo(x0+TILE,yy+7.5); g.stroke();
+        for(let q=0;q<3;q++){ g.beginPath(); g.arc(x0+off+q*16-4,yy+0.5,8,0.15,Math.PI-0.15); g.stroke(); }
+        g.fillStyle = 'rgba(255,255,255,'+(0.05+0.03*(k%2))+')'; g.fillRect(x0,yy,TILE,3);
+      }
+      let up = 0, dn = 0; while(wl(tx,ty-up-1) && up<8) up++; while(wl(tx,ty+dn+1) && dn<8) dn++;
+      const hh = up+dn+1, mid = (hh-1)/2;
+      if(hh>=2){ const ry = hh%2===1 ? (up===mid ? y0+16 : -1) : (up===hh/2-1 ? y0+32 : -1);
+        if(ry>=0){ g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(x0,ry+1,TILE,3); g.fillStyle = 'rgba(255,236,200,0.5)'; g.fillRect(x0,ry-2,TILE,3); } }
+      g.fillStyle = 'rgba(0,0,0,0.38)';
+      if(!wl(tx,ty+1)) g.fillRect(x0,y0+TILE-5,TILE,5);
+      if(!wl(tx-1,ty)) g.fillRect(x0,y0,3,TILE);
+      if(!wl(tx+1,ty)) g.fillRect(x0+TILE-3,y0,3,TILE);
+      if(!wl(tx,ty-1)){ g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x0,y0,TILE,3); }
+      continue;
+    }
     if(L.level>=11){                                                                                               // кирпичная кладка вместо валунов
       const x0 = tx*TILE, y0 = ty*TILE;
       g.fillStyle = 'rgb('+((P.w[0]*1.25)|0)+','+((P.w[1]*1.25)|0)+','+((P.w[2]*1.25)|0)+')'; g.fillRect(x0,y0,TILE,TILE);

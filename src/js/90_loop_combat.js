@@ -432,42 +432,6 @@ function codexTick(dt){
   for(const g of gl) codexAddArt('g:'+g.name+':'+g.rar, {i:g.slot==='helm'?'⛑️':g.slot==='ring'?'💍':'📿', n:g.name, d:'Снаряжение ('+GEAR_SLOTS[g.slot].n.toLowerCase()+'), '+RAR[g.rar].n.toLowerCase()+'. '+gearLines(g)+'.', c:RAR[g.rar].c});
   for(const it of loc.items) if(it.type==='treasure' && Math.hypot(it.x-px,it.y-py)<300) codexAddArt('heart');
 }
-function codexRow(icon, title, desc, color, known){
-  const row = document.createElement('div'); row.className = 'shopItem'; if(!known) row.style.opacity = '0.55';
-  const info = document.createElement('div'); info.className = 'shopInfo';
-  const nm = document.createElement('b'); nm.textContent = icon+' '+title; if(color) nm.style.color = color;
-  const ds = document.createElement('span'); ds.textContent = desc; info.append(nm, ds);
-  row.appendChild(info); codexList.appendChild(row);
-}
-function renderCodex(){
-  const c = codexEnsure();
-  const enemyKeys = Object.keys(ENEMY_INFO), artKeys = Object.keys(ARTIFACT_INFO);
-  const eN = enemyKeys.filter(k=>c.e[k]).length;
-  const dyn = Object.keys(c.a).filter(k=>!ARTIFACT_INFO[k]);
-  const aN = artKeys.filter(k=>c.a[k]).length + dyn.length;
-  codexTabsEl.innerHTML = '';
-  [['enemies','👾 Враги ('+eN+'/'+enemyKeys.length+')'],['arts','✦ Артефакты ('+aN+(dyn.length?'':'/'+artKeys.length)+')']].forEach(([id,label])=>{
-    const t = document.createElement('button'); t.className = 'tabBtn'+(codexTab===id?' active':''); t.textContent = label;
-    t.addEventListener('click', ()=>{ codexTab = id; renderCodex(); }); codexTabsEl.appendChild(t);
-  });
-  document.getElementById('codexInfo').textContent = codexTab==='enemies' ? 'Открыто записей: '+eN+' из '+enemyKeys.length : 'Открыто записей: '+aN;
-  codexList.innerHTML = '';
-  if(codexTab==='enemies'){
-    for(const k of enemyKeys){
-      const I = ENEMY_INFO[k];
-      if(c.e[k]){
-        const B = ENEMY_BASE[k], kills = c.k[k]||0;
-        codexRow(I[0], I[1], 'Где: '+I[2]+'. '+I[3]+' Здоровье ≈'+B.hp+', урон ≈'+B.dmg+(B.shoot?', стреляет':'')+'. Побеждено: '+kills+'.', BOSS_TYPES.includes(k)?'#ff9f4a':null, true);
-      } else codexRow('❔','???','Не встречен.', null, false);
-    }
-  } else {
-    for(const k of artKeys){
-      if(c.a[k]) codexRow(c.a[k].i, c.a[k].n, c.a[k].d, null, true);
-      else codexRow('❔','???','Ещё не найден.', null, false);
-    }
-    for(const k of dyn) codexRow(c.a[k].i, c.a[k].n, c.a[k].d, c.a[k].c, true);
-  }
-}
 function openCodex(){
   if(gameState!=='playing') return;
   for(const k in keys) keys[k] = false;

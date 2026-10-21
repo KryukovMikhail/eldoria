@@ -23,6 +23,7 @@
   <div id="rotateHint"><span>📱↻</span><div>Поверните телефон горизонтально</div></div>
   <div id="safeProbe" style="position:absolute;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);"></div>
   <div id="topBtns">
+    <button id="pauseBtn" title="Меню (Esc)">☰</button>
     <button id="menuBtn" class="hidden">Выйти в меню</button>
     <button id="fullscreenBtn" class="hidden">⛶</button>
     <button id="soundBtn" title="Звук">🔊</button>
@@ -46,15 +47,17 @@
   </div>
 
   <div id="startScreen" class="overlay">
-    <div id="buildTag">сборка D001.045</div>
+    <div id="buildTag">сборка D001.046</div>
     <div class="scroll"><div class="scrollIn">
     <h2>Легенды Эльдории</h2>
+    <div id="introText">
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
     Путь лежит через цепочку мест, и между каждыми двумя из них стоит отдельное <b>логово с боссом</b>. Проход дальше открывается, когда босс повержен. Днём и ночью, в дождь, туман и метель вас ждут новые враги. В углу карты стоит <b>торговая лавка</b>: покупайте и продавайте оружие, броню и зелья. Есть и <b>Город Лиссарен</b> — с трактиром, лавкой «Дымный Тигель» и рынком; его ворота стоят где-то на поверхности. Ищите <b>тайные места</b>: сундуки, ключи к запертым сундукам и скрытые пещеры (они появляются на карте, когда вы подходите близко). На поверхности можно встретить караванщика Хазима, целительницу Айлун — и попасть в засаду. Игра сохраняется автоматически.</p>
     <p style="font-size:13px">Карта и местность скрыты туманом: он рассеивается, когда вы подходите. Торговые лавки есть в углу карты, в Пустоши Зарахаб, Крае Белого Эха, на Погосте и в Дебрях.</p>
     <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака (удерживайте — мощный удар) &nbsp;|&nbsp; <b>E</b> — выпить эликсир здоровья &nbsp;|&nbsp; <b>1</b> — большой эликсир, <b>2–5</b> — зелья (скорость, сила, стойкость, водоход) &nbsp;|&nbsp; <b>ESC</b> — меню<br><b>Shift</b> — рывок &nbsp;|&nbsp; <b>Q</b> — вихрь &nbsp;|&nbsp; <b>R</b> — щит &nbsp;|&nbsp; <b>I</b> — герой (навыки и снаряжение)</p>
     <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Эликсиры лечат 30 HP, уровень повышает здоровье и урон. Чем ближе враг, тем сильнее удар.</p>
+    </div>
     <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
     <div id="saveInfo" class="hidden" style="font-size:12px;color:#a89d78"></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><b style="font-size:13px">Сложность</b><div class="shopTabs" id="diffBtns"></div><div id="diffDesc" style="font-size:12px;color:#a89d78"></div></div>
@@ -65,6 +68,7 @@
       <button class="startBtn" id="mapBtn">🗺 Карта мира</button>
       <button class="startBtn" id="savesBtn">Сохранения</button>
       <button class="startBtn" id="setBtn">⚙ Настройки</button>
+      <button class="startBtn" id="aboutBtn">📜 Об игре</button>
       <button class="startBtn hidden" id="installBtn">📲 Установить</button>
       <button class="startBtn hidden" id="ngpBtn">🔁 Новая игра+</button>
     </div>
@@ -101,7 +105,7 @@
     <p id="codexMsg" style="min-height:18px"></p>
     <div id="codexInfo" style="color:#e0c23a;font-weight:bold"></div>
     <div class="shopTabs" id="codexTabs"></div>
-    <div id="codexList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <div id="codexBook"></div>
     <button class="startBtn" id="codexClose">Закрыть</button>
   </div>
 

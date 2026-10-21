@@ -121,16 +121,7 @@ function drawWater(x0,y0,x1,y1,camX,camY){
     for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){
       if(loc.grid[y][x]!=='~') continue;
       const sx = x*TILE-camX, sy = y*TILE-camY, ph = Math.sin(t2*1.6+x*0.8+y*0.5);
-      const edges = [[0,-1,sx,sy,TILE,0],[0,1,sx,sy+TILE,TILE,0],[-1,0,sx,sy,0,TILE],[1,0,sx+TILE,sy,0,TILE]];
-      for(const e of edges){
-        if(isWater(x+e[0],y+e[1])) continue;
-        const inw = (0.6+0.4*ph)*2.2*(e[0]||e[1]);                  // кромка то накатывает, то отходит
-        ctx.strokeStyle = 'rgba(236,248,255,'+(0.28+0.22*ph)+')'; ctx.lineWidth = 2;
-        ctx.beginPath();
-        if(e[4]){ ctx.moveTo(e[2],e[3]-inw); for(let k=1;k<=4;k++) ctx.lineTo(e[2]+k*8, e[3]-inw+Math.sin(t2*2+k+x)*1.2); }
-        else { ctx.moveTo(e[2]-inw,e[3]); for(let k=1;k<=4;k++) ctx.lineTo(e[2]-inw+Math.sin(t2*2+k+y)*1.2, e[3]+k*8); }
-        ctx.stroke();
-      }
+      void ph;
       if(QA>1){ const h = ((x*2654435761) ^ (y*40503))>>>0; if(h%5===0){ const wv = (t2*0.35+(h%100)/100)%1; ctx.strokeStyle='rgba(255,255,255,'+(0.28*Math.sin(wv*3.1416))+')'; ctx.lineWidth=1.2; const ox = sx+4+wv*22, oy = sy+10+(h>>4)%12; ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+7,oy-1.2); ctx.stroke(); } }
     }
   }

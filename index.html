@@ -56,17 +56,20 @@
   .hidden { display: none !important; }
   .overlay::before, .overlay::after { content:''; flex:1 0 0; }
   #iosHint { font-size:13px; color:#e8c873; border:1px dashed #5c4415; border-radius:6px; padding:8px 12px; max-width:520px; }
-  .shopItem { display:flex; align-items:center; justify-content:space-between; gap:14px; width:100%; max-width:520px; padding:10px 12px; background:rgba(60,45,20,.55); border:1px solid #5c4415; border-radius:6px; text-align:left; }
-  .shopInfo { display:flex; flex-direction:column; gap:3px; font-size:13px; color:#cfc7a8; }
+  .shopItem { flex-wrap:wrap; display:flex; align-items:center; justify-content:space-between; gap:14px; width:100%; max-width:520px; padding:10px 12px; background:rgba(60,45,20,.55); border:1px solid #5c4415; border-radius:6px; text-align:left; }
+  .shopInfo { display:flex; flex-direction:column; gap:3px; font-size:13px; color:#cfc7a8; flex:1 1 220px; min-width:0; white-space:pre-line; }
   .shopInfo b { color:#f4d98a; font-size:15px; }
-  button.shopBtn { margin:0; padding:9px 14px; font-size:14px; white-space:nowrap; }
+  button.shopBtn { margin:0; padding:9px 12px; font-size:14px; white-space:normal; line-height:1.2; }
   button.startBtn:disabled { opacity:.55; cursor:default; box-shadow:none; }
   #shopGold { color:#e0c23a; font-weight:bold; }
   #shopMsg { min-height:20px; }
   .shopTabs { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
   .tabBtn { padding:7px 14px; font-size:14px; font-weight:bold; cursor:pointer; background:#2a2316; color:#e8c873; border:2px solid #5c4415; border-radius:6px; }
   .tabBtn.active { background:linear-gradient(#e8c873,#b8892f); color:#2b1d05; }
-  .shopBtns { display:flex; gap:8px; }
+  .shopBtns { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; flex:0 1 auto; }
+  .shopItem:has(.shopBtns > :nth-child(3)) { flex-direction:column; align-items:stretch; gap:8px; }
+  .shopItem:has(.shopBtns > :nth-child(3)) .shopBtns { display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); width:100%; }
+  .shopItem:has(.shopBtns > :nth-child(3)) button.shopBtn { width:100%; padding:7px 6px; font-size:13px; }
   .menuGrid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; width:100%; max-width:420px; margin-left:auto; margin-right:auto; }
   .menuGrid button.startBtn { width:100%; margin:0; padding:9px 4px; font-size:14px; line-height:1.2; box-sizing:border-box; min-width:0; overflow-wrap:normal; }
   @media (max-width:520px){ .menuGrid button.startBtn { font-size:10.5px; padding:8px 1px; letter-spacing:-0.2px; } }
@@ -132,7 +135,7 @@
   /* ---- Сенсорное управление (только на устройствах с touch) ---- */
   #touchControls { position:absolute; inset:0; pointer-events:none; z-index:12; }
   #joystickBase {
-    position:absolute; left:calc(20px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); width:90px; height:90px; border-radius:50%;
+    position:absolute; left:calc(46px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); width:90px; height:90px; border-radius:50%;
     background: rgba(255,255,255,0.08); border:2px solid rgba(232,200,115,0.5);
     pointer-events:auto; touch-action:none;
   }
@@ -173,6 +176,38 @@
     .overlay p { font-size: 13px; }
     .overlay h2 { font-size: 22px; }
   }
+
+/* ---- D001.046: верхние кнопки уходят в меню паузы ---- */
+#pauseBtn { position:relative; z-index:15; width:38px; height:34px; padding:0; font-size:18px; font-weight:bold; cursor:pointer; line-height:1; background:linear-gradient(#3a3a3a,#1e1e1e); border:2px solid #5c4415; border-radius:5px; color:#e8c873; box-shadow:0 2px 0 #000; display:flex; align-items:center; justify-content:center; }
+#gameWrap:not([data-st="playing"]) #pauseBtn { display:none; }
+#gameWrap[data-st="playing"] #heroBtn, #gameWrap[data-st="playing"] #questBtn, #gameWrap[data-st="playing"] #codexBtn { display:none !important; }
+#gameWrap:is([data-st="playing"],[data-st="hero"],[data-st="journal"],[data-st="codex"],[data-st="shop"],[data-st="dialog"]) :is(#soundBtn,#fullscreenBtn,#menuBtn) { display:none !important; }
+#startScreen .scroll .btnRow { position:static; background:none; padding-top:10px; }
+#pauseScreen h2 { margin:0 0 6px; }
+#pauseScreen .menuGrid { max-width:380px; }
+#aboutScreen .scrollIn { max-width:560px; }
+#introText { display:none; }
+#aboutBody p { max-width:none; }
+/* ---- энциклопедия-книга ---- */
+#codexBook { position:relative; display:flex; align-items:stretch; justify-content:center; width:min(760px,96%); min-height:230px; margin:4px 0; filter:drop-shadow(0 6px 10px rgba(0,0,0,.6)); }
+#codexBook .pg { flex:1 1 0; min-width:0; padding:16px 18px 22px; background:linear-gradient(90deg,#e9d6a4,#f3e4bb 60%,#dcc48a); color:#3a2710; text-align:center; display:flex; flex-direction:column; align-items:center; gap:7px; position:relative; border:1px solid #8a6a2e; }
+#codexBook .pg.l { border-radius:10px 0 0 10px; background:linear-gradient(90deg,#d8c088,#f1e1b6 22%,#f3e4bb 70%,#d4b97c); box-shadow:inset -14px 0 18px -10px rgba(70,40,10,.45); }
+#codexBook .pg.r { border-radius:0 10px 10px 0; background:linear-gradient(270deg,#d8c088,#f1e1b6 22%,#f3e4bb 70%,#d4b97c); box-shadow:inset 14px 0 18px -10px rgba(70,40,10,.45); }
+#codexBook .spine { width:6px; background:linear-gradient(90deg,#5a3a14,#8a5a24,#5a3a14); flex:none; }
+#codexBook .ic { font-size:46px; line-height:1; margin-top:2px; filter:drop-shadow(0 2px 2px rgba(60,30,0,.4)); }
+#codexBook .tt { font-size:17px; font-weight:bold; color:#5a2410; }
+#codexBook .ds { font-size:13px; line-height:1.4; color:#3a2710; }
+#codexBook .st { font-size:12px; color:#6a4a1e; border-top:1px dashed #a88a4e; padding-top:5px; width:100%; }
+#codexBook .pn { position:absolute; bottom:5px; left:0; right:0; font-size:11px; color:#8a6a2e; }
+#codexBook .flipL { animation:flipL .32s ease; transform-origin:left center; } #codexBook .flipR { animation:flipR .32s ease; transform-origin:right center; }
+@keyframes flipL { from { transform:perspective(900px) rotateY(-55deg); opacity:.4; } to { transform:none; opacity:1; } }
+@keyframes flipR { from { transform:perspective(900px) rotateY(55deg); opacity:.4; } to { transform:none; opacity:1; } }
+#codexNav { display:flex; gap:10px; align-items:center; justify-content:center; }
+#codexNav button { min-width:84px; }
+@media (max-height:520px) { #codexBook { min-height:170px; } #codexBook .pg { padding:9px 12px 18px; gap:4px; } #codexBook .ic { font-size:30px; } #codexBook .tt { font-size:14px; } #codexBook .ds { font-size:11.5px; line-height:1.3; } #codexBook .st { font-size:10.5px; } }
+#fireworks { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+#winScreen > *:not(#fireworks) { position:relative; z-index:1; }
+@media (max-height:520px){ #startScreen #qDesc { display:none; } #startScreen .scroll h2 { font-size:22px; margin:0 0 2px; } }
 </style>
 </head>
 <body>
@@ -181,6 +216,7 @@
   <div id="rotateHint"><span>📱↻</span><div>Поверните телефон горизонтально</div></div>
   <div id="safeProbe" style="position:absolute;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);"></div>
   <div id="topBtns">
+    <button id="pauseBtn" title="Меню (Esc)">☰</button>
     <button id="menuBtn" class="hidden">Выйти в меню</button>
     <button id="fullscreenBtn" class="hidden">⛶</button>
     <button id="soundBtn" title="Звук">🔊</button>
@@ -204,15 +240,17 @@
   </div>
 
   <div id="startScreen" class="overlay">
-    <div id="buildTag">сборка D001.045</div>
+    <div id="buildTag">сборка D001.046</div>
     <div class="scroll"><div class="scrollIn">
     <h2>Легенды Эльдории</h2>
+    <div id="introText">
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.
     Путь лежит через цепочку мест, и между каждыми двумя из них стоит отдельное <b>логово с боссом</b>. Проход дальше открывается, когда босс повержен. Днём и ночью, в дождь, туман и метель вас ждут новые враги. В углу карты стоит <b>торговая лавка</b>: покупайте и продавайте оружие, броню и зелья. Есть и <b>Город Лиссарен</b> — с трактиром, лавкой «Дымный Тигель» и рынком; его ворота стоят где-то на поверхности. Ищите <b>тайные места</b>: сундуки, ключи к запертым сундукам и скрытые пещеры (они появляются на карте, когда вы подходите близко). На поверхности можно встретить караванщика Хазима, целительницу Айлун — и попасть в засаду. Игра сохраняется автоматически.</p>
     <p style="font-size:13px">Карта и местность скрыты туманом: он рассеивается, когда вы подходите. Торговые лавки есть в углу карты, в Пустоши Зарахаб, Крае Белого Эха, на Погосте и в Дебрях.</p>
     <p><b>WASD</b> / стрелки — движение &nbsp;|&nbsp; <b>ПРОБЕЛ</b> — атака (удерживайте — мощный удар) &nbsp;|&nbsp; <b>E</b> — выпить эликсир здоровья &nbsp;|&nbsp; <b>1</b> — большой эликсир, <b>2–5</b> — зелья (скорость, сила, стойкость, водоход) &nbsp;|&nbsp; <b>ESC</b> — меню<br><b>Shift</b> — рывок &nbsp;|&nbsp; <b>Q</b> — вихрь &nbsp;|&nbsp; <b>R</b> — щит &nbsp;|&nbsp; <b>I</b> — герой (навыки и снаряжение)</p>
     <p style="font-size:12px">Совет: не сражайтесь с несколькими врагами сразу на низком уровне. Эликсиры лечат 30 HP, уровень повышает здоровье и урон. Чем ближе враг, тем сильнее удар.</p>
+    </div>
     <div id="iosHint" class="hidden">Для настоящего полного экрана на iPhone: «Поделиться» → «На экран „Домой“» и запускайте игру с иконки.</div>
     <div id="saveInfo" class="hidden" style="font-size:12px;color:#a89d78"></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><b style="font-size:13px">Сложность</b><div class="shopTabs" id="diffBtns"></div><div id="diffDesc" style="font-size:12px;color:#a89d78"></div></div>
@@ -223,6 +261,7 @@
       <button class="startBtn" id="mapBtn">🗺 Карта мира</button>
       <button class="startBtn" id="savesBtn">Сохранения</button>
       <button class="startBtn" id="setBtn">⚙ Настройки</button>
+      <button class="startBtn" id="aboutBtn">📜 Об игре</button>
       <button class="startBtn hidden" id="installBtn">📲 Установить</button>
       <button class="startBtn hidden" id="ngpBtn">🔁 Новая игра+</button>
     </div>
@@ -259,7 +298,7 @@
     <p id="codexMsg" style="min-height:18px"></p>
     <div id="codexInfo" style="color:#e0c23a;font-weight:bold"></div>
     <div class="shopTabs" id="codexTabs"></div>
-    <div id="codexList" style="display:flex;flex-direction:column;gap:8px;align-items:center;width:100%"></div>
+    <div id="codexBook"></div>
     <button class="startBtn" id="codexClose">Закрыть</button>
   </div>
 
@@ -2850,16 +2889,7 @@ function drawWater(x0,y0,x1,y1,camX,camY){
     for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){
       if(loc.grid[y][x]!=='~') continue;
       const sx = x*TILE-camX, sy = y*TILE-camY, ph = Math.sin(t2*1.6+x*0.8+y*0.5);
-      const edges = [[0,-1,sx,sy,TILE,0],[0,1,sx,sy+TILE,TILE,0],[-1,0,sx,sy,0,TILE],[1,0,sx+TILE,sy,0,TILE]];
-      for(const e of edges){
-        if(isWater(x+e[0],y+e[1])) continue;
-        const inw = (0.6+0.4*ph)*2.2*(e[0]||e[1]);                  // кромка то накатывает, то отходит
-        ctx.strokeStyle = 'rgba(236,248,255,'+(0.28+0.22*ph)+')'; ctx.lineWidth = 2;
-        ctx.beginPath();
-        if(e[4]){ ctx.moveTo(e[2],e[3]-inw); for(let k=1;k<=4;k++) ctx.lineTo(e[2]+k*8, e[3]-inw+Math.sin(t2*2+k+x)*1.2); }
-        else { ctx.moveTo(e[2]-inw,e[3]); for(let k=1;k<=4;k++) ctx.lineTo(e[2]-inw+Math.sin(t2*2+k+y)*1.2, e[3]+k*8); }
-        ctx.stroke();
-      }
+      void ph;
       if(QA>1){ const h = ((x*2654435761) ^ (y*40503))>>>0; if(h%5===0){ const wv = (t2*0.35+(h%100)/100)%1; ctx.strokeStyle='rgba(255,255,255,'+(0.28*Math.sin(wv*3.1416))+')'; ctx.lineWidth=1.2; const ox = sx+4+wv*22, oy = sy+10+(h>>4)%12; ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+7,oy-1.2); ctx.stroke(); } }
     }
   }
@@ -4933,14 +4963,22 @@ function buildDungeonLayer(L){
       gr.addColorStop(0,'rgba(255,110,20,0.34)'); gr.addColorStop(1,'rgba(255,110,20,0)');
       g.fillStyle = gr; g.fillRect(cx-52,cy-52,104,104);
     }
-    for(const [rad,col] of [[19.5,'#24090a'],[16.5,'#c43a0a']]){
+    const blob = (cx,cy,rad,sd)=>{                                  // неровное пятно без прямых углов
+      const N = 12, pts = [];
+      for(let i=0;i<N;i++){ const a = i/N*Math.PI*2, r = rad*(0.78+0.42*hash2(sd,i,710)); pts.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); }
+      g.beginPath(); g.moveTo((pts[0][0]+pts[N-1][0])/2,(pts[0][1]+pts[N-1][1])/2);
+      for(let i=0;i<N;i++){ const a = pts[i], b = pts[(i+1)%N]; g.quadraticCurveTo(a[0],a[1],(a[0]+b[0])/2,(a[1]+b[1])/2); }
+      g.closePath(); g.fill();
+    };
+    for(const [rad,col,dx] of [[21,'rgba(120,34,10,0.85)',0],[17,'#c43a0a',1]]){
       g.fillStyle = col;
       for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
         if(!isL(tx,ty)) continue;
-        const cx = tx*TILE+16, cy = ty*TILE+16;
-        g.beginPath(); g.arc(cx,cy,rad,0,Math.PI*2); g.fill();
-        if(isL(tx+1,ty)) g.fillRect(cx,cy-rad,TILE,rad*2);
-        if(isL(tx,ty+1)) g.fillRect(cx-rad,cy,rad*2,TILE);
+        const sd = tx*131+ty*17+dx, jx = (hash2(tx,ty,720)-0.5)*7, jy = (hash2(tx,ty,721)-0.5)*7, cx = tx*TILE+16+jx, cy = ty*TILE+16+jy;
+        blob(cx,cy,rad*(0.92+0.2*hash2(tx,ty,722)),sd);
+        if(isL(tx+1,ty)) blob(tx*TILE+32+(hash2(tx,ty,723)-0.5)*5,ty*TILE+16+(hash2(tx,ty,724)-0.5)*8,rad*0.86,sd+5);
+        if(isL(tx,ty+1)) blob(tx*TILE+16+(hash2(tx,ty,725)-0.5)*8,ty*TILE+32+(hash2(tx,ty,726)-0.5)*5,rad*0.86,sd+9);
+        if(isL(tx+1,ty+1) && isL(tx+1,ty) && isL(tx,ty+1)) blob(tx*TILE+32,ty*TILE+32,rad*0.8,sd+13);
       }
     }
     for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
@@ -4961,6 +4999,28 @@ function buildDungeonLayer(L){
   for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
     if(isF(tx,ty)) continue;
     const R = (k)=>hash2(tx,ty,500+k);
+    if(L.biome==='city' && L.level===11 && tx>=2 && ty>=2 && tx<L.width-2 && ty<L.height-2){                       // дома с крышами (вид сверху)
+      const x0 = tx*TILE, y0 = ty*TILE, wl = (x,y)=>!isF(x,y);
+      const cols = [[176,76,54],[128,92,70],[78,92,120],[138,62,62],[98,114,88],[150,112,66]];
+      const c = cols[(hash2(tx>>2,ty>>2,777)*cols.length)|0], sh = 0.92+0.16*hash2(tx,ty,778);
+      g.fillStyle = 'rgb('+((c[0]*sh)|0)+','+((c[1]*sh)|0)+','+((c[2]*sh)|0)+')'; g.fillRect(x0,y0,TILE,TILE);
+      for(let k=0;k<4;k++){                                                                                     // ряды черепицы
+        const yy = y0+k*8, off = (k+tx)%2*8;
+        g.strokeStyle = 'rgba(0,0,0,0.3)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x0,yy+7.5); g.lineTo(x0+TILE,yy+7.5); g.stroke();
+        for(let q=0;q<3;q++){ g.beginPath(); g.arc(x0+off+q*16-4,yy+0.5,8,0.15,Math.PI-0.15); g.stroke(); }
+        g.fillStyle = 'rgba(255,255,255,'+(0.05+0.03*(k%2))+')'; g.fillRect(x0,yy,TILE,3);
+      }
+      let up = 0, dn = 0; while(wl(tx,ty-up-1) && up<8) up++; while(wl(tx,ty+dn+1) && dn<8) dn++;
+      const hh = up+dn+1, mid = (hh-1)/2;
+      if(hh>=2){ const ry = hh%2===1 ? (up===mid ? y0+16 : -1) : (up===hh/2-1 ? y0+32 : -1);
+        if(ry>=0){ g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(x0,ry+1,TILE,3); g.fillStyle = 'rgba(255,236,200,0.5)'; g.fillRect(x0,ry-2,TILE,3); } }
+      g.fillStyle = 'rgba(0,0,0,0.38)';
+      if(!wl(tx,ty+1)) g.fillRect(x0,y0+TILE-5,TILE,5);
+      if(!wl(tx-1,ty)) g.fillRect(x0,y0,3,TILE);
+      if(!wl(tx+1,ty)) g.fillRect(x0+TILE-3,y0,3,TILE);
+      if(!wl(tx,ty-1)){ g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x0,y0,TILE,3); }
+      continue;
+    }
     if(L.level>=11){                                                                                               // кирпичная кладка вместо валунов
       const x0 = tx*TILE, y0 = ty*TILE;
       g.fillStyle = 'rgb('+((P.w[0]*1.25)|0)+','+((P.w[1]*1.25)|0)+','+((P.w[2]*1.25)|0)+')'; g.fillRect(x0,y0,TILE,TILE);
@@ -7263,42 +7323,6 @@ function codexTick(dt){
   for(const g of gl) codexAddArt('g:'+g.name+':'+g.rar, {i:g.slot==='helm'?'⛑️':g.slot==='ring'?'💍':'📿', n:g.name, d:'Снаряжение ('+GEAR_SLOTS[g.slot].n.toLowerCase()+'), '+RAR[g.rar].n.toLowerCase()+'. '+gearLines(g)+'.', c:RAR[g.rar].c});
   for(const it of loc.items) if(it.type==='treasure' && Math.hypot(it.x-px,it.y-py)<300) codexAddArt('heart');
 }
-function codexRow(icon, title, desc, color, known){
-  const row = document.createElement('div'); row.className = 'shopItem'; if(!known) row.style.opacity = '0.55';
-  const info = document.createElement('div'); info.className = 'shopInfo';
-  const nm = document.createElement('b'); nm.textContent = icon+' '+title; if(color) nm.style.color = color;
-  const ds = document.createElement('span'); ds.textContent = desc; info.append(nm, ds);
-  row.appendChild(info); codexList.appendChild(row);
-}
-function renderCodex(){
-  const c = codexEnsure();
-  const enemyKeys = Object.keys(ENEMY_INFO), artKeys = Object.keys(ARTIFACT_INFO);
-  const eN = enemyKeys.filter(k=>c.e[k]).length;
-  const dyn = Object.keys(c.a).filter(k=>!ARTIFACT_INFO[k]);
-  const aN = artKeys.filter(k=>c.a[k]).length + dyn.length;
-  codexTabsEl.innerHTML = '';
-  [['enemies','👾 Враги ('+eN+'/'+enemyKeys.length+')'],['arts','✦ Артефакты ('+aN+(dyn.length?'':'/'+artKeys.length)+')']].forEach(([id,label])=>{
-    const t = document.createElement('button'); t.className = 'tabBtn'+(codexTab===id?' active':''); t.textContent = label;
-    t.addEventListener('click', ()=>{ codexTab = id; renderCodex(); }); codexTabsEl.appendChild(t);
-  });
-  document.getElementById('codexInfo').textContent = codexTab==='enemies' ? 'Открыто записей: '+eN+' из '+enemyKeys.length : 'Открыто записей: '+aN;
-  codexList.innerHTML = '';
-  if(codexTab==='enemies'){
-    for(const k of enemyKeys){
-      const I = ENEMY_INFO[k];
-      if(c.e[k]){
-        const B = ENEMY_BASE[k], kills = c.k[k]||0;
-        codexRow(I[0], I[1], 'Где: '+I[2]+'. '+I[3]+' Здоровье ≈'+B.hp+', урон ≈'+B.dmg+(B.shoot?', стреляет':'')+'. Побеждено: '+kills+'.', BOSS_TYPES.includes(k)?'#ff9f4a':null, true);
-      } else codexRow('❔','???','Не встречен.', null, false);
-    }
-  } else {
-    for(const k of artKeys){
-      if(c.a[k]) codexRow(c.a[k].i, c.a[k].n, c.a[k].d, null, true);
-      else codexRow('❔','???','Ещё не найден.', null, false);
-    }
-    for(const k of dyn) codexRow(c.a[k].i, c.a[k].n, c.a[k].d, c.a[k].c, true);
-  }
-}
 function openCodex(){
   if(gameState!=='playing') return;
   for(const k in keys) keys[k] = false;
@@ -9326,6 +9350,125 @@ ACH.push(
   {id:'fest1', i:'🎉', n:'Душа праздника',    d:'Пройти сезонный праздник.', g:80, t:()=>(player.stat.fest||0)>=1},
   {id:'fest4', i:'🎊', n:'Круглый год',       d:'Пройти праздники всех четырёх сезонов.', g:400, t:()=>((player.stat.festMask||0)&15)===15}
 );
+// ======================= Меню паузы, «Об игре», энциклопедия-книга, салют победы =======================
+const gameWrapEl = document.getElementById('gameWrap');
+function uiSync(){ const st = gameState; if(gameWrapEl.dataset.st!==st) gameWrapEl.dataset.st = st; }
+setInterval(uiSync, 120); uiSync();
+
+// ---------- меню паузы ----------
+const pauseScreen = document.createElement('div');
+pauseScreen.id = 'pauseScreen'; pauseScreen.className = 'overlay hidden'; gameWrapEl.appendChild(pauseScreen);
+let pauseOpen = false;
+function closePause(){ if(!pauseOpen) return; pauseOpen = false; pauseScreen.classList.add('hidden'); if(gameState==='dialog') gameState = 'playing'; for(const k in keys) keys[k] = false; }
+function openPause(){
+  if(gameState!=='playing' || pauseOpen) return;
+  pauseOpen = true; for(const k in keys) keys[k] = false; gameState = 'dialog';
+  pauseScreen.innerHTML = '<h2>Меню</h2>';
+  const grid = document.createElement('div'); grid.className = 'btnRow menuGrid';
+  const add = (label, fn, cls)=>{ const b = document.createElement('button'); b.className = 'startBtn'+(cls||''); b.textContent = label; b.addEventListener('click', ()=>{ closePause(); fn(); }); grid.appendChild(b); };
+  add('▶ Продолжить', ()=>{});
+  add('📜 Журнал', ()=>questBtn.click());
+  add('🎒 Герой'+(player.sp>0 ? ' ★' : ''), ()=>heroBtn.click());
+  add('📖 Энциклопедия', ()=>codexBtn.click());
+  add(SFX.muted ? '🔇 Звук выкл.' : '🔊 Звук вкл.', ()=>soundBtn.click());
+  add(document.fullscreenElement || document.webkitFullscreenElement ? '🗗 Окно' : '⛶ Полный экран', ()=>fullscreenBtn.click());
+  add('🚪 Выйти в меню', ()=>menuBtn.click());
+  pauseScreen.appendChild(grid); pauseScreen.classList.remove('hidden');
+}
+document.getElementById('pauseBtn').addEventListener('click', openPause);
+window.addEventListener('keydown', e=>{ if(e.code==='Escape'){ if(gameState==='playing') openPause(); else if(pauseOpen) closePause(); } });
+
+// ---------- «Об игре» ----------
+const aboutScreen = document.createElement('div');
+aboutScreen.id = 'aboutScreen'; aboutScreen.className = 'overlay hidden'; gameWrapEl.appendChild(aboutScreen);
+document.getElementById('aboutBtn').addEventListener('click', ()=>{
+  startScreenEl.classList.add('hidden');
+  aboutScreen.innerHTML = '<div class="scroll"><div class="scrollIn"><h2>Об игре</h2><div id="aboutBody">'+document.getElementById('introText').innerHTML+'</div><div class="btnRow"><button class="startBtn" id="aboutBack">Назад</button></div></div></div>';
+  aboutScreen.classList.remove('hidden');
+  document.getElementById('aboutBack').addEventListener('click', ()=>{ aboutScreen.classList.add('hidden'); startScreenEl.classList.remove('hidden'); });
+});
+
+// ---------- энциклопедия: раскрытая книга ----------
+let codexSpread = 0;
+function codexEntries(){
+  const c = codexEnsure(), out = [];
+  if(codexTab==='enemies'){
+    for(const k of Object.keys(ENEMY_INFO)) if(c.e[k]){
+      const I = ENEMY_INFO[k], B = ENEMY_BASE[k];
+      out.push({i:I[0], t:I[1], d:I[3], w:'Где: '+I[2], s:'Здоровье ≈'+B.hp+' · урон ≈'+B.dmg+(B.shoot ? ' · стреляет' : '')+' · побеждено: '+(c.k[k]||0), col:BOSS_TYPES.includes(k) ? '#a02a10' : null});
+    }
+  } else {
+    for(const k of Object.keys(ARTIFACT_INFO)) if(c.a[k]) out.push({i:c.a[k].i, t:c.a[k].n, d:c.a[k].d, w:'', s:'', col:null});
+    for(const k of Object.keys(c.a)) if(!ARTIFACT_INFO[k]) out.push({i:c.a[k].i, t:c.a[k].n, d:c.a[k].d, w:'', s:'', col:c.a[k].c});
+  }
+  return out;
+}
+function renderCodex(dir){
+  const c = codexEnsure(), enemyKeys = Object.keys(ENEMY_INFO), artKeys = Object.keys(ARTIFACT_INFO);
+  const eN = enemyKeys.filter(k=>c.e[k]).length, dyn = Object.keys(c.a).filter(k=>!ARTIFACT_INFO[k]), aN = artKeys.filter(k=>c.a[k]).length + dyn.length;
+  codexTabsEl.innerHTML = '';
+  [['enemies','👾 Враги ('+eN+'/'+enemyKeys.length+')'],['arts','✦ Артефакты ('+aN+(dyn.length?'':'/'+artKeys.length)+')']].forEach(([id,label])=>{
+    const t = document.createElement('button'); t.className = 'tabBtn'+(codexTab===id?' active':''); t.textContent = label;
+    t.addEventListener('click', ()=>{ codexTab = id; codexSpread = 0; renderCodex(); }); codexTabsEl.appendChild(t);
+  });
+  const list = codexEntries(), spreads = Math.max(1, Math.ceil(list.length/2));
+  codexSpread = Math.min(Math.max(0, codexSpread), spreads-1);
+  document.getElementById('codexInfo').textContent = 'Открыто записей: '+(codexTab==='enemies' ? eN+' из '+enemyKeys.length : aN);
+  const book = document.getElementById('codexBook'); book.innerHTML = '';
+  const page = (e, side, n)=>{
+    const p = document.createElement('div'); p.className = 'pg '+side+(dir ? (dir>0 ? (side==='r' ? ' flipR' : '') : (side==='l' ? ' flipL' : '')) : '');
+    if(e){
+      p.innerHTML = '<div class="ic"></div><div class="tt"></div><div class="ds"></div>'+(e.w ? '<div class="ds" style="font-style:italic"></div>' : '')+(e.s ? '<div class="st"></div>' : '')+'<div class="pn"></div>';
+      const q = p.children; q[0].textContent = e.i; q[1].textContent = e.t; if(e.col) q[1].style.color = e.col; q[2].textContent = e.d;
+      let k = 3; if(e.w) q[k++].textContent = e.w; if(e.s) q[k++].textContent = e.s; q[k].textContent = '— '+n+' —';
+    } else p.innerHTML = '<div class="ic" style="opacity:.35">'+(list.length ? '✒' : '📖')+'</div><div class="ds" style="opacity:.6">'+(list.length ? 'Страница ждёт новых записей.' : 'Книга пока пуста — исследуйте мир, и записи появятся здесь.')+'</div>';
+    return p;
+  };
+  const sp = document.createElement('div'); sp.className = 'spine';
+  book.append(page(list[codexSpread*2], 'l', codexSpread*2+1), sp, page(list[codexSpread*2+1], 'r', codexSpread*2+2));
+  let nav = document.getElementById('codexNav');
+  if(!nav){ nav = document.createElement('div'); nav.id = 'codexNav'; book.after(nav); }
+  nav.innerHTML = '';
+  const mk = (txt, d, off)=>{ const b = document.createElement('button'); b.className = 'tabBtn'; b.textContent = txt; b.disabled = off; if(off) b.style.opacity = '.4'; else b.addEventListener('click', ()=>{ codexSpread += d; renderCodex(d); SFX.play('click'); }); return b; };
+  const lab = document.createElement('span'); lab.style.cssText = 'color:#e0c23a;font-weight:bold;font-size:13px'; lab.textContent = (codexSpread+1)+' / '+spreads;
+  nav.append(mk('◀ Назад', -1, codexSpread<=0), lab, mk('Вперёд ▶', 1, codexSpread>=spreads-1));
+}
+(function swipe(){
+  let x0 = null; const book = document.getElementById('codexBook');
+  book.addEventListener('pointerdown', e=>{ x0 = e.clientX; });
+  book.addEventListener('pointerup', e=>{ if(x0===null) return; const dx = e.clientX-x0; x0 = null; if(Math.abs(dx)>50){ const nav = document.getElementById('codexNav'); if(nav){ const bs = nav.querySelectorAll('button'); (dx<0 ? bs[1] : bs[0]).click(); } } });
+})();
+
+// ---------- салют на экране победы ----------
+const fwCanvas = document.createElement('canvas'); fwCanvas.id = 'fireworks';
+const winEl = document.getElementById('winScreen'); winEl.insertBefore(fwCanvas, winEl.firstChild);
+let fwRun = false, fwParts = [], fwT = 0;
+function fwBurst(x, y){
+  const hue = Math.random()*360, n = 46+((Math.random()*24)|0), kind = Math.random();
+  for(let i=0;i<n;i++){
+    const a = i/n*Math.PI*2 + Math.random()*0.1, sp = (kind<0.3 ? 120 : 70+Math.random()*130);
+    fwParts.push({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1.2+Math.random()*0.8, t:0, hue:(hue+(kind>0.7 ? Math.random()*80 : 0))%360, sz:1.6+Math.random()*1.6});
+  }
+  fwParts.push({x, y, vx:0, vy:0, life:0.25, t:0, hue:50, sz:14, flash:true});
+}
+function fwLoop(){
+  if(winEl.classList.contains('hidden')){ fwRun = false; fwParts.length = 0; return; }
+  requestAnimationFrame(fwLoop);
+  const r = winEl.getBoundingClientRect(), W = Math.max(1, r.width|0), H = Math.max(1, r.height|0);
+  if(fwCanvas.width!==W || fwCanvas.height!==H){ fwCanvas.width = W; fwCanvas.height = H; }
+  const g = fwCanvas.getContext('2d'), dt = 1/60; fwT -= dt;
+  if(fwT<=0){ fwT = 0.35+Math.random()*0.55; fwBurst(W*(0.12+Math.random()*0.76), H*(0.12+Math.random()*0.5)); if(Math.random()<0.35) fwBurst(W*Math.random(), H*(0.1+Math.random()*0.4)); }
+  g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(0,0,W,H);
+  g.globalCompositeOperation = 'lighter';
+  for(let i=fwParts.length-1;i>=0;i--){
+    const p = fwParts[i]; p.t += dt; if(p.t>=p.life){ fwParts.splice(i,1); continue; }
+    const k = 1-p.t/p.life;
+    if(p.flash){ g.fillStyle = 'rgba(255,240,200,'+(0.28*k)+')'; g.beginPath(); g.arc(p.x,p.y,p.sz*(0.8+p.t*14),0,6.283); g.fill(); continue; }
+    p.vy += 90*dt; p.vx *= 0.985; p.vy *= 0.985; p.x += p.vx*dt; p.y += p.vy*dt;
+    g.fillStyle = 'hsla('+p.hue+',100%,'+(55+20*k)+'%,'+k+')'; g.beginPath(); g.arc(p.x,p.y,p.sz*(0.5+k*0.7),0,6.283); g.fill();
+  }
+}
+new MutationObserver(()=>{ if(!winEl.classList.contains('hidden') && !fwRun){ fwRun = true; fwT = 0; requestAnimationFrame(fwLoop); } }).observe(winEl, {attributes:true, attributeFilter:['class']});
 // ---------- Экспорт и импорт сохранений файлом ----------
 function exportSaves(){
   const bundle = {format:'eldoria-saves', v:1, build:'D001.031', t:Date.now(), saves:{}};
