@@ -440,22 +440,22 @@ function buildDungeonLayer(L){
       gr.addColorStop(0,'rgba(255,110,20,0.34)'); gr.addColorStop(1,'rgba(255,110,20,0)');
       g.fillStyle = gr; g.fillRect(cx-52,cy-52,104,104);
     }
-    const blob = (cx,cy,rad,sd)=>{                                  // неровное пятно без прямых углов
-      const N = 12, pts = [];
-      for(let i=0;i<N;i++){ const a = i/N*Math.PI*2, r = rad*(0.78+0.42*hash2(sd,i,710)); pts.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); }
+    const blob = (cx,cy,rad,sd)=>{                                  // неровное вытянутое пятно: у каждого своя форма, без контура
+      const N = 16, pts = [], rot = hash2(sd,1,711)*6.28, sx = 0.75+0.7*hash2(sd,2,712), sy = 0.75+0.5*hash2(sd,3,713), cr = Math.cos(rot), sr = Math.sin(rot);
+      for(let i=0;i<N;i++){ const a = i/N*Math.PI*2, r = rad*(0.62+0.7*hash2(sd,i,710)), px = Math.cos(a)*r*sx, py = Math.sin(a)*r*sy; pts.push([cx+px*cr-py*sr, cy+px*sr+py*cr]); }
       g.beginPath(); g.moveTo((pts[0][0]+pts[N-1][0])/2,(pts[0][1]+pts[N-1][1])/2);
       for(let i=0;i<N;i++){ const a = pts[i], b = pts[(i+1)%N]; g.quadraticCurveTo(a[0],a[1],(a[0]+b[0])/2,(a[1]+b[1])/2); }
       g.closePath(); g.fill();
     };
-    for(const [rad,col,dx] of [[21,'rgba(120,34,10,0.85)',0],[17,'#c43a0a',1]]){
+    for(const [rad,col,dx] of [[22,'rgba(255,92,24,0.30)',0],[18,'#c43a0a',1],[11,'#e8620f',2]]){
       g.fillStyle = col;
       for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
         if(!isL(tx,ty)) continue;
-        const sd = tx*131+ty*17+dx, jx = (hash2(tx,ty,720)-0.5)*7, jy = (hash2(tx,ty,721)-0.5)*7, cx = tx*TILE+16+jx, cy = ty*TILE+16+jy;
-        blob(cx,cy,rad*(0.92+0.2*hash2(tx,ty,722)),sd);
-        if(isL(tx+1,ty)) blob(tx*TILE+32+(hash2(tx,ty,723)-0.5)*5,ty*TILE+16+(hash2(tx,ty,724)-0.5)*8,rad*0.86,sd+5);
-        if(isL(tx,ty+1)) blob(tx*TILE+16+(hash2(tx,ty,725)-0.5)*8,ty*TILE+32+(hash2(tx,ty,726)-0.5)*5,rad*0.86,sd+9);
-        if(isL(tx+1,ty+1) && isL(tx+1,ty) && isL(tx,ty+1)) blob(tx*TILE+32,ty*TILE+32,rad*0.8,sd+13);
+        const sd = tx*131+ty*17+dx, jx = (hash2(tx,ty,720)-0.5)*9, jy = (hash2(tx,ty,721)-0.5)*9, cx = tx*TILE+16+jx, cy = ty*TILE+16+jy;
+        blob(cx,cy,rad*(0.9+0.28*hash2(tx,ty,722)),sd);
+        if(isL(tx+1,ty)) blob(tx*TILE+32+(hash2(tx,ty,723)-0.5)*6,ty*TILE+16+(hash2(tx,ty,724)-0.5)*10,rad*0.9,sd+5);
+        if(isL(tx,ty+1)) blob(tx*TILE+16+(hash2(tx,ty,725)-0.5)*10,ty*TILE+32+(hash2(tx,ty,726)-0.5)*6,rad*0.9,sd+9);
+        if(isL(tx+1,ty+1) && isL(tx+1,ty) && isL(tx,ty+1)) blob(tx*TILE+32,ty*TILE+32,rad*0.85,sd+13);
       }
     }
     for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
@@ -465,7 +465,6 @@ function buildDungeonLayer(L){
         const px = tx*TILE+4+R(i*3)*24, py = ty*TILE+4+R(i*3+1)*24, r = 2.5+R(i*3+2)*4.5;
         g.fillStyle = R(i+20)<0.5 ? 'rgba(255,150,30,0.8)' : 'rgba(255,214,90,0.7)'; g.beginPath(); g.arc(px,py,r,0,Math.PI*2); g.fill();
       }
-      if(R(40)<0.5){ g.fillStyle='#3a110a'; g.beginPath(); g.ellipse(tx*TILE+6+R(41)*20,ty*TILE+6+R(42)*20,3+R(43)*3,2+R(44)*2,R(45)*3,0,Math.PI*2); g.fill(); }
     }
   }
   // стены: тёмная масса + валуны
@@ -565,7 +564,7 @@ function drawLavaAnim(x0,y0,x1,y1,camX,camY){
     const cx = x*TILE-camX+16, cy = y*TILE-camY+16;
     ctx.fillStyle = 'rgba(255,224,100,'+a+')'; circ(cx+Math.sin(ph*0.7)*5, cy+Math.cos(ph*0.9)*5, 9); ctx.fill();
     const b = (now*0.5+h*3)%1;
-    if(b<0.5){ ctx.strokeStyle = 'rgba(255,240,160,'+(0.8*(1-b*2))+')'; ctx.lineWidth = 1.2; circ(cx+(h-0.5)*16, cy+(hash2(x,y,901)-0.5)*16, 1+b*7); ctx.stroke(); }
+    if(b<0.5){ ctx.fillStyle = 'rgba(255,236,140,'+(0.35*(1-b*2))+')'; circ(cx+(h-0.5)*16, cy+(hash2(x,y,901)-0.5)*16, 1+b*6); ctx.fill(); }
   }
 }
 function drawDungeonGround(camX,camY){

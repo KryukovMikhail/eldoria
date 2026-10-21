@@ -21,7 +21,7 @@ async def main():
         # codex empty UI
         await E("()=>__t.openCodex()"); 
         r=await E("()=>[__t.gs, document.getElementById('codexInfo').textContent, document.querySelectorAll('#codexList .shopItem').length, [...document.querySelectorAll('#codexList b')].filter(b=>b.textContent.includes('???')).length]")
-        chk('codex opens empty',r[0]=='codex' and r[2]>=40 and r[3]==r[2],r)
+        chk('codex opens empty',r[0]=='codex' and r[2]==0 and r[3]==0 and 'из 60' in r[1],r)
         await pg.screenshot(path=SC+'x_codex0.png')
         await E("()=>__t.closeCodex()")
         # weapons unlock

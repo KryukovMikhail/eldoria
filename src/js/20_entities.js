@@ -268,18 +268,18 @@ function drawStatusFx(sx,sy){
 }
 function drawStatusHUD(){
   const f = player.fx; if(!f) return;
-  let y = UI.t+184+(player.slowT>0?24:0);
+  let y = UI.t+244+(player.slowT>0?24:0);
   for(const k of ['freeze','burn','poison']){
     if(!(f[k]>0)) continue;
     const I = STATUS_INFO[k], w = 112;
-    ctx.fillStyle = 'rgba(20,20,30,0.8)'; ctx.fillRect(UI.l+52,y,w,20); ctx.strokeStyle = I.col; ctx.lineWidth = 1; ctx.strokeRect(UI.l+52.5,y+0.5,w-1,19);
-    ctx.fillStyle = I.col; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(I.icon+' '+I.n+' '+(f[k]/1000).toFixed(1), UI.l+58, y+14);
+    ctx.fillStyle = 'rgba(20,20,30,0.8)'; ctx.fillRect(UI.l+8,y,w,20); ctx.strokeStyle = I.col; ctx.lineWidth = 1; ctx.strokeRect(UI.l+8.5,y+0.5,w-1,19);
+    ctx.fillStyle = I.col; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(I.icon+' '+I.n+' '+(f[k]/1000).toFixed(1), UI.l+14, y+14);
     y += 24;
   }
   if(player.buff.swim>0){
-    const w = 112; ctx.fillStyle = 'rgba(10,40,40,0.8)'; ctx.fillRect(UI.l+52,y,w,20); ctx.strokeStyle = '#27c9b8'; ctx.lineWidth = 1; ctx.strokeRect(UI.l+52.5,y+0.5,w-1,19);
+    const w = 112; ctx.fillStyle = 'rgba(10,40,40,0.8)'; ctx.fillRect(UI.l+8,y,w,20); ctx.strokeStyle = '#27c9b8'; ctx.lineWidth = 1; ctx.strokeRect(UI.l+8.5,y+0.5,w-1,19);
     const blink = player.buff.swim<6000 && Math.floor(Date.now()/250)%2===0;
-    ctx.fillStyle = blink ? '#ff8a6a' : '#27c9b8'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('🌊 Водоход '+(player.buff.swim/1000).toFixed(0)+' с', UI.l+58, y+14);
+    ctx.fillStyle = blink ? '#ff8a6a' : '#27c9b8'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('🌊 Водоход '+(player.buff.swim/1000).toFixed(0)+' с', UI.l+14, y+14);
   }
 }
 function applyWebSlow(){
@@ -295,7 +295,7 @@ function maybeDropElixir(e){
 }
 function elixLayout(){
   const list = ELIX_KEYS.filter(k=> player.elix[k]>0 || (k!=='big' && player.buff[k]>0));
-  return list.map((k,i)=>({k, x:UI.l+8, y:UI.t+202+i*40, w:36, h:36}));
+  return list.map((k,i)=>({k, x:UI.l+8+i*40, y:UI.t+202, w:36, h:36}));
 }
 function drawElixHUD(){
   const L = elixLayout();
