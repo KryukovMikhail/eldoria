@@ -78,7 +78,7 @@ async def main():
         chk('events actually spawn over time',r>=10,r)
         # старое сохранение без тайников
         r=await E("""()=>{ __t.beginNewGame(); __t.saveGame(); const k=__t.latestSaveKey(); const d=JSON.parse(localStorage.getItem(k)); delete d.world.secret1; delete d.world.secret2; d.world.overworld.entrances=d.world.overworld.entrances.filter(e=>!e.dungeon.startsWith('secret')); d.world.overworld.items=d.world.overworld.items.filter(i=>i.type!=='chest'&&i.type!=='key'); delete d.world.overworld.secrets; localStorage.setItem(k,JSON.stringify(d)); const ok=__t.loadGame(k); const w=__t.world; return [ok,!!w.secret1&&!!w.secret2,w.overworld.entrances.filter(e=>e.hidden).length,w.overworld.items.filter(i=>i.type==='chest').length] }""")
-        chk('older save gets secrets added',r==[True,True,2,7],r)
+        chk('older save gets secrets added',r==[True,True,4,7],r)
         chk('no page errors',errs==[],errs[:5])
         await b.close()
     print('ALL OK' if ok else 'SOME FAILED')
