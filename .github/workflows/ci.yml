@@ -26,3 +26,28 @@ jobs:
       - name: Тесты
         env: { PERF_SLACK: '3' }
         run: python3 tests/run_all.py
+  roblox:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: roblox
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Lua 5.4 для проверок
+        run: sudo apt-get update && sudo apt-get install -y liblua5.4-0
+      - name: Синтаксис Luau-скриптов
+        run: python3 tools/luacheck.py src
+      - name: Опечатки в именах
+        run: python3 tools/globals.py src
+      - name: Прогон игры на макете Roblox
+        run: |
+          for s in 1 7 42; do
+            python3 tools/mock/run.py $s | tee run.log
+            grep -qE "ОШИБОК В ОБРАБОТЧИКАХ:[[:space:]]+0$" run.log
+          done
+      - name: Файл .rbxlx собран из src (не забыли пересобрать?)
+        run: |
+          python3 tools/build_rbxlx.py Eldoria_R001.001.rbxlx
+          git diff --exit-code -- Eldoria_R001.001.rbxlx || (echo "::error::Запустите python3 tools/build_rbxlx.py и закоммитьте .rbxlx"; exit 1)

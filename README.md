@@ -5,6 +5,8 @@
 
 Технический стек и устройство проекта: [ARCHITECTURE.md](ARCHITECTURE.md).
 
+3D-версия для Roblox (первая глава) лежит в папке [roblox/](roblox/README.md).
+
 ## Структура
 
 ```

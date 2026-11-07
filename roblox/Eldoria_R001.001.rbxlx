@@ -1,0 +1,3315 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4"><External>null</External><External>nil</External><Item class="Workspace" referent="RBX00000004"><Properties><string name="Name">Workspace</string></Properties></Item><Item class="Players" referent="RBX00000005"><Properties><string name="Name">Players</string><bool name="CharacterAutoLoads">false</bool></Properties></Item><Item class="Lighting" referent="RBX00000006"><Properties><string name="Name">Lighting</string><token name="Technology">4</token><bool name="GlobalShadows">true</bool></Properties></Item><Item class="ReplicatedStorage" referent="RBX00000009"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX00000008"><Properties><string name="Name">Eldoria</string></Properties><Item class="ModuleScript" referent="RBX00000007"><Properties><string name="Name">Config</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Хроники Эльдории для Roblox: общие настройки (сервер и клиент)
+local Config = {}
+
+Config.BUILD = "R001.001"
+Config.TITLE = "Хроники Эльдории"
+
+-- Мир
+Config.CELL = 8            -- размер клетки карты в студах
+Config.MAP_N = 96          -- карта N x N клеток
+Config.LAIR_ORIGIN = Vector3.new(0, 0, 2600)   -- логово Мортракса строится далеко от поверхности
+Config.DAY_LENGTH = 720    -- длина суток в секундах
+
+-- Герой
+Config.PLAYER = { hp = 100, atk = 16, xpNext = 50, walkSpeed = 16 }
+Config.LEVEL_UP = { hp = 18, atk = 4, xpMul = 1.35 }
+Config.CHARGE_TIME = 0.55  -- удержание атаки для сильного удара
+Config.DASH = { cooldown = 1.2, invuln = 0.35, power = 75 }
+
+-- Враги. speed/aggro — в пикселях браузерной версии, пересчитываются в студы
+Config.ENEMY = {
+	wolf     = { name = "Волк",              hp = 28,  dmg = 7,  speed = 75, xp = 14,  gold = 2,  aggro = 150, body = "quad", scale = 1.0 },
+	boar     = { name = "Кабан",             hp = 40,  dmg = 10, speed = 88, xp = 17,  gold = 3,  aggro = 150, body = "quad", scale = 1.05 },
+	ram      = { name = "Бодун",             hp = 52,  dmg = 12, speed = 70, xp = 20,  gold = 4,  aggro = 210, body = "quad", scale = 1.15, charge = true },
+	bandit   = { name = "Разбойник",         hp = 42,  dmg = 9,  speed = 66, xp = 24,  gold = 9,  aggro = 220, body = "biped", scale = 1.0, thrower = true },
+	skeleton = { name = "Скелет",            hp = 42,  dmg = 11, speed = 55, xp = 24,  gold = 5,  aggro = 170, body = "biped", scale = 1.0 },
+	slime    = { name = "Слизень",           hp = 18,  dmg = 5,  speed = 40, xp = 9,   gold = 2,  aggro = 110, body = "blob",  scale = 1.0 },
+	giantrat = { name = "Гигантская крыса",  hp = 28,  dmg = 8,  speed = 92, xp = 15,  gold = 2,  aggro = 160, body = "quad",  scale = 0.75 },
+	boss     = { name = "Мортракс",          hp = 220, dmg = 20, speed = 55, xp = 150, gold = 60, aggro = 260, body = "biped", scale = 2.6, boss = true },
+}
+Config.OVERWORLD_ROSTER = { "wolf", "wolf", "boar", "bandit", "ram" }
+Config.OVERWORLD_ENEMIES = 46
+Config.LAIR_GUARDS = { "skeleton", "slime", "skeleton", "giantrat" }
+
+function Config.walkSpeed(px) return 16 * px / 140 end
+function Config.aggroStuds(px) return px / 32 * 8 * 1.4 end
+
+-- Оружие (mult — множитель к урону героя, cooldown — секунды, range — дальность удара в студах)
+Config.WEAPON_ORDER = { "sword", "spear", "bow", "axe" }
+Config.WEAPONS = {
+	sword = { name = "Меч",          mult = 1.0, price = 0,   cooldown = 0.38, range = 7.5, arc = 110, unlock = 0, anim = "Slash", desc = "Базовое оружие, быстрый удар перед собой." },
+	spear = { name = "Копьё",        mult = 1.5, price = 50,  cooldown = 0.38, range = 9.5, arc = 70,  unlock = 1, anim = "Lunge", desc = "Заметно сильнее меча и бьёт дальше." },
+	bow   = { name = "Лук",          mult = 1.6, price = 90,  cooldown = 0.56, range = 40,  arc = 0,   unlock = 2, anim = "Slash", ranged = true, desc = "Стреляет стрелами. Откроется после второго стража." },
+	axe   = { name = "Боевой топор", mult = 2.5, price = 130, cooldown = 0.62, range = 8.5, arc = 200, unlock = 3, anim = "Slash", desc = "Тяжёлый удар по большой площади. Откроется после третьего стража." },
+}
+Config.ARMOR_ORDER = { "none", "leather", "chain", "plate" }
+Config.ARMORS = {
+	none    = { name = "Без брони",     reduce = 0,    price = 0,   unlock = 0, desc = "Простая одежда путника." },
+	leather = { name = "Кожаная броня", reduce = 0.20, price = 60,  unlock = 0, desc = "Лёгкая и недорогая.",                     color = Color3.fromRGB(150, 98, 52) },
+	chain   = { name = "Кольчуга",      reduce = 0.35, price = 140, unlock = 1, desc = "Надёжная защита от волков и скелетов.",   color = Color3.fromRGB(176, 186, 198) },
+	plate   = { name = "Стальные латы", reduce = 0.50, price = 240, unlock = 2, desc = "Лучшая броня в Эльдории.",                color = Color3.fromRGB(222, 202, 120) },
+}
+Config.BOSS_NAMES = { "Мортракс", "Шелиба", "Ноктурн", "Игнаррок" }
+
+-- Эликсиры лечат, зелья дают силу. Клавиши 1–5 по порядку
+Config.ELIX_ORDER = { "small", "big", "speed", "might", "guard" }
+Config.ELIX = {
+	small = { name = "Эликсир здоровья",         short = "Эликсир",   price = 20, sell = 8,  heal = 40, color = Color3.fromRGB(214, 58, 72),   desc = "Лечит 40 HP." },
+	big   = { name = "Большой эликсир здоровья", short = "Б. эликсир", price = 55, sell = 22, heal = 80, color = Color3.fromRGB(224, 80, 138),  desc = "Лечит 80 HP и снимает яд." },
+	speed = { name = "Зелье скорости",           short = "Скорость",  price = 45, sell = 18, dur = 20, color = Color3.fromRGB(52, 200, 240),  desc = "+40% к скорости на 20 с." },
+	might = { name = "Зелье силы",               short = "Сила",      price = 50, sell = 20, dur = 25, color = Color3.fromRGB(255, 154, 42),  desc = "+50% к урону на 25 с." },
+	guard = { name = "Зелье стойкости",          short = "Стойкость", price = 50, sell = 20, dur = 25, color = Color3.fromRGB(138, 122, 255), desc = "Получаемый урон вдвое меньше на 25 с." },
+}
+Config.ELIX_MAX = 8
+
+-- Задания торговца
+Config.QUEST_ORDER = { "wolves", "boars", "bandits", "rams", "king" }
+Config.QUESTS = {
+	wolves  = { name = "Волчья угроза",       desc = "Волки в округе пугают путников. Убейте 5 волков.",            target = "wolf",   count = 5, gold = 60,  elix = 1 },
+	boars   = { name = "Кабанья напасть",     desc = "Кабаны разоряют огороды у тракта. Убейте 4 кабанов.",        target = "boar",   count = 4, gold = 70,  elix = 1 },
+	bandits = { name = "Разбойники на тракте", desc = "Разбойники грабят караваны. Убейте 4 разбойников.",          target = "bandit", count = 4, gold = 90,  elix = 1 },
+	rams    = { name = "Бодливое стадо",      desc = "Бодуны сбивают путников с ног. Убейте 3 бодунов.",           target = "ram",    count = 3, gold = 60,  elix = 1 },
+	king    = { name = "Конец тирана",        desc = "Победите Мортракса в его логове.",                            target = "boss",   count = 1, gold = 220, elix = 2 },
+}
+
+Config.STORY_INTRO = {
+	"Эльдория погружается во тьму. Эфирий — когда-то страж Обители — похитил Сердце Эльдории, древний камень, хранивший свет королевства, и заперся в Обители Пустых Зеркал на краю мира.",
+	"Десять его слуг-стражей запечатали путь: у каждого своё логово, и пока страж жив, врата вглубь закрыты. Первый из них — Мортракс — засел в пещере на поверхности.",
+	"Вы — последний, кто решился идти за светом. Закупитесь у торговца, наберитесь сил в бою и найдите логово Мортракса.",
+}
+Config.STORY_TIPS = {
+	[0] = "Путь начинается в пещере на поверхности. Мортракс силён — сперва наберись опыта и купи броню.",
+	[1] = "Мортракс пал — отлично! В глубине его логова открылся проход в Грот Шорохов. Копьё и кольчуга теперь продаются у меня.",
+}
+Config.BOSS_TAUNT = "Мортракс: «Ещё один глупец пришёл умереть…»"
+Config.BOSS_LORE = "Мортракс продал душу Эфирию ради вечной жизни. Не стойте на месте — он бьёт по площади, а раненый зовёт скелетов."
+
+return Config
+]]></ProtectedString></Properties></Item></Item></Item><Item class="ServerScriptService" referent="RBX0000000B"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX0000000A"><Properties><string name="Name">EldoriaServer</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Хроники Эльдории для Roblox — главный серверный скрипт
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DataStoreService = game:GetService("DataStoreService")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+
+local Eldoria = ReplicatedStorage:WaitForChild("Eldoria")
+local Config = require(Eldoria:WaitForChild("Config"))
+local Models = require(script:WaitForChild("Models"))
+local WorldGen = require(script:WaitForChild("WorldGen"))
+local Enemies = require(script:WaitForChild("Enemies"))
+
+Players.CharacterAutoLoads = false
+
+---------------------------------------------------------------- связь с клиентом
+local remotes = Instance.new("Folder")
+remotes.Name = "Remotes"
+local Action = Instance.new("RemoteEvent")
+Action.Name = "Action"
+Action.Parent = remotes
+local Notify = Instance.new("RemoteEvent")
+Notify.Name = "Notify"
+Notify.Parent = remotes
+local Fx = Instance.new("RemoteEvent")
+Fx.Name = "Fx"
+Fx.Parent = remotes
+remotes.Parent = Eldoria
+
+local function notify(plr, text, color)
+	Notify:FireClient(plr, text, color or Color3.fromRGB(240, 226, 190))
+end
+local function notifyAll(text, color)
+	Notify:FireAllClients(text, color or Color3.fromRGB(240, 226, 190))
+end
+local function fxAll(kind, d) Fx:FireAllClients(kind, d) end
+Enemies.fx = fxAll
+
+local function serverNow() return workspace:GetServerTimeNow() end
+local function clock() return os.clock() end
+
+---------------------------------------------------------------- свет, атмосфера, смена суток
+Lighting.Brightness = 2.4
+Lighting.Ambient = Color3.fromRGB(64, 62, 72)
+Lighting.OutdoorAmbient = Color3.fromRGB(122, 122, 132)
+Lighting.EnvironmentDiffuseScale = 0.6
+Lighting.EnvironmentSpecularScale = 0.5
+Lighting.GlobalShadows = true
+Lighting.ClockTime = 9
+local atm = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
+atm.Density = 0.3
+atm.Offset = 0.15
+atm.Haze = 1.4
+atm.Glare = 0.3
+atm.Color = Color3.fromRGB(205, 196, 176)
+atm.Decay = Color3.fromRGB(104, 112, 126)
+atm.Parent = Lighting
+if not Lighting:FindFirstChildOfClass("Sky") then
+	local sky = Instance.new("Sky")
+	sky.SunAngularSize = 14
+	sky.MoonAngularSize = 9
+	sky.Parent = Lighting
+end
+local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
+bloom.Intensity = 0.5
+bloom.Size = 22
+bloom.Threshold = 1.6
+bloom.Parent = Lighting
+local cc = Instance.new("ColorCorrectionEffect")
+cc.Name = "EldoriaGrade"
+cc.Saturation = 0.08
+cc.Contrast = 0.05
+cc.Parent = Lighting
+
+task.spawn(function()
+	local t0 = clock()
+	while true do
+		-- день длиннее ночи: 70% суток — с 6 до 20 часов, 30% — ночь
+		local p = ((clock() - t0) / Config.DAY_LENGTH + 0.12) % 1
+		local h
+		if p < 0.7 then h = 6 + p / 0.7 * 14 else h = 20 + (p - 0.7) / 0.3 * 10 end
+		Lighting.ClockTime = h % 24
+		task.wait(0.5)
+	end
+end)
+
+---------------------------------------------------------------- мир
+local worldFolder = Instance.new("Folder")
+worldFolder.Name = "Eldoria"
+worldFolder.Parent = workspace
+local owFolder = Instance.new("Folder")
+owFolder.Name = "Overworld"
+owFolder.Parent = worldFolder
+local lairFolder = Instance.new("Folder")
+lairFolder.Name = "Lair"
+lairFolder.Parent = worldFolder
+local pickupFolder = Instance.new("Folder")
+pickupFolder.Name = "Pickups"
+pickupFolder.Parent = worldFolder
+
+local layout = WorldGen.buildOverworld(owFolder)
+local lairInfo = WorldGen.buildLair(lairFolder)
+
+local mapData = Instance.new("StringValue")
+mapData.Name = "MapData"
+mapData.Value = layout.mapString
+mapData:SetAttribute("N", Config.MAP_N)
+mapData:SetAttribute("ShopX", layout.shopCell[1])
+mapData:SetAttribute("ShopZ", layout.shopCell[2])
+mapData:SetAttribute("CaveX", layout.caveCell[1])
+mapData:SetAttribute("CaveZ", layout.caveCell[2])
+mapData.Parent = Eldoria
+
+Enemies.init(worldFolder)
+Enemies.safeZones = {
+	{ pos = layout.spawn, r = 30 },
+	{ pos = layout.shopPos, r = 34 },
+	{ pos = layout.cavePos, r = 22 },
+	{ pos = lairInfo.spawn, r = 24 },
+}
+
+---------------------------------------------------------------- данные героя
+local store
+pcall(function() store = DataStoreService:GetDataStore("EldoriaR1") end)
+
+local data = {}
+
+local function defaultData()
+	local d = {
+		level = 1, xp = 0, xpNext = Config.PLAYER.xpNext, gold = 0, atk = Config.PLAYER.atk, maxHp = Config.PLAYER.hp,
+		weapon = "sword", owned = { sword = true }, armor = "none", ownedArmor = { none = true },
+		elix = { small = 3, big = 0, speed = 0, might = 0, guard = 0 },
+		quest = nil, done = {}, stage = 0, intro = false, kills = {},
+	}
+	return d
+end
+
+local function merge(def, got)
+	if type(got) ~= "table" then return def end
+	for k, v in pairs(def) do
+		if got[k] == nil then got[k] = v
+		elseif type(v) == "table" and type(got[k]) == "table" and k ~= "quest" then merge(v, got[k]) end
+	end
+	return got
+end
+
+local function loadData(plr)
+	local d = defaultData()
+	if store then
+		local ok, res = pcall(function() return store:GetAsync("p_" .. plr.UserId) end)
+		if ok and type(res) == "table" then d = merge(defaultData(), res)
+		elseif not ok then warn("Eldoria: не удалось загрузить сохранение", res) end
+	end
+	d.buffs = { speed = 0, might = 0, guard = 0 }
+	-- os.clock() в начале работы сервера может быть маленьким, поэтому «давно» = -1e9
+	d.invulnUntil = -1e9
+	d.dashCd = -1e9
+	d.lastAtk = -1e9
+	return d
+end
+
+local function saveData(plr)
+	local d = data[plr]
+	if not d or not store then return false end
+	local copy = {}
+	for k, v in pairs(d) do
+		if k ~= "buffs" and k ~= "invulnUntil" and k ~= "dashCd" and k ~= "lastAtk" then copy[k] = v end
+	end
+	local ok, err = pcall(function() store:SetAsync("p_" .. plr.UserId, copy) end)
+	if ok then plr:SetAttribute("SavedAt", os.date("!%d.%m %H:%M") .. " UTC · ур. " .. d.level)
+	else warn("Eldoria: не удалось сохранить", err) end
+	return ok
+end
+
+local function keysCsv(t)
+	local out = {}
+	for k, v in pairs(t) do if v then table.insert(out, k) end end
+	table.sort(out)
+	return table.concat(out, ",")
+end
+
+local function publish(plr)
+	local d = data[plr]
+	if not d then return end
+	plr:SetAttribute("Level", d.level)
+	plr:SetAttribute("XP", d.xp)
+	plr:SetAttribute("XPNext", d.xpNext)
+	plr:SetAttribute("Gold", d.gold)
+	plr:SetAttribute("Atk", d.atk)
+	plr:SetAttribute("MaxHp", d.maxHp)
+	plr:SetAttribute("Weapon", d.weapon)
+	plr:SetAttribute("Armor", d.armor)
+	plr:SetAttribute("Stage", d.stage)
+	plr:SetAttribute("Owned", keysCsv(d.owned))
+	plr:SetAttribute("OwnedArmor", keysCsv(d.ownedArmor))
+	plr:SetAttribute("QuestsDone", keysCsv(d.done))
+	plr:SetAttribute("Quest", d.quest and d.quest.id or "")
+	plr:SetAttribute("QuestProg", d.quest and d.quest.prog or 0)
+	plr:SetAttribute("IntroSeen", d.intro)
+	for _, k in ipairs(Config.ELIX_ORDER) do plr:SetAttribute("E_" .. k, d.elix[k] or 0) end
+	for k, v in pairs(d.buffs) do plr:SetAttribute("Buff_" .. k, v) end
+	local ls = plr:FindFirstChild("leaderstats")
+	if ls then
+		ls["Уровень"].Value = d.level
+		ls["Золото"].Value = d.gold
+	end
+end
+
+local function aliveChar(plr)
+	local ch = plr.Character
+	if not ch then return nil end
+	local hum = ch:FindFirstChildOfClass("Humanoid")
+	local hrp = ch:FindFirstChild("HumanoidRootPart")
+	if hum and hrp and hum.Health > 0 then return hrp, hum, ch end
+	return nil
+end
+
+local function buffOn(d, k) return (d.buffs[k] or 0) > serverNow() end
+
+local function applySpeed(plr)
+	local d = data[plr]
+	local _, hum = aliveChar(plr)
+	if d and hum then hum.WalkSpeed = Config.PLAYER.walkSpeed * (buffOn(d, "speed") and 1.4 or 1) end
+end
+
+---------------------------------------------------------------- оружие и броня на герое
+local function giveWeapon(plr)
+	local d = data[plr]
+	local ch = plr.Character
+	if not d or not ch then return end
+	for _, cont in ipairs({ ch, plr:FindFirstChild("Backpack") }) do
+		if cont then
+			for _, t in ipairs(cont:GetChildren()) do
+				if t:IsA("Tool") then t:Destroy() end
+			end
+		end
+	end
+	local w = Config.WEAPONS[d.weapon] or Config.WEAPONS.sword
+	local tool = Models.weaponTool(d.weapon, w.name)
+	tool.Parent = ch
+	tool.Unequipped:Connect(function()
+		task.defer(function()
+			local _, hum = aliveChar(plr)
+			if hum and tool.Parent and tool.Parent:IsA("Backpack") then hum:EquipTool(tool) end
+		end)
+	end)
+end
+
+local function applyArmor(plr)
+	local d = data[plr]
+	local ch = plr.Character
+	if not d or not ch then return end
+	for _, p in ipairs(ch:GetChildren()) do
+		if p.Name == "EldoriaArmor" then p:Destroy() end
+	end
+	local a = Config.ARMORS[d.armor]
+	if a and a.color then Models.armorPiece(ch, a.color) end
+end
+
+---------------------------------------------------------------- опыт и уровни
+local function addXP(plr, n)
+	local d = data[plr]
+	if not d then return end
+	d.xp = d.xp + n
+	local up = false
+	while d.xp >= d.xpNext do
+		d.xp = d.xp - d.xpNext
+		d.level = d.level + 1
+		d.xpNext = math.floor(d.xpNext * Config.LEVEL_UP.xpMul + 0.5)
+		d.maxHp = d.maxHp + Config.LEVEL_UP.hp
+		d.atk = d.atk + Config.LEVEL_UP.atk
+		up = true
+	end
+	if up then
+		local hrp, hum = aliveChar(plr)
+		if hum then
+			hum.MaxHealth = d.maxHp
+			hum.Health = d.maxHp
+		end
+		notify(plr, "✦ Новый уровень: " .. d.level .. "! Здоровье и урон возросли.", Color3.fromRGB(127, 224, 127))
+		if hrp then fxAll("levelup", { pos = hrp.Position }) end
+	end
+end
+
+local function questProgress(plr, kind)
+	local d = data[plr]
+	if not d or not d.quest then return end
+	local q = Config.QUESTS[d.quest.id]
+	if not q or q.target ~= kind or d.quest.prog >= q.count then return end
+	d.quest.prog = d.quest.prog + 1
+	if d.quest.prog >= q.count then
+		notify(plr, "✔ Задание «" .. q.name .. "» выполнено! Вернитесь к торговцу за наградой.", Color3.fromRGB(255, 211, 74))
+	else
+		notify(plr, q.name .. ": " .. d.quest.prog .. "/" .. q.count, Color3.fromRGB(220, 200, 140))
+	end
+end
+
+---------------------------------------------------------------- урон по герою
+Enemies.hurtPlayer = function(plr, dmg, source)
+	local d = data[plr]
+	local hrp, hum, ch = aliveChar(plr)
+	if not d or not hum then return end
+	local t = clock()
+	if t < d.invulnUntil then return end
+	local a = Config.ARMORS[d.armor] or Config.ARMORS.none
+	local mul = (1 - a.reduce) * (buffOn(d, "guard") and 0.5 or 1)
+	local final = math.max(1, math.floor(dmg * mul + 0.5))
+	hum:TakeDamage(final)
+	d.invulnUntil = t + 0.35
+	local head = ch:FindFirstChild("Head") or hrp
+	fxAll("dmg", { pos = head.Position + Vector3.new(0, 2, 0), text = "-" .. final, hero = true })
+	Fx:FireClient(plr, "hurt", { source = source })
+end
+
+---------------------------------------------------------------- логово Мортракса
+local lair = { boss = nil, open = false }
+local gateParts = {}
+for _, p in ipairs(lairInfo.gate:GetChildren()) do
+	if p:IsA("BasePart") then table.insert(gateParts, { part = p, cf = p.CFrame }) end
+end
+local function setGate(open)
+	lair.open = open
+	for _, g in ipairs(gateParts) do
+		local target = open and (g.cf - Vector3.new(0, 17.5, 0)) or g.cf
+		TweenService:Create(g.part, TweenInfo.new(open and 2.2 or 0.3, Enum.EasingStyle.Quad), { CFrame = target }):Play()
+	end
+end
+
+local function playersInLair()
+	local out = {}
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr:GetAttribute("Zone") == "lair" and aliveChar(plr) then table.insert(out, plr) end
+	end
+	return out
+end
+
+local function resetLair(bossAlive)
+	Enemies.clearZone("lair")
+	for i, spot in ipairs(lairInfo.guardSpots) do
+		Enemies.spawn(Config.LAIR_GUARDS[i] or "skeleton", Vector3.new(spot.X, Config.LAIR_ORIGIN.Y, spot.Z), { zone = "lair" })
+	end
+	if bossAlive then
+		local bp = lairInfo.bossPos
+		lair.boss = Enemies.spawn("boss", Vector3.new(bp.X, Config.LAIR_ORIGIN.Y, bp.Z), { zone = "lair" })
+		if lair.boss then
+			lair.boss.home = Vector3.new(bp.X, Config.LAIR_ORIGIN.Y, bp.Z)
+			lair.boss.root.CFrame = CFrame.lookAt(lair.boss.root.Position, lair.boss.root.Position - Vector3.new(1, 0, 0))
+		end
+		setGate(false)
+	else
+		lair.boss = nil
+		setGate(true)
+	end
+end
+
+local function enterLair(plr)
+	local d = data[plr]
+	local hrp = aliveChar(plr)
+	if not d or not hrp then return end
+	if #playersInLair() == 0 then resetLair(d.stage < 1) end
+	local sp = lairInfo.spawn
+	plr.Character:PivotTo(CFrame.lookAt(sp, sp + Vector3.new(1, 0, 0)))
+	plr:SetAttribute("Zone", "lair")
+	if lair.boss and not lair.boss.dead then
+		notify(plr, Config.BOSS_TAUNT, Color3.fromRGB(255, 120, 100))
+		task.delay(2.5, function() notify(plr, "☠ " .. Config.BOSS_LORE, Color3.fromRGB(214, 190, 150)) end)
+	else
+		notify(plr, "Логово Мортракса пусто. Решётка в Грот Шорохов открыта.", Color3.fromRGB(180, 210, 255))
+	end
+end
+
+local function exitLair(plr)
+	local hrp = aliveChar(plr)
+	if not hrp then return end
+	local p = layout.caveReturn
+	plr.Character:PivotTo(CFrame.lookAt(p, layout.spawn))
+	plr:SetAttribute("Zone", "ow")
+end
+
+layout.caveDoor:FindFirstChildOfClass("ProximityPrompt").Triggered:Connect(enterLair)
+lairInfo.exitPart:FindFirstChildOfClass("ProximityPrompt").Triggered:Connect(exitLair)
+
+Enemies.onBossPhase = function(rec, phase)
+	for _, plr in ipairs(playersInLair()) do
+		if phase == 2 then notify(plr, "Мортракс ревёт и поднимает мёртвых!", Color3.fromRGB(255, 140, 100))
+		else notify(plr, "Мортракс в ярости — удары посыпались чаще!", Color3.fromRGB(255, 90, 80)) end
+	end
+end
+
+---------------------------------------------------------------- награда за убийство
+Enemies.onKilled = function(rec, killer)
+	local kind = rec.kind
+	if rec.def.boss then
+		lair.boss = nil
+		setGate(true)
+		for _, plr in ipairs(playersInLair()) do
+			local d = data[plr]
+			if d then
+				d.gold = d.gold + rec.gold
+				d.kills.boss = (d.kills.boss or 0) + 1
+				local first = d.stage < 1
+				d.stage = math.max(d.stage, 1)
+				addXP(plr, rec.xp)
+				questProgress(plr, "boss")
+				Fx:FireClient(plr, "victory", { title = "Мортракс повержен!", first = first })
+				notify(plr, "☠ Мортракс повержен! В глубине логова открылся проход в Грот Шорохов. +" .. rec.gold .. " золота", Color3.fromRGB(255, 211, 74))
+				if first then notify(plr, "В лавке появились копьё и кольчуга.", Color3.fromRGB(180, 220, 255)) end
+				publish(plr)
+				task.spawn(saveData, plr)
+			end
+		end
+		return
+	end
+	if not killer then return end
+	local d = data[killer]
+	if not d then return end
+	d.gold = d.gold + rec.gold
+	d.kills[kind] = (d.kills[kind] or 0) + 1
+	addXP(killer, rec.xp)
+	if not rec.minion then questProgress(killer, kind) end
+	Fx:FireClient(killer, "loot", { pos = rec.root.Position, gold = rec.gold, xp = rec.xp })
+	publish(killer)
+end
+
+---------------------------------------------------------------- предметы на земле
+local pickups = 0
+local function spawnPickup(kind, pos)
+	local model, hit
+	if kind == "gold" then
+		model, hit = Models.coins(pos, pickupFolder)
+	else
+		model, hit = Models.bottle(pos, Config.ELIX.small.color, pickupFolder)
+	end
+	pickups = pickups + 1
+	local taken = false
+	hit.Touched:Connect(function(other)
+		if taken then return end
+		local ch = other:FindFirstAncestorOfClass("Model")
+		local plr = ch and Players:GetPlayerFromCharacter(ch)
+		local d = plr and data[plr]
+		if not d then return end
+		if kind == "gold" then
+			local v = math.random(3, 10)
+			d.gold = d.gold + v
+			Fx:FireClient(plr, "loot", { pos = hit.Position, gold = v })
+		else
+			if (d.elix.small or 0) >= Config.ELIX_MAX then
+				notify(plr, "Больше эликсиров не унести", Color3.fromRGB(224, 201, 106))
+				return
+			end
+			d.elix.small = d.elix.small + 1
+			Fx:FireClient(plr, "loot", { pos = hit.Position, item = "Эликсир здоровья" })
+		end
+		taken = true
+		pickups = pickups - 1
+		publish(plr)
+		model:Destroy()
+	end)
+end
+
+local avoidPOI = {
+	{ pos = layout.spawn, r = 40 },
+	{ pos = layout.shopPos, r = 40 },
+	{ pos = layout.cavePos, r = 30 },
+}
+for i = 1, 30 do
+	local p = WorldGen.randomGround(avoidPOI)
+	if p then spawnPickup(i <= 21 and "gold" or "elixir", p) end
+end
+
+---------------------------------------------------------------- враги на поверхности
+local function spawnOverworldEnemy(extraAvoid)
+	local avoid = {
+		{ pos = layout.spawn, r = 72 },
+		{ pos = layout.shopPos, r = 64 },
+		{ pos = layout.cavePos, r = 88 },
+	}
+	for _, a in ipairs(extraAvoid or {}) do table.insert(avoid, a) end
+	local p = WorldGen.randomGround(avoid)
+	if not p then return end
+	local roster = Config.OVERWORLD_ROSTER
+	Enemies.spawn(roster[math.random(1, #roster)], p, { zone = "ow" })
+end
+for i = 1, Config.OVERWORLD_ENEMIES do spawnOverworldEnemy() end
+
+task.spawn(function()
+	while true do
+		task.wait(6)
+		local alive = Enemies.count("ow")
+		if alive < Config.OVERWORLD_ENEMIES then
+			local avoid = {}
+			for _, plr in ipairs(Players:GetPlayers()) do
+				local hrp = aliveChar(plr)
+				if hrp then table.insert(avoid, { pos = hrp.Position, r = 80 }) end
+			end
+			for i = 1, math.min(3, Config.OVERWORLD_ENEMIES - alive) do spawnOverworldEnemy(avoid) end
+		end
+	end
+end)
+task.spawn(function()
+	while true do
+		task.wait(45)
+		if pickups < 16 then
+			for i = 1, 2 do
+				local p = WorldGen.randomGround(avoidPOI)
+				if p then spawnPickup(math.random() < 0.7 and "gold" or "elixir", p) end
+			end
+		end
+	end
+end)
+-- логово возвращается в исходное состояние, когда в нём никого нет
+task.spawn(function()
+	local emptyFor = 0
+	while true do
+		task.wait(5)
+		if #playersInLair() == 0 then
+			emptyFor = emptyFor + 5
+			if emptyFor >= 30 and Enemies.count("lair", true) > 0 then
+				Enemies.clearZone("lair")
+				lair.boss = nil
+			end
+		else
+			emptyFor = 0
+		end
+	end
+end)
+
+---------------------------------------------------------------- торговец
+local merchantPrompt = Instance.new("ProximityPrompt")
+merchantPrompt.ActionText = "Торговать"
+merchantPrompt.ObjectText = "Торговец"
+merchantPrompt.HoldDuration = 0
+merchantPrompt.MaxActivationDistance = 14
+merchantPrompt.RequiresLineOfSight = false
+merchantPrompt.Parent = layout.merchant:FindFirstChild("HumanoidRootPart") or layout.merchant.PrimaryPart
+merchantPrompt.Triggered:Connect(function(plr)
+	local d = data[plr]
+	if not d then return end
+	Fx:FireClient(plr, "openShop", { tip = Config.STORY_TIPS[math.min(d.stage, 1)] })
+end)
+
+local function nearShop(plr)
+	local hrp = aliveChar(plr)
+	return hrp and (hrp.Position - layout.shopPos).Magnitude < 45
+end
+
+---------------------------------------------------------------- действия игрока
+local handlers = {}
+
+function handlers.attack(plr, d, charged)
+	local hrp, hum, ch = aliveChar(plr)
+	if not hrp then return end
+	local w = Config.WEAPONS[d.weapon] or Config.WEAPONS.sword
+	local t = clock()
+	if t - d.lastAtk < w.cooldown * 0.85 then return end
+	d.lastAtk = t
+	charged = charged == true
+	local tool = ch:FindFirstChildOfClass("Tool")
+	if tool then
+		local anim = Instance.new("StringValue")
+		anim.Name = "toolanim"
+		anim.Value = charged and "Lunge" or w.anim
+		anim.Parent = tool
+		Debris:AddItem(anim, 0.5)
+	end
+	local base = d.atk * w.mult * (buffOn(d, "might") and 1.5 or 1) * (charged and 2 or 1)
+	local range = w.range * (charged and 1.25 or 1)
+	local arc = math.min(360, w.arc + (charged and 70 or 0))
+	local look = Vector3.new(hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z).Unit
+	local hits = 0
+	for _, rec in ipairs(Enemies.list) do
+		if not rec.dead and rec.root.Parent then
+			local to = rec.root.Position - hrp.Position
+			local flatTo = Vector3.new(to.X, 0, to.Z)
+			local dist = flatTo.Magnitude
+			local radius = rec.def.boss and 4.5 or 1.6 * rec.def.scale
+			if dist <= range + radius and math.abs(to.Y) < 12 then
+				local okAngle = dist < 2.5 or arc >= 360 or math.deg(math.acos(math.clamp(flatTo.Unit:Dot(look), -1, 1))) <= arc / 2
+				if okAngle then
+					local close = 1 + 0.3 * (1 - math.clamp(dist / (range + radius), 0, 1))
+					local dmg = base * close * (0.9 + math.random() * 0.2)
+					if Enemies.damage(rec, dmg, plr, hrp.Position, charged and 42 or 24) then hits = hits + 1 end
+				end
+			end
+		end
+	end
+	fxAll("slash", { cf = hrp.CFrame, range = range, arc = arc, charged = charged, weapon = d.weapon, hit = hits > 0, by = plr.UserId })
+end
+
+function handlers.dash(plr, d)
+	local t = clock()
+	if t < d.dashCd then return end
+	d.dashCd = t + Config.DASH.cooldown * 0.9
+	d.invulnUntil = math.max(d.invulnUntil, t + Config.DASH.invuln)
+end
+
+function handlers.elixir(plr, d, k)
+	local e = Config.ELIX[k]
+	local hrp, hum = aliveChar(plr)
+	if not e or not hum then return end
+	if (d.elix[k] or 0) <= 0 then
+		notify(plr, "Нет: " .. string.lower(e.name), Color3.fromRGB(224, 127, 127))
+		return
+	end
+	if e.heal then
+		if hum.Health >= hum.MaxHealth then
+			notify(plr, "Здоровье уже полное", Color3.fromRGB(224, 201, 106))
+			return
+		end
+		hum.Health = math.min(hum.MaxHealth, hum.Health + e.heal)
+		notify(plr, "Выпит " .. string.lower(e.name) .. " (+" .. e.heal .. " HP)", Color3.fromRGB(127, 224, 127))
+	else
+		d.buffs[k] = serverNow() + e.dur
+		notify(plr, e.name .. ": " .. e.desc, e.color)
+		if k == "speed" then
+			applySpeed(plr)
+			task.delay(e.dur + 0.1, function() applySpeed(plr) end)
+		end
+		task.delay(e.dur + 0.1, function()
+			if data[plr] and not buffOn(data[plr], k) then
+				notify(plr, "Действие зелья закончилось: " .. string.lower(e.name), Color3.fromRGB(168, 157, 120))
+			end
+		end)
+	end
+	d.elix[k] = d.elix[k] - 1
+	fxAll("drink", { pos = hrp.Position, color = e.color })
+	publish(plr)
+end
+
+local function canUseItem(d, unlock) return (unlock or 0) <= d.stage end
+
+function handlers.buy(plr, d, cat, id)
+	if not nearShop(plr) then return end
+	if cat == "weapon" then
+		local w = Config.WEAPONS[id]
+		if not w or d.owned[id] then return end
+		if not canUseItem(d, w.unlock) then notify(plr, "Пока не продаётся", Color3.fromRGB(224, 127, 127)); return end
+		if d.gold < w.price then notify(plr, "Не хватает золота", Color3.fromRGB(224, 127, 127)); return end
+		d.gold = d.gold - w.price
+		d.owned[id] = true
+		d.weapon = id
+		giveWeapon(plr)
+		notify(plr, "Куплено: " .. w.name, Color3.fromRGB(127, 224, 127))
+	elseif cat == "armor" then
+		local a = Config.ARMORS[id]
+		if not a or d.ownedArmor[id] then return end
+		if not canUseItem(d, a.unlock) then notify(plr, "Пока не продаётся", Color3.fromRGB(224, 127, 127)); return end
+		if d.gold < a.price then notify(plr, "Не хватает золота", Color3.fromRGB(224, 127, 127)); return end
+		d.gold = d.gold - a.price
+		d.ownedArmor[id] = true
+		d.armor = id
+		applyArmor(plr)
+		notify(plr, "Куплено: " .. a.name, Color3.fromRGB(127, 224, 127))
+	elseif cat == "elixir" then
+		local e = Config.ELIX[id]
+		if not e then return end
+		if (d.elix[id] or 0) >= Config.ELIX_MAX then notify(plr, "Больше не унести", Color3.fromRGB(224, 201, 106)); return end
+		if d.gold < e.price then notify(plr, "Не хватает золота", Color3.fromRGB(224, 127, 127)); return end
+		d.gold = d.gold - e.price
+		d.elix[id] = (d.elix[id] or 0) + 1
+		notify(plr, "Куплено: " .. e.name, Color3.fromRGB(127, 224, 127))
+	end
+	Fx:FireClient(plr, "coin", {})
+	publish(plr)
+end
+
+function handlers.sell(plr, d, cat, id)
+	if not nearShop(plr) then return end
+	if cat == "weapon" then
+		local w = Config.WEAPONS[id]
+		if not w or not d.owned[id] or id == "sword" then return end
+		d.owned[id] = nil
+		d.gold = d.gold + math.floor(w.price / 2)
+		if d.weapon == id then d.weapon = "sword"; giveWeapon(plr) end
+		notify(plr, "Продано: " .. w.name .. " (+" .. math.floor(w.price / 2) .. ")", Color3.fromRGB(255, 211, 74))
+	elseif cat == "armor" then
+		local a = Config.ARMORS[id]
+		if not a or not d.ownedArmor[id] or id == "none" then return end
+		d.ownedArmor[id] = nil
+		d.gold = d.gold + math.floor(a.price / 2)
+		if d.armor == id then d.armor = "none"; applyArmor(plr) end
+		notify(plr, "Продано: " .. a.name .. " (+" .. math.floor(a.price / 2) .. ")", Color3.fromRGB(255, 211, 74))
+	elseif cat == "elixir" then
+		local e = Config.ELIX[id]
+		if not e or (d.elix[id] or 0) <= 0 then return end
+		d.elix[id] = d.elix[id] - 1
+		d.gold = d.gold + e.sell
+		notify(plr, "Продано: " .. e.name .. " (+" .. e.sell .. ")", Color3.fromRGB(255, 211, 74))
+	end
+	Fx:FireClient(plr, "coin", {})
+	publish(plr)
+end
+
+function handlers.equip(plr, d, cat, id)
+	if cat == "weapon" and d.owned[id] and Config.WEAPONS[id] then
+		d.weapon = id
+		giveWeapon(plr)
+	elseif cat == "armor" and d.ownedArmor[id] and Config.ARMORS[id] then
+		d.armor = id
+		applyArmor(plr)
+	end
+	publish(plr)
+end
+
+function handlers.quest(plr, d, op, id)
+	local q = Config.QUESTS[id]
+	if not q then return end
+	if op == "take" then
+		if d.quest or d.done[id] then return end
+		d.quest = { id = id, prog = 0 }
+		notify(plr, "Новое задание: " .. q.name, Color3.fromRGB(255, 211, 74))
+	elseif op == "cancel" then
+		if d.quest and d.quest.id == id then
+			d.quest = nil
+			notify(plr, "Задание отменено", Color3.fromRGB(200, 190, 160))
+		end
+	elseif op == "claim" then
+		if not nearShop(plr) or not d.quest or d.quest.id ~= id or d.quest.prog < q.count then return end
+		d.gold = d.gold + q.gold
+		d.elix.small = math.min(Config.ELIX_MAX, (d.elix.small or 0) + q.elix)
+		d.done[id] = true
+		d.quest = nil
+		notify(plr, "Награда: +" .. q.gold .. " золота, эликсиров: " .. q.elix, Color3.fromRGB(255, 211, 74))
+		Fx:FireClient(plr, "coin", {})
+		task.spawn(saveData, plr)
+	end
+	publish(plr)
+end
+
+function handlers.intro(plr, d)
+	d.intro = true
+	publish(plr)
+end
+
+function handlers.save(plr, d)
+	if clock() - (d.lastManualSave or -1e9) < 15 then
+		notify(plr, "Сохранение уже сделано недавно", Color3.fromRGB(224, 201, 106))
+		return
+	end
+	d.lastManualSave = clock()
+	if store and saveData(plr) then
+		notify(plr, "Прогресс сохранён", Color3.fromRGB(127, 224, 127))
+	else
+		notify(plr, "Сохранение недоступно: опубликуйте игру и включите доступ к API в настройках", Color3.fromRGB(224, 127, 127))
+	end
+end
+
+Action.OnServerEvent:Connect(function(plr, kind, a, b)
+	if type(kind) ~= "string" then return end
+	local d = data[plr]
+	local h = handlers[kind]
+	if not d or not h then return end
+	local ok, err = pcall(h, plr, d, a, b)
+	if not ok then warn("Eldoria action " .. kind .. ":", err) end
+end)
+
+---------------------------------------------------------------- игроки
+local worldReady = true
+
+local function onCharacter(plr, ch)
+	local d = data[plr]
+	local hum = ch:WaitForChild("Humanoid")
+	ch:WaitForChild("HumanoidRootPart")
+	plr:SetAttribute("Zone", "ow")
+	hum.MaxHealth = d.maxHp
+	hum.Health = d.maxHp
+	hum.BreakJointsOnDeath = false
+	applySpeed(plr)
+	giveWeapon(plr)
+	applyArmor(plr)
+	hum.Died:Connect(function()
+		local lose = math.floor(d.gold * 0.1)
+		d.gold = d.gold - lose
+		notify(plr, "Вы пали… Потеряно " .. lose .. " золота. Возвращение через несколько секунд.", Color3.fromRGB(224, 110, 110))
+		publish(plr)
+		task.delay(4, function()
+			if plr.Parent then plr:LoadCharacter() end
+		end)
+	end)
+end
+
+local function onPlayerAdded(plr)
+	local ls = Instance.new("Folder")
+	ls.Name = "leaderstats"
+	local lv = Instance.new("IntValue")
+	lv.Name = "Уровень"
+	lv.Parent = ls
+	local gd = Instance.new("IntValue")
+	gd.Name = "Золото"
+	gd.Parent = ls
+	ls.Parent = plr
+	data[plr] = loadData(plr)
+	publish(plr)
+	plr.CharacterAdded:Connect(function(ch) onCharacter(plr, ch) end)
+	if worldReady and plr.Parent then plr:LoadCharacter() end
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+for _, plr in ipairs(Players:GetPlayers()) do task.spawn(onPlayerAdded, plr) end
+
+Players.PlayerRemoving:Connect(function(plr)
+	saveData(plr)
+	data[plr] = nil
+end)
+
+game:BindToClose(function()
+	for _, plr in ipairs(Players:GetPlayers()) do saveData(plr) end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(90)
+		for _, plr in ipairs(Players:GetPlayers()) do task.spawn(saveData, plr) end
+	end
+end)
+
+print("Хроники Эльдории " .. Config.BUILD .. ": мир готов")
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000001"><Properties><string name="Name">Enemies</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Враги: появление, поведение, урон, смерть, снаряды и удары босса по площади
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Eldoria"):WaitForChild("Config"))
+local Models = require(script.Parent:WaitForChild("Models"))
+
+local Enemies = {}
+local list = {}
+Enemies.list = list
+Enemies.safeZones = {}              -- { {pos=Vector3, r=число} } — у входа в пещеру, у лавки и на площади враги не нападают
+Enemies.hurtPlayer = function(plr, dmg, source) end
+Enemies.onKilled = function(rec, killer) end
+Enemies.onBossPhase = function(rec, phase) end
+Enemies.fx = function(kind, data) end
+
+local rng = Random.new()
+local folder, projFolder
+local projectiles, aoes = {}, {}
+
+local function now() return os.clock() end
+local function flat(v) return Vector3.new(v.X, 0, v.Z) end
+
+local function inSafe(p)
+	for _, z in ipairs(Enemies.safeZones) do
+		if (flat(p) - flat(z.pos)).Magnitude < z.r then return true end
+	end
+	return false
+end
+Enemies.inSafe = inSafe
+
+local function aliveChar(plr)
+	local ch = plr.Character
+	if not ch then return nil end
+	local hum = ch:FindFirstChildOfClass("Humanoid")
+	local hrp = ch:FindFirstChild("HumanoidRootPart")
+	if hum and hrp and hum.Health > 0 then return hrp, hum end
+	return nil
+end
+
+function Enemies.init(parentFolder)
+	folder = Instance.new("Folder")
+	folder.Name = "Enemies"
+	folder.Parent = parentFolder
+	projFolder = Instance.new("Folder")
+	projFolder.Name = "Projectiles"
+	projFolder.Parent = parentFolder
+	Enemies.folder = folder
+	local acc = 0
+	RunService.Heartbeat:Connect(function(dt)
+		Enemies.stepProjectiles(dt)
+		acc = acc + dt
+		if acc >= 0.12 then
+			local step = acc
+			acc = 0
+			for i = #list, 1, -1 do
+				local rec = list[i]
+				if rec and not rec.dead then
+					local ok, err = pcall(Enemies.think, rec, step)
+					if not ok then warn("Eldoria AI:", err) end
+				end
+			end
+		end
+	end)
+end
+
+---------------------------------------------------------------- появление
+function Enemies.spawn(kind, pos, opts)
+	opts = opts or {}
+	local def = Config.ENEMY[kind]
+	if not def then return nil end
+	local model = Models.creature(kind, def.scale)
+	model.Name = def.name
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	local root = model.PrimaryPart
+	local hp = def.hp * (opts.hpMul or 1)
+	hum.MaxHealth = hp
+	hum.Health = hp
+	hum.WalkSpeed = Config.walkSpeed(def.speed) * (def.boss and 1.35 or 1)
+	hum.DisplayName = def.name
+	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
+	hum.NameDisplayDistance = def.boss and 0 or 55
+	hum.HealthDisplayDistance = def.boss and 0 or 55
+	hum.HealthDisplayType = Enum.HumanoidHealthDisplayType.DisplayWhenDamaged
+	hum.BreakJointsOnDeath = true
+	hum.RequiresNeck = false
+	hum.AutoRotate = true
+	for _, st in ipairs({ Enum.HumanoidStateType.FallingDown, Enum.HumanoidStateType.Ragdoll, Enum.HumanoidStateType.Climbing, Enum.HumanoidStateType.Seated }) do
+		hum:SetStateEnabled(st, false)
+	end
+	local y = hum.HipHeight + root.Size.Y / 2 + 0.6
+	local gy = Enemies.groundY(pos) or pos.Y
+	model:PivotTo(CFrame.new(pos.X, gy + y, pos.Z) * CFrame.Angles(0, rng:NextNumber(0, 6.28), 0))
+	model:SetAttribute("EnemyType", kind)
+	if def.boss then model:SetAttribute("Boss", true) end
+	model.Parent = folder
+	pcall(function() root:SetNetworkOwner(nil) end)
+	local rec = {
+		kind = kind, def = def, model = model, hum = hum, root = root,
+		home = pos, zone = opts.zone or "ow", minion = opts.minion,
+		dmg = math.floor(def.dmg * (opts.dmgMul or 1) + 0.5),
+		xp = opts.minion and math.floor(def.xp * 0.4) or def.xp,
+		gold = opts.minion and 0 or def.gold,
+		aggro = Config.aggroStuds(def.aggro),
+		reach = (def.body == "quad" and 3.2 or 2.6) * def.scale + 2.4,
+		atkT = -1e9, wanderT = -1e9, phase = 1, born = now(),
+		lastPos = root.Position, stuckT = now(),
+	}
+	if def.boss then
+		rec.reach = 12
+		rec.slamT = 0
+		rec.summonT = 0
+	end
+	hum.Died:Connect(function() Enemies.die(rec) end)
+	table.insert(list, rec)
+	return rec
+end
+
+---------------------------------------------------------------- урон по врагу
+function Enemies.damage(rec, amount, attacker, fromPos, knock)
+	if rec.dead or rec.hum.Health <= 0 then return false end
+	amount = math.max(1, math.floor(amount + 0.5))
+	-- убийцу запоминаем ДО урона: событие Died может сработать прямо внутри TakeDamage
+	rec.lastHitter = attacker
+	rec.lastHitT = now()
+	rec.forceTarget = attacker
+	rec.forceUntil = now() + 6
+	rec.hum:TakeDamage(amount)
+	local hl = Instance.new("Highlight")
+	hl.FillColor = Color3.fromRGB(255, 70, 60)
+	hl.FillTransparency = 0.35
+	hl.OutlineTransparency = 1
+	hl.DepthMode = Enum.HighlightDepthMode.Occluded
+	hl.Parent = rec.model
+	Debris:AddItem(hl, 0.13)
+	if not rec.def.boss and fromPos and rec.root.Parent then
+		local d = flat(rec.root.Position - fromPos)
+		if d.Magnitude > 0.01 then
+			rec.root.AssemblyLinearVelocity = d.Unit * (knock or 26) + Vector3.new(0, 9, 0)
+		end
+	end
+	local head = rec.model:FindFirstChild("Head") or rec.root
+	Enemies.fx("dmg", { pos = head.Position + Vector3.new(0, 2, 0), text = tostring(amount), big = knock and knock > 30 })
+	if rec.def.boss then
+		local r = rec.hum.Health / rec.hum.MaxHealth
+		local ph = (r <= 0.25 and 3) or (r <= 0.5 and 2) or 1
+		if ph > rec.phase and rec.hum.Health > 0 then
+			rec.phase = ph
+			Enemies.onBossPhase(rec, ph)
+			Enemies.summon(rec, ph == 2 and 2 or 3)
+		end
+	end
+	return true
+end
+
+function Enemies.die(rec)
+	if rec.dead then return end
+	rec.dead = true
+	for i, r in ipairs(list) do
+		if r == rec then table.remove(list, i); break end
+	end
+	local killer = nil
+	if rec.lastHitter and rec.lastHitter.Parent and now() - (rec.lastHitT or 0) < 15 then killer = rec.lastHitter end
+	local pos = rec.root.Position
+	Enemies.fx("death", { pos = pos, boss = rec.def.boss and true or false })
+	local ok, err = pcall(Enemies.onKilled, rec, killer)
+	if not ok then warn("Eldoria onKilled:", err) end
+	-- кости рассыпаются: включаем столкновения, через пару секунд всё растворяется
+	for _, d in ipairs(rec.model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.CanCollide = d ~= rec.root
+			d.Massless = false
+			d.AssemblyLinearVelocity = Vector3.new(rng:NextNumber(-12, 12), rng:NextNumber(8, 18), rng:NextNumber(-12, 12))
+		elseif d:IsA("PointLight") or d:IsA("BillboardGui") then
+			d:Destroy()
+		end
+	end
+	task.delay(1.6, function()
+		if not rec.model.Parent then return end
+		for _, d in ipairs(rec.model:GetDescendants()) do
+			if d:IsA("BasePart") and d.Transparency < 1 then
+				TweenService:Create(d, TweenInfo.new(0.8), { Transparency = 1 }):Play()
+			end
+		end
+		Debris:AddItem(rec.model, 0.9)
+	end)
+end
+
+function Enemies.clearZone(zone)
+	for i = #list, 1, -1 do
+		local rec = list[i]
+		if rec.zone == zone then
+			rec.dead = true
+			table.remove(list, i)
+			rec.model:Destroy()
+		end
+	end
+end
+
+function Enemies.count(zone, includeMinions)
+	local n = 0
+	for _, rec in ipairs(list) do
+		if rec.zone == zone and not rec.dead and (includeMinions or not rec.minion) and not rec.def.boss then n = n + 1 end
+	end
+	return n
+end
+
+---------------------------------------------------------------- поведение
+local function setMarker(rec, on)
+	local head = rec.model:FindFirstChild("Head")
+	if not head then return end
+	local m = head:FindFirstChild("Alert")
+	if on and not m then
+		m = Instance.new("BillboardGui")
+		m.Name = "Alert"
+		m.Size = UDim2.fromOffset(40, 40)
+		m.StudsOffset = Vector3.new(0, 3, 0)
+		m.AlwaysOnTop = true
+		local t = Instance.new("TextLabel")
+		t.Size = UDim2.fromScale(1, 1)
+		t.BackgroundTransparency = 1
+		t.Text = "!"
+		t.Font = Enum.Font.GothamBlack
+		t.TextScaled = true
+		t.TextColor3 = Color3.fromRGB(255, 70, 50)
+		t.TextStrokeTransparency = 0
+		t.Parent = m
+		m.Parent = head
+	elseif not on and m then
+		m:Destroy()
+	end
+end
+
+local function findTarget(rec)
+	local pos = rec.root.Position
+	if rec.forceTarget and now() < (rec.forceUntil or 0) then
+		local hrp = aliveChar(rec.forceTarget)
+		if hrp and not inSafe(hrp.Position) and (hrp.Position - pos).Magnitude < rec.aggro * 2.2 then return rec.forceTarget, hrp, (hrp.Position - pos).Magnitude end
+	end
+	local best, bestHrp, bd = nil, nil, rec.aggro
+	for _, plr in ipairs(Players:GetPlayers()) do
+		local hrp = aliveChar(plr)
+		if hrp and not inSafe(hrp.Position) then
+			local d = (hrp.Position - pos).Magnitude
+			if d < bd then best, bestHrp, bd = plr, hrp, d end
+		end
+	end
+	return best, bestHrp, bd
+end
+
+local function face(rec, p)
+	local r = rec.root
+	local look = flat(p - r.Position)
+	if look.Magnitude > 0.1 then
+		r.CFrame = CFrame.lookAt(r.Position, r.Position + look)
+	end
+end
+
+local function meleeSwing(rec, plr, mul, delayS, reachBonus)
+	rec.model:SetAttribute("AtkAt", workspace:GetServerTimeNow())
+	task.delay(delayS or 0.25, function()
+		if rec.dead then return end
+		local hrp = aliveChar(plr)
+		if hrp and (hrp.Position - rec.root.Position).Magnitude <= rec.reach + (reachBonus or 1.5) then
+			Enemies.hurtPlayer(plr, math.floor(rec.dmg * (mul or 1) + 0.5), rec.def.name)
+		end
+	end)
+end
+
+function Enemies.think(rec, dt)
+	local t = now()
+	local hum, root = rec.hum, rec.root
+	if not root.Parent then rec.dead = true; return end
+	-- особые состояния бодуна
+	if rec.state == "windup" then
+		if t >= rec.stateEnd then
+			rec.state = "dash"
+			rec.stateEnd = t + 0.6
+			rec.dashHit = false
+			hum.WalkSpeed = 36
+			hum:MoveTo(root.Position + rec.dashDir * 32)
+		end
+		return
+	elseif rec.state == "dash" then
+		if not rec.dashHit then
+			for _, plr in ipairs(Players:GetPlayers()) do
+				local hrp = aliveChar(plr)
+				if hrp and (hrp.Position - root.Position).Magnitude < rec.reach + 1 then
+					rec.dashHit = true
+					Enemies.hurtPlayer(plr, math.floor(rec.dmg * 2.4 + 0.5), rec.def.name)
+					hrp.AssemblyLinearVelocity = rec.dashDir * 40 + Vector3.new(0, 20, 0)
+				end
+			end
+		end
+		if t >= rec.stateEnd or rec.dashHit then
+			rec.state = nil
+			hum.WalkSpeed = Config.walkSpeed(rec.def.speed)
+			setMarker(rec, false)
+			rec.chargeCd = t + 3.2
+			hum:MoveTo(root.Position)
+		end
+		return
+	end
+
+	local plr, hrp, dist = findTarget(rec)
+	if plr then
+		rec.engaged = true
+		local tp = hrp.Position
+		-- застревание: прыжок и шаг в сторону
+		if (root.Position - rec.lastPos).Magnitude > 1 then rec.lastPos = root.Position; rec.stuckT = t
+		elseif dist > rec.reach + 1 and t - rec.stuckT > 1.3 then
+			hum.Jump = true
+			local side = flat(tp - root.Position)
+			if side.Magnitude > 0.1 then
+				side = Vector3.new(-side.Z, 0, side.X).Unit * (rng:NextNumber() < 0.5 and -10 or 10)
+				hum:MoveTo(root.Position + side)
+			end
+			rec.stuckT = t
+			return
+		end
+		if rec.def.boss then
+			Enemies.bossThink(rec, plr, hrp, dist, t)
+			return
+		end
+		if rec.def.charge and dist < 30 and dist > 7 and t >= (rec.chargeCd or 0) then
+			rec.state = "windup"
+			rec.stateEnd = t + 0.65
+			rec.dashDir = flat(tp - root.Position).Unit
+			hum:MoveTo(root.Position)
+			face(rec, tp)
+			setMarker(rec, true)
+			return
+		end
+		if rec.def.thrower and dist < 28 and dist > 8 then
+			if dist > 20 then hum:MoveTo(tp) else hum:MoveTo(root.Position); face(rec, tp) end
+			if t >= (rec.throwCd or 0) then
+				rec.throwCd = t + 2.6
+				rec.model:SetAttribute("AtkAt", workspace:GetServerTimeNow())
+				local from = root.Position + Vector3.new(0, 1.5, 0)
+				local aim = tp + hrp.AssemblyLinearVelocity * 0.25
+				Enemies.projectile(from, (aim - from).Unit * 48, math.floor(rec.dmg * 0.9 + 0.5), rec.def.name, "knife")
+			end
+			return
+		end
+		if dist > rec.reach then
+			hum:MoveTo(tp)
+		else
+			hum:MoveTo(root.Position)
+			face(rec, tp)
+			if t >= rec.atkT then
+				rec.atkT = t + 1.1
+				meleeSwing(rec, plr, 1, 0.25)
+			end
+		end
+	else
+		rec.engaged = false
+		local fromHome = flat(root.Position - rec.home).Magnitude
+		if fromHome > (rec.def.boss and 30 or 70) then
+			hum:MoveTo(rec.home)
+			rec.wanderT = t + 4
+		elseif t >= rec.wanderT then
+			rec.wanderT = t + rng:NextNumber(3, 7)
+			if not rec.def.boss and rec.zone == "ow" then
+				hum:MoveTo(rec.home + Vector3.new(rng:NextNumber(-18, 18), 0, rng:NextNumber(-18, 18)))
+			end
+		end
+	end
+end
+
+---------------------------------------------------------------- Мортракс
+function Enemies.bossThink(rec, plr, hrp, dist, t)
+	local hum, root = rec.hum, rec.root
+	local tp = hrp.Position
+	if not rec.taunted then
+		rec.taunted = true
+		rec.slamT = t + 2.6
+		rec.summonT = t + 4
+	end
+	-- удар по площади: круг на земле, через 1.15 с — взрыв
+	if t >= rec.slamT then
+		local cds = { 6.5, 4.8, 3.4 }
+		rec.slamT = t + cds[rec.phase]
+		local R = (54 + 6 * rec.phase) / 32 * 8
+		rec.model:SetAttribute("AtkAt", workspace:GetServerTimeNow())
+		Enemies.aoe(tp, R, 1.15, math.floor(rec.dmg * 1.2 + 0.5), rec.def.name)
+		if rec.phase >= 3 then
+			local a = rng:NextNumber(0, 6.28)
+			task.delay(0.25, function()
+				if not rec.dead then Enemies.aoe(tp + Vector3.new(math.cos(a) * 22, 0, math.sin(a) * 22), R, 1.15, math.floor(rec.dmg * 1.2 + 0.5), rec.def.name) end
+			end)
+		end
+	end
+	if rec.phase >= 2 and t >= rec.summonT then
+		rec.summonT = t + 7.5
+		Enemies.summon(rec, 1)
+	end
+	if dist > rec.reach then
+		hum:MoveTo(tp)
+	else
+		hum:MoveTo(root.Position)
+		face(rec, tp)
+		if t >= rec.atkT then
+			rec.atkT = t + 1.6
+			meleeSwing(rec, plr, 1, 0.45, 3)
+		end
+	end
+end
+
+function Enemies.summon(boss, n)
+	local alive = 0
+	for _, r in ipairs(list) do if r.minion and not r.dead and r.zone == boss.zone then alive = alive + 1 end end
+	local want = math.min(n, 3 - alive)
+	for i = 1, want do
+		local a = rng:NextNumber(0, 6.28)
+		local p = boss.root.Position + Vector3.new(math.cos(a) * 12, 0, math.sin(a) * 12)
+		local ground = Enemies.groundY(p) or boss.home.Y
+		local m = Enemies.spawn("skeleton", Vector3.new(p.X, ground, p.Z), { zone = boss.zone, minion = true })
+		if m then
+			Enemies.fx("summon", { pos = Vector3.new(p.X, ground + 1, p.Z) })
+		end
+	end
+end
+
+---------------------------------------------------------------- удары по площади
+function Enemies.groundY(p)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.RespectCanCollide = true   -- кроны деревьев и декор не считаются землёй
+	local ex = { folder, projFolder }
+	for _, plr in ipairs(Players:GetPlayers()) do if plr.Character then table.insert(ex, plr.Character) end end
+	params.FilterDescendantsInstances = ex
+	local res = workspace:Raycast(p + Vector3.new(0, 12, 0), Vector3.new(0, -60, 0), params)
+	return res and res.Position.Y or nil
+end
+
+function Enemies.aoe(center, r, delayS, dmg, source)
+	local gy = Enemies.groundY(center) or (center.Y - 3)
+	local c = Vector3.new(center.X, gy + 0.15, center.Z)
+	local ring = Models.cylinderV(0.25, r * 2, Color3.fromRGB(255, 60, 40), CFrame.new(c), projFolder, Enum.Material.Neon)
+	ring.Transparency = 0.75
+	ring.CastShadow = false
+	ring.CanQuery = false
+	local inner = Models.cylinderV(0.3, 0.5, Color3.fromRGB(255, 120, 60), CFrame.new(c), projFolder, Enum.Material.Neon)
+	inner.Transparency = 0.35
+	inner.CastShadow = false
+	inner.CanQuery = false
+	TweenService:Create(inner, TweenInfo.new(delayS, Enum.EasingStyle.Linear), { Size = Vector3.new(0.3, r * 2, r * 2) }):Play()
+	task.delay(delayS, function()
+		ring:Destroy()
+		inner:Destroy()
+		Enemies.fx("boom", { pos = c, r = r })
+		for _, plr in ipairs(Players:GetPlayers()) do
+			local hrp = aliveChar(plr)
+			if hrp and flat(hrp.Position - c).Magnitude < r and math.abs(hrp.Position.Y - c.Y) < 10 then
+				Enemies.hurtPlayer(plr, dmg, source)
+			end
+		end
+	end)
+end
+
+---------------------------------------------------------------- снаряды
+function Enemies.projectile(from, vel, dmg, source, kind)
+	local p = Models.part({ Name = "Knife", Size = Vector3.new(0.25, 0.25, 1.3), Color = Color3.fromRGB(205, 210, 218), Material = Enum.Material.Metal,
+		CFrame = CFrame.lookAt(from, from + vel), Parent = projFolder })
+	p.CanQuery = false
+	p.CastShadow = false
+	table.insert(projectiles, { part = p, pos = from, vel = vel, life = 1.4, dmg = dmg, source = source, spin = 0 })
+end
+
+function Enemies.stepProjectiles(dt)
+	if #projectiles == 0 then return end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local ex = { folder, projFolder }
+	for _, plr in ipairs(Players:GetPlayers()) do if plr.Character then table.insert(ex, plr.Character) end end
+	params.FilterDescendantsInstances = ex
+	for i = #projectiles, 1, -1 do
+		local pr = projectiles[i]
+		local nextPos = pr.pos + pr.vel * dt
+		local done = false
+		pr.life = pr.life - dt
+		if pr.life <= 0 then done = true end
+		if not done and workspace:Raycast(pr.pos, nextPos - pr.pos, params) then done = true end
+		if not done then
+			for _, plr in ipairs(Players:GetPlayers()) do
+				local hrp = aliveChar(plr)
+				if hrp and (hrp.Position - nextPos).Magnitude < 2.6 then
+					Enemies.hurtPlayer(plr, pr.dmg, pr.source)
+					done = true
+					break
+				end
+			end
+		end
+		if done then
+			pr.part:Destroy()
+			table.remove(projectiles, i)
+		else
+			pr.pos = nextPos
+			pr.spin = pr.spin + dt * 20
+			pr.part.CFrame = CFrame.lookAt(nextPos, nextPos + pr.vel) * CFrame.Angles(pr.spin, 0, 0)
+		end
+	end
+end
+
+return Enemies
+]]></ProtectedString></Properties></Item><Item class="ModuleScript" referent="RBX00000002"><Properties><string name="Name">Models</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Построение моделей из деталей: деревья, камни, враги, торговец, лавка, оружие, предметы
+local Models = {}
+
+local rng = Random.new()
+
+local function rgb(r, g, b) return Color3.fromRGB(r, g, b) end
+local function vary(c, k)
+	local d = (rng:NextNumber() - 0.5) * (k or 0.12)
+	return Color3.new(math.clamp(c.R + d, 0, 1), math.clamp(c.G + d, 0, 1), math.clamp(c.B + d, 0, 1))
+end
+Models.vary = vary
+
+-- Деталь с разумными значениями по умолчанию
+local function part(props)
+	local p = Instance.new(props.ClassName or "Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.Material = Enum.Material.SmoothPlastic
+	p.CastShadow = true
+	for k, v in pairs(props) do
+		if k ~= "ClassName" and k ~= "Parent" then p[k] = v end
+	end
+	if props.Parent then p.Parent = props.Parent end
+	return p
+end
+Models.part = part
+
+local function ball(size, color, cf, parent, material)
+	return part({ Shape = Enum.PartType.Ball, Size = Vector3.new(size, size, size), Color = color, CFrame = cf, Parent = parent, Material = material or Enum.Material.SmoothPlastic })
+end
+
+local function ellipsoid(size, color, cf, parent, material)
+	local p = part({ Size = size, Color = color, CFrame = cf, Parent = parent, Material = material or Enum.Material.SmoothPlastic })
+	local m = Instance.new("SpecialMesh")
+	m.MeshType = Enum.MeshType.Sphere
+	m.Parent = p
+	return p
+end
+Models.ellipsoid = ellipsoid
+
+local function cylinderV(height, diam, color, cf, parent, material)
+	return part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(height, diam, diam), Color = color,
+		CFrame = cf * CFrame.Angles(0, 0, math.pi / 2), Parent = parent, Material = material or Enum.Material.SmoothPlastic })
+end
+Models.cylinderV = cylinderV
+
+-- Жёсткое крепление детали к другой по текущему взаимному положению
+local function weldTo(p0, p1)
+	local w = Instance.new("Weld")
+	w.Part0 = p0
+	w.Part1 = p1
+	w.C0 = p0.CFrame:Inverse() * p1.CFrame
+	w.Parent = p1
+	return w
+end
+Models.weldTo = weldTo
+
+local function motor(name, p0, p1, c0, c1)
+	local m = Instance.new("Motor6D")
+	m.Name = name
+	m.Part0 = p0
+	m.Part1 = p1
+	m.C0 = c0
+	m.C1 = c1
+	m.Parent = p0
+	return m
+end
+
+---------------------------------------------------------------- Природа
+function Models.tree(pos, parent)
+	local m = Instance.new("Model")
+	m.Name = "Tree"
+	local h = rng:NextNumber(7, 12)
+	local trunkColor = vary(rgb(98, 70, 44), 0.08)
+	cylinderV(h, rng:NextNumber(1.3, 2), trunkColor, CFrame.new(pos + Vector3.new(0, h / 2 - 0.3, 0)), m, Enum.Material.Wood).CanCollide = true
+	local base = rgb(58, 118, 44)
+	if rng:NextNumber() < 0.3 then base = rgb(46, 98, 52) end
+	if rng:NextNumber() < 0.12 then base = rgb(122, 140, 46) end
+	local crown = rng:NextNumber(6.5, 9.5)
+	local top = pos + Vector3.new(0, h, 0)
+	ball(crown, vary(base, 0.08), CFrame.new(top), m, Enum.Material.Grass)
+	for i = 1, 3 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local off = Vector3.new(math.cos(a) * crown * 0.38, rng:NextNumber(-1.6, 1.4), math.sin(a) * crown * 0.38)
+		ball(crown * rng:NextNumber(0.55, 0.75), vary(base, 0.1), CFrame.new(top + off), m, Enum.Material.Grass)
+	end
+	for _, p in ipairs(m:GetChildren()) do
+		if p:IsA("BasePart") and p.Material == Enum.Material.Grass then p.CastShadow = true end
+	end
+	m.Parent = parent
+	return m
+end
+
+function Models.pine(pos, parent)
+	local m = Instance.new("Model")
+	m.Name = "Pine"
+	local h = rng:NextNumber(9, 14)
+	cylinderV(h, 1.3, vary(rgb(84, 58, 38), 0.06), CFrame.new(pos + Vector3.new(0, h / 2, 0)), m, Enum.Material.Wood).CanCollide = true
+	local c = vary(rgb(38, 82, 50), 0.06)
+	for i = 0, 3 do
+		local w = 8 - i * 1.7
+		local y = 3 + i * (h - 3) / 4
+		ellipsoid(Vector3.new(w, 3.4, w), vary(c, 0.05), CFrame.new(pos + Vector3.new(0, y, 0)), m, Enum.Material.Grass)
+	end
+	m.Parent = parent
+	return m
+end
+
+function Models.bush(pos, parent)
+	local m = Instance.new("Model")
+	m.Name = "Bush"
+	local c = vary(rgb(52, 104, 40), 0.1)
+	for i = 1, 3 do
+		local s = rng:NextNumber(2.4, 3.6)
+		ball(s, vary(c, 0.06), CFrame.new(pos + Vector3.new(rng:NextNumber(-1.4, 1.4), s * 0.32, rng:NextNumber(-1.4, 1.4))), m, Enum.Material.Grass)
+	end
+	if rng:NextNumber() < 0.4 then
+		for i = 1, 4 do
+			ball(0.45, rgb(196, 40, 52), CFrame.new(pos + Vector3.new(rng:NextNumber(-1.6, 1.6), rng:NextNumber(1, 2.2), rng:NextNumber(-1.6, 1.6))), m, Enum.Material.SmoothPlastic)
+		end
+	end
+	m.Parent = parent
+	return m
+end
+
+function Models.rock(pos, parent, scale)
+	local s = scale or 1
+	local p = part({ Size = Vector3.new(rng:NextNumber(2, 4.5), rng:NextNumber(1.4, 3), rng:NextNumber(2, 4.5)) * s,
+		Color = vary(rgb(118, 116, 110), 0.1), Material = Enum.Material.Slate, CanCollide = true,
+		CFrame = CFrame.new(pos + Vector3.new(0, 0.5 * s, 0)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, 6.28), rng:NextNumber(-0.3, 0.3)) })
+	p.Name = "Rock"
+	p.Parent = parent
+	return p
+end
+
+local FLOWER_COLORS = { rgb(238, 232, 120), rgb(240, 240, 240), rgb(208, 92, 160), rgb(132, 120, 230), rgb(230, 90, 70) }
+function Models.flowers(pos, parent)
+	local col = FLOWER_COLORS[rng:NextInteger(1, #FLOWER_COLORS)]
+	for i = 1, rng:NextInteger(3, 6) do
+		local p = ball(0.55, vary(col, 0.06), CFrame.new(pos + Vector3.new(rng:NextNumber(-2, 2), 0.35, rng:NextNumber(-2, 2))), parent)
+		p.CastShadow = false
+		p.Name = "Flower"
+	end
+end
+
+---------------------------------------------------------------- Существа
+-- Палитры: основной цвет, второй цвет, цвет головы, глаза
+local PAL = {
+	wolf     = { a = rgb(122, 124, 128), b = rgb(178, 176, 170), eye = rgb(255, 214, 60) },
+	boar     = { a = rgb(92, 64, 44), b = rgb(60, 42, 30), eye = rgb(255, 90, 40) },
+	ram      = { a = rgb(222, 212, 186), b = rgb(52, 44, 40), eye = rgb(255, 170, 40), horn = rgb(150, 120, 84) },
+	giantrat = { a = rgb(112, 98, 86), b = rgb(214, 150, 150), eye = rgb(255, 40, 40) },
+	bandit   = { a = rgb(96, 70, 48), b = rgb(52, 50, 58), head = rgb(214, 170, 132), hood = rgb(120, 34, 34), eye = rgb(30, 20, 20) },
+	skeleton = { a = rgb(222, 216, 192), b = rgb(200, 194, 170), head = rgb(232, 226, 204), eye = rgb(255, 40, 40) },
+	boss     = { a = rgb(210, 202, 176), b = rgb(70, 60, 64), head = rgb(226, 218, 192), eye = rgb(255, 30, 30), cape = rgb(110, 20, 28), gold = rgb(220, 176, 52) },
+	merchant = { a = rgb(74, 98, 64), b = rgb(70, 54, 40), head = rgb(220, 178, 140), eye = rgb(30, 20, 20) },
+}
+
+local function finishCreature(model, root, hum, hip)
+	hum.HipHeight = hip
+	hum.Parent = model
+	model.PrimaryPart = root
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.Anchored = false
+			if d ~= root then
+				d.CanCollide = false
+				d.Massless = true
+			end
+		end
+	end
+	return model
+end
+
+-- Четвероногие: волк, кабан, бодун, крыса
+local function buildQuad(kind, s)
+	local pal = PAL[kind]
+	local m = Instance.new("Model")
+	local base = CFrame.new(0, 50, 0)
+	local root = part({ Name = "HumanoidRootPart", Size = Vector3.new(2, 1.6, 3.6) * s, Transparency = 1, CFrame = base, Parent = m, CanCollide = true })
+	local bodyMat = Enum.Material.Fabric
+	local body = ellipsoid(Vector3.new(2.1, 1.8, 3.8) * s, pal.a, base, m, bodyMat)
+	body.Name = "Body"
+	weldTo(root, body)
+	local head = ellipsoid(Vector3.new(1.4, 1.3, 1.5) * s, pal.a, base * CFrame.new(0, 0.55 * s, -2.1 * s), m, bodyMat)
+	head.Name = "Head"
+	weldTo(body, head)
+	local snoutColor = kind == "ram" and pal.b or pal.a
+	local snout = part({ Size = Vector3.new(0.8, 0.7, 0.9) * s, Color = snoutColor, CFrame = base * CFrame.new(0, 0.35 * s, -2.9 * s), Parent = m, Material = bodyMat })
+	weldTo(head, snout)
+	part({ Size = Vector3.new(0.35, 0.3, 0.2) * s, Color = rgb(30, 24, 22), CFrame = base * CFrame.new(0, 0.5 * s, -3.35 * s), Parent = m })
+	for _, sx in ipairs({ -1, 1 }) do
+		local eye = part({ Size = Vector3.new(0.22, 0.22, 0.1) * s, Color = pal.eye, Material = Enum.Material.Neon, CFrame = base * CFrame.new(sx * 0.38 * s, 0.85 * s, -2.8 * s), Parent = m })
+		weldTo(head, eye)
+		if kind == "wolf" or kind == "giantrat" then
+			local ear = part({ ClassName = "WedgePart", Size = Vector3.new(0.2, 0.6, 0.45) * s, Color = pal.a, CFrame = base * CFrame.new(sx * 0.45 * s, 1.35 * s, -1.85 * s), Parent = m, Material = bodyMat })
+			weldTo(head, ear)
+		end
+		if kind == "boar" then
+			local tusk = part({ Size = Vector3.new(0.18, 0.55, 0.18) * s, Color = rgb(240, 234, 214), CFrame = base * CFrame.new(sx * 0.4 * s, 0.25 * s, -3.15 * s) * CFrame.Angles(0.5, 0, sx * 0.3), Parent = m })
+			weldTo(head, tusk)
+		end
+		if kind == "ram" then
+			for k = 0, 2 do
+				local hp = ball((0.7 - k * 0.12) * s, pal.horn, base * CFrame.new(sx * (0.75 + k * 0.25) * s, (1.15 - k * 0.32) * s, (-1.9 + k * 0.35) * s), m, Enum.Material.Slate)
+				weldTo(head, hp)
+			end
+		end
+	end
+	if kind == "boar" then
+		for i = 0, 4 do
+			local bristle = part({ Size = Vector3.new(0.3, 0.5, 0.5) * s, Color = pal.b, CFrame = base * CFrame.new(0, 0.95 * s, (-1.2 + i * 0.6) * s), Parent = m, Material = bodyMat })
+			weldTo(body, bristle)
+		end
+	end
+	if kind == "wolf" then
+		local belly = ellipsoid(Vector3.new(1.4, 0.8, 2.6) * s, pal.b, base * CFrame.new(0, -0.55 * s, 0), m, bodyMat)
+		weldTo(body, belly)
+	end
+	-- хвост
+	local tailLen = kind == "giantrat" and 3.2 or (kind == "wolf" and 1.8 or 0.6)
+	local tailColor = kind == "giantrat" and pal.b or pal.a
+	local tail = part({ Size = Vector3.new(0.3, 0.3, tailLen) * s, Color = tailColor, CFrame = base * CFrame.new(0, 0.4 * s, (1.9 + tailLen / 2) * s) * CFrame.Angles(0.35, 0, 0), Parent = m, Material = bodyMat })
+	tail.Name = "Tail"
+	weldTo(body, tail)
+	-- ноги на шарнирах (клиент их анимирует)
+	local legLen = 1.6
+	local legColor = kind == "ram" and pal.b or (kind == "boar" and pal.b or pal.a)
+	local i = 0
+	for _, lz in ipairs({ -1.25, 1.2 }) do
+		for _, lx in ipairs({ -0.6, 0.6 }) do
+			i = i + 1
+			local leg = part({ Name = "Leg" .. i, Size = Vector3.new(0.45, legLen, 0.45) * s, Color = legColor, Parent = m, Material = bodyMat,
+				CFrame = base * CFrame.new(lx * s, (-0.6 - legLen / 2) * s, lz * s) })
+			local mo = motor("LegMotor" .. i, body, leg, CFrame.new(lx * s, -0.6 * s, lz * s), CFrame.new(0, legLen / 2 * s, 0))
+			mo:SetAttribute("Phase", (i == 1 or i == 4) and 0 or math.pi)
+		end
+	end
+	local hum = Instance.new("Humanoid")
+	return finishCreature(m, root, hum, 1.4 * s)
+end
+
+-- Двуногие: разбойник, скелет, Мортракс, торговец
+local function buildBiped(kind, s)
+	local pal = PAL[kind]
+	local m = Instance.new("Model")
+	local base = CFrame.new(0, 50, 0)
+	local bony = kind == "skeleton" or kind == "boss"
+	local root = part({ Name = "HumanoidRootPart", Size = Vector3.new(2, 2, 1) * s, Transparency = 1, CFrame = base, Parent = m, CanCollide = true })
+	local torsoSize = bony and Vector3.new(1.5, 2, 0.8) or Vector3.new(2, 2, 1)
+	local torso = part({ Name = "Torso", Size = torsoSize * s, Color = pal.a, CFrame = base, Parent = m, Material = bony and Enum.Material.SmoothPlastic or Enum.Material.Fabric })
+	weldTo(root, torso)
+	if bony then
+		torso.Transparency = 0.15
+		for r = 0, 3 do
+			local rib = part({ Size = Vector3.new(2, 0.22, 1) * s, Color = pal.b, CFrame = base * CFrame.new(0, (0.7 - r * 0.42) * s, 0), Parent = m })
+			weldTo(torso, rib)
+		end
+	end
+	local headSize = bony and 1.35 or 1.2
+	local head = part({ Name = "Head", Size = Vector3.new(headSize, headSize, headSize) * s, Color = pal.head, CFrame = base * CFrame.new(0, 1.65 * s, 0), Parent = m })
+	weldTo(torso, head)
+	for _, sx in ipairs({ -1, 1 }) do
+		local socket = part({ Size = Vector3.new(0.34, 0.3, 0.12) * s, Color = bony and rgb(24, 18, 18) or rgb(250, 250, 250), CFrame = base * CFrame.new(sx * 0.3 * s, 1.75 * s, -headSize / 2 * s), Parent = m })
+		weldTo(head, socket)
+		local eye = part({ Size = Vector3.new(0.16, 0.16, 0.08) * s, Color = pal.eye, Material = bony and Enum.Material.Neon or Enum.Material.SmoothPlastic, CFrame = base * CFrame.new(sx * 0.3 * s, 1.75 * s, (-headSize / 2 - 0.05) * s), Parent = m })
+		weldTo(head, eye)
+	end
+	if bony then
+		local jaw = part({ Size = Vector3.new(1.0, 0.35, 0.9) * s, Color = pal.b, CFrame = base * CFrame.new(0, 1.0 * s, -0.15 * s), Parent = m })
+		weldTo(head, jaw)
+		for t = -2, 2 do
+			local tooth = part({ Size = Vector3.new(0.12, 0.2, 0.08) * s, Color = rgb(250, 248, 236), CFrame = base * CFrame.new(t * 0.17 * s, 1.22 * s, -0.62 * s), Parent = m })
+			weldTo(head, tooth)
+		end
+	end
+	if kind == "bandit" then
+		local hood = part({ Size = Vector3.new(1.36, 0.7, 1.36) * s, Color = pal.hood, CFrame = base * CFrame.new(0, 2.15 * s, 0.05 * s), Parent = m, Material = Enum.Material.Fabric })
+		weldTo(head, hood)
+		local mask = part({ Size = Vector3.new(1.24, 0.5, 0.1) * s, Color = rgb(40, 34, 34), CFrame = base * CFrame.new(0, 1.35 * s, -0.62 * s), Parent = m, Material = Enum.Material.Fabric })
+		weldTo(head, mask)
+		local belt = part({ Size = Vector3.new(2.05, 0.3, 1.05) * s, Color = rgb(40, 30, 22), CFrame = base * CFrame.new(0, -0.7 * s, 0), Parent = m, Material = Enum.Material.Leather })
+		weldTo(torso, belt)
+	elseif kind == "merchant" then
+		local hat = cylinderV(0.25 * s, 2.4 * s, rgb(120, 82, 46), base * CFrame.new(0, 2.3 * s, 0), m, Enum.Material.Fabric)
+		weldTo(head, hat)
+		local hatTop = cylinderV(0.7 * s, 1.3 * s, rgb(120, 82, 46), base * CFrame.new(0, 2.7 * s, 0), m, Enum.Material.Fabric)
+		weldTo(head, hatTop)
+		local beard = part({ Size = Vector3.new(1.0, 0.8, 0.35) * s, Color = rgb(150, 140, 130), CFrame = base * CFrame.new(0, 1.15 * s, -0.55 * s), Parent = m, Material = Enum.Material.Fabric })
+		weldTo(head, beard)
+		local apron = part({ Size = Vector3.new(1.6, 1.8, 0.1) * s, Color = rgb(196, 180, 140), CFrame = base * CFrame.new(0, -0.3 * s, -0.55 * s), Parent = m, Material = Enum.Material.Fabric })
+		weldTo(torso, apron)
+	elseif kind == "boss" then
+		local crownBase = cylinderV(0.45 * s, 1.5 * s, pal.gold, base * CFrame.new(0, 2.45 * s, 0), m, Enum.Material.Metal)
+		weldTo(head, crownBase)
+		for k = 0, 4 do
+			local a = k / 5 * math.pi * 2
+			local spike = part({ ClassName = "WedgePart", Size = Vector3.new(0.18, 0.7, 0.4) * s, Color = pal.gold, Material = Enum.Material.Metal,
+				CFrame = base * CFrame.new(math.cos(a) * 0.62 * s, 2.95 * s, math.sin(a) * 0.62 * s) * CFrame.Angles(0, -a + math.pi / 2, 0), Parent = m })
+			weldTo(head, spike)
+		end
+		local gem = part({ Size = Vector3.new(0.25, 0.25, 0.1) * s, Color = rgb(200, 20, 40), Material = Enum.Material.Neon, CFrame = base * CFrame.new(0, 2.5 * s, -0.78 * s), Parent = m })
+		weldTo(head, gem)
+		local cape = part({ Size = Vector3.new(2.6, 3.8, 0.15) * s, Color = pal.cape, Material = Enum.Material.Fabric, CFrame = base * CFrame.new(0, -0.4 * s, 0.6 * s) * CFrame.Angles(0.12, 0, 0), Parent = m })
+		weldTo(torso, cape)
+		for _, sx in ipairs({ -1, 1 }) do
+			local pad = ellipsoid(Vector3.new(1.4, 0.9, 1.3) * s, pal.b, base * CFrame.new(sx * 1.15 * s, 1.05 * s, 0), m, Enum.Material.Metal)
+			weldTo(torso, pad)
+			for k = 0, 1 do
+				local sp = part({ ClassName = "WedgePart", Size = Vector3.new(0.15, 0.6, 0.3) * s, Color = rgb(190, 184, 160), CFrame = base * CFrame.new(sx * (1.0 + k * 0.35) * s, 1.65 * s, 0), Parent = m })
+				weldTo(torso, sp)
+			end
+		end
+		local glow = Instance.new("PointLight")
+		glow.Color = rgb(255, 40, 40)
+		glow.Range = 16
+		glow.Brightness = 2
+		glow.Parent = head
+	end
+	-- руки и ноги
+	local limbColor = bony and pal.a or pal.a
+	local legColor = bony and pal.a or pal.b
+	local armW = bony and 0.45 or 0.85
+	local legW = bony and 0.5 or 0.9
+	local arms = {}
+	for _, sx in ipairs({ -1, 1 }) do
+		local name = sx < 0 and "L" or "R"
+		local arm = part({ Name = "Arm" .. name, Size = Vector3.new(armW, 2, armW) * s, Color = limbColor, Parent = m, Material = bony and Enum.Material.SmoothPlastic or Enum.Material.Fabric,
+			CFrame = base * CFrame.new(sx * 1.35 * s, 0, 0) })
+		motor("ArmMotor" .. name, torso, arm, CFrame.new(sx * 1.35 * s, 0.9 * s, 0), CFrame.new(0, 0.9 * s, 0))
+		arms[name] = arm
+		local hand = part({ Size = Vector3.new(armW + 0.1, 0.4, armW + 0.1) * s, Color = bony and pal.b or (pal.head or limbColor), CFrame = base * CFrame.new(sx * 1.35 * s, -0.95 * s, 0), Parent = m })
+		weldTo(arm, hand)
+		local leg = part({ Name = "Leg" .. name, Size = Vector3.new(legW, 2, legW) * s, Color = legColor, Parent = m, Material = bony and Enum.Material.SmoothPlastic or Enum.Material.Fabric,
+			CFrame = base * CFrame.new(sx * 0.5 * s, -2 * s, 0) })
+		local mo = motor("LegMotor" .. name, torso, leg, CFrame.new(sx * 0.5 * s, -1 * s, 0), CFrame.new(0, 1 * s, 0))
+		mo:SetAttribute("Phase", sx < 0 and 0 or math.pi)
+		local boot = part({ Size = Vector3.new(legW + 0.1, 0.4, legW + 0.35) * s, Color = bony and pal.b or rgb(40, 30, 24), CFrame = base * CFrame.new(sx * 0.5 * s, -2.8 * s, -0.12 * s), Parent = m })
+		weldTo(leg, boot)
+	end
+	-- оружие в правой руке
+	local armR = arms.R
+	local handCF = base * CFrame.new(1.35 * s, -1.1 * s, 0)
+	if kind == "boss" then
+		local shaft = part({ Size = Vector3.new(0.35, 5.5, 0.35) * s, Color = rgb(60, 44, 36), Material = Enum.Material.Wood, CFrame = handCF * CFrame.new(0, 0, -1.6 * s) * CFrame.Angles(math.pi / 2, 0, 0), Parent = m })
+		weldTo(armR, shaft)
+		local headP = part({ Size = Vector3.new(1.3, 1.3, 1.6) * s, Color = rgb(70, 70, 78), Material = Enum.Material.Metal, CFrame = handCF * CFrame.new(0, 0, -4.2 * s), Parent = m })
+		weldTo(armR, headP)
+		for k = -1, 1, 2 do
+			local spike = part({ ClassName = "WedgePart", Size = Vector3.new(0.3, 0.8, 0.5) * s, Color = rgb(200, 196, 180), CFrame = handCF * CFrame.new(k * 0.85 * s, 0, -4.2 * s) * CFrame.Angles(0, 0, -k * math.pi / 2), Parent = m })
+			weldTo(armR, spike)
+		end
+	elseif kind == "skeleton" then
+		local blade = part({ Size = Vector3.new(0.18, 0.5, 2.8) * s, Color = rgb(150, 140, 120), Material = Enum.Material.Metal, CFrame = handCF * CFrame.new(0, 0, -1.4 * s), Parent = m })
+		weldTo(armR, blade)
+		local shield = cylinderV(0.25 * s, 1.8 * s, rgb(92, 70, 50), base * CFrame.new(-1.6 * s, -0.3 * s, -0.3 * s) * CFrame.Angles(0, 0, math.pi / 2), m, Enum.Material.Wood)
+		weldTo(arms.L, shield)
+	elseif kind == "bandit" then
+		local knife = part({ Size = Vector3.new(0.15, 0.3, 1.3) * s, Color = rgb(200, 204, 210), Material = Enum.Material.Metal, CFrame = handCF * CFrame.new(0, 0, -0.7 * s), Parent = m })
+		weldTo(armR, knife)
+	end
+	local hum = Instance.new("Humanoid")
+	return finishCreature(m, root, hum, 2 * s)
+end
+
+-- Слизень: полупрозрачный сгусток с клыками
+local function buildBlob(s)
+	local m = Instance.new("Model")
+	local base = CFrame.new(0, 50, 0)
+	local root = part({ Name = "HumanoidRootPart", Size = Vector3.new(2.6, 1.8, 2.6) * s, Transparency = 1, CFrame = base, Parent = m, CanCollide = true })
+	local body = ellipsoid(Vector3.new(3.2, 2.4, 3.2) * s, rgb(70, 170, 70), base, m, Enum.Material.Glass)
+	body.Name = "Head"
+	body.Transparency = 0.2
+	motor("BodyMotor", root, body, CFrame.new(0, 0, 0), CFrame.new(0, 0, 0))
+	local core = ball(1.2 * s, rgb(30, 90, 30), base * CFrame.new(0, -0.2 * s, 0.3 * s), m, Enum.Material.SmoothPlastic)
+	weldTo(body, core)
+	for _, sx in ipairs({ -1, 1 }) do
+		local eye = ball(0.55 * s, rgb(255, 220, 40), base * CFrame.new(sx * 0.6 * s, 0.4 * s, -1.25 * s), m, Enum.Material.Neon)
+		weldTo(body, eye)
+		local pupil = part({ Size = Vector3.new(0.12, 0.45, 0.1) * s, Color = rgb(10, 10, 10), CFrame = base * CFrame.new(sx * 0.6 * s, 0.4 * s, -1.52 * s), Parent = m })
+		weldTo(body, pupil)
+		local brow = part({ Size = Vector3.new(0.7, 0.15, 0.15) * s, Color = rgb(20, 60, 20), CFrame = base * CFrame.new(sx * 0.6 * s, 0.85 * s, -1.25 * s) * CFrame.Angles(0, 0, sx * 0.45), Parent = m })
+		weldTo(body, brow)
+	end
+	for t = -2, 2 do
+		local fang = part({ ClassName = "WedgePart", Size = Vector3.new(0.12, 0.35, 0.15) * s, Color = rgb(240, 240, 220), CFrame = base * CFrame.new(t * 0.22 * s, -0.4 * s, -1.4 * s) * CFrame.Angles(math.pi, 0, 0), Parent = m })
+		weldTo(body, fang)
+	end
+	local hum = Instance.new("Humanoid")
+	return finishCreature(m, root, hum, 0.3 * s)
+end
+
+function Models.creature(kind, scale)
+	local s = scale or 1
+	if kind == "wolf" or kind == "boar" or kind == "ram" or kind == "giantrat" then
+		return buildQuad(kind, s)
+	elseif kind == "slime" then
+		return buildBlob(s)
+	end
+	return buildBiped(kind, s)
+end
+
+---------------------------------------------------------------- Торговая лавка
+-- Рыночный навес из дерева и холста в приглушённых тонах. cf смотрит лицом к покупателю
+function Models.stall(cf, parent)
+	local m = Instance.new("Model")
+	m.Name = "Stall"
+	local wood = rgb(110, 82, 56)
+	local dark = rgb(78, 58, 40)
+	local function at(x, y, z) return cf * CFrame.new(x, y, z) end
+	for _, x in ipairs({ -6, 6 }) do
+		for _, z in ipairs({ -2.5, 2.5 }) do
+			local h = z < 0 and 9 or 7.6
+			part({ Size = Vector3.new(0.7, h, 0.7), Color = vary(wood, 0.04), Material = Enum.Material.Wood, CFrame = at(x, h / 2, z), Parent = m, CanCollide = true })
+		end
+	end
+	-- прилавок
+	part({ Size = Vector3.new(11, 0.5, 2.6), Color = wood, Material = Enum.Material.WoodPlanks, CFrame = at(0, 3.4, -2.2), Parent = m, CanCollide = true })
+	part({ Size = Vector3.new(11, 3.2, 0.4), Color = dark, Material = Enum.Material.WoodPlanks, CFrame = at(0, 1.6, -3.3), Parent = m, CanCollide = true })
+	-- полосатый холст крыши, наклонён назад
+	for i = 0, 5 do
+		local c = (i % 2 == 0) and rgb(186, 170, 136) or rgb(146, 84, 66)
+		part({ Size = Vector3.new(2.1, 0.2, 6.6), Color = c, Material = Enum.Material.Fabric, CFrame = at(-5.25 + i * 2.1, 8.4, 0) * CFrame.Angles(-0.22, 0, 0), Parent = m })
+	end
+	-- бахрома спереди
+	for i = 0, 10 do
+		part({ ClassName = "WedgePart", Size = Vector3.new(0.1, 0.6, 1.05), Color = (i % 2 == 0) and rgb(146, 84, 66) or rgb(186, 170, 136),
+			Material = Enum.Material.Fabric, CFrame = at(-5.25 + i * 1.05, 8.75, -3.35) * CFrame.Angles(0, math.pi / 2, math.pi), Parent = m })
+	end
+	-- товары на прилавке: бутылочки и мешочек
+	local cols = { rgb(214, 58, 72), rgb(52, 200, 240), rgb(255, 154, 42), rgb(138, 122, 255) }
+	for i, c in ipairs(cols) do
+		local b = ball(0.8, c, at(-3.5 + i * 1.1, 4.05, -2.2), m, Enum.Material.Glass)
+		b.Transparency = 0.15
+		cylinderV(0.5, 0.3, rgb(220, 228, 232), at(-3.5 + i * 1.1, 4.6, -2.2), m, Enum.Material.Glass)
+	end
+	ellipsoid(Vector3.new(1.4, 1.1, 1.2), rgb(160, 130, 90), at(3, 4.1, -2.1), m, Enum.Material.Fabric)
+	-- стойка с мечом и копьём сбоку
+	part({ Size = Vector3.new(0.2, 3.5, 0.5), Color = rgb(190, 196, 204), Material = Enum.Material.Metal, CFrame = at(7.5, 2.4, -1) * CFrame.Angles(0, 0, 0.15), Parent = m })
+	part({ Size = Vector3.new(0.25, 6, 0.25), Color = wood, Material = Enum.Material.Wood, CFrame = at(8.1, 3.1, -1) * CFrame.Angles(0, 0, -0.1), Parent = m })
+	-- бочки и ящики
+	for _, x in ipairs({ -8.3, 9.2 }) do
+		local barrel = cylinderV(3.2, 2.6, rgb(120, 84, 50), at(x, 1.6, 1.5), m, Enum.Material.Wood)
+		barrel.CanCollide = true
+		cylinderV(0.25, 2.7, rgb(70, 70, 74), at(x, 0.7, 1.5), m, Enum.Material.Metal)
+		cylinderV(0.25, 2.7, rgb(70, 70, 74), at(x, 2.5, 1.5), m, Enum.Material.Metal)
+	end
+	part({ Size = Vector3.new(2.6, 2.6, 2.6), Color = rgb(150, 112, 70), Material = Enum.Material.WoodPlanks, CFrame = at(-8.6, 1.3, -1.6) * CFrame.Angles(0, 0.3, 0), Parent = m, CanCollide = true })
+	part({ Size = Vector3.new(1.8, 1.8, 1.8), Color = rgb(140, 104, 64), Material = Enum.Material.WoodPlanks, CFrame = at(-8.4, 3.5, -1.5) * CFrame.Angles(0, -0.2, 0), Parent = m, CanCollide = true })
+	-- фонарь
+	local lamp = part({ Size = Vector3.new(0.8, 1.1, 0.8), Color = rgb(255, 196, 110), Material = Enum.Material.Neon, CFrame = at(-5.6, 7, -2.9), Parent = m })
+	local light = Instance.new("PointLight")
+	light.Color = rgb(255, 190, 120)
+	light.Range = 22
+	light.Brightness = 1.6
+	light.Shadows = true
+	light.Parent = lamp
+	-- вывеска
+	local sign = part({ Size = Vector3.new(5, 1.6, 0.25), Color = dark, Material = Enum.Material.Wood, CFrame = at(0, 9.6, -3.2) * CFrame.Angles(-0.22, 0, 0), Parent = m })
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Front
+	sg.PixelsPerStud = 40
+	sg.Parent = sign
+	local t = Instance.new("TextLabel")
+	t.Size = UDim2.fromScale(1, 1)
+	t.BackgroundTransparency = 1
+	t.Text = "ЛАВКА"
+	t.TextScaled = true
+	t.Font = Enum.Font.Merriweather
+	t.TextColor3 = rgb(236, 210, 150)
+	t.Parent = sg
+	m.Parent = parent
+	return m
+end
+
+function Models.merchant(cf, parent)
+	local m = Models.creature("merchant", 1)
+	m.Name = "Торговец"
+	m:PivotTo(cf)
+	for _, d in ipairs(m:GetDescendants()) do
+		if d:IsA("BasePart") then d.Anchored = true end
+	end
+	local hum = m:FindFirstChildOfClass("Humanoid")
+	if hum then hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
+	m.Parent = parent
+	return m
+end
+
+---------------------------------------------------------------- Подписи
+function Models.label(adornee, text, color, offsetY, maxDist)
+	local bg = Instance.new("BillboardGui")
+	bg.Size = UDim2.fromOffset(220, 40)
+	bg.StudsOffset = Vector3.new(0, offsetY or 3, 0)
+	bg.AlwaysOnTop = false
+	bg.MaxDistance = maxDist or 90
+	bg.Adornee = adornee
+	local t = Instance.new("TextLabel")
+	t.Size = UDim2.fromScale(1, 1)
+	t.BackgroundTransparency = 1
+	t.Text = text
+	t.Font = Enum.Font.GothamBold
+	t.TextSize = 18
+	t.TextColor3 = color or rgb(255, 230, 170)
+	t.TextStrokeTransparency = 0.3
+	t.Parent = bg
+	bg.Parent = adornee
+	return bg
+end
+
+function Models.torch(pos, parent)
+	local stick = part({ Size = Vector3.new(0.4, 3, 0.4), Color = rgb(80, 56, 36), Material = Enum.Material.Wood, CFrame = CFrame.new(pos + Vector3.new(0, 1.5, 0)), Parent = parent })
+	local head = part({ Size = Vector3.new(0.7, 0.6, 0.7), Color = rgb(255, 160, 60), Material = Enum.Material.Neon, CFrame = CFrame.new(pos + Vector3.new(0, 3.2, 0)), Parent = parent })
+	local fire = Instance.new("Fire")
+	fire.Size = 2.5
+	fire.Heat = 6
+	fire.Parent = head
+	local light = Instance.new("PointLight")
+	light.Color = rgb(255, 170, 90)
+	light.Range = 24
+	light.Brightness = 1.8
+	light.Shadows = true
+	light.Parent = head
+	return stick
+end
+
+---------------------------------------------------------------- Предметы на земле
+function Models.coins(pos, parent)
+	local m = Instance.new("Model")
+	m.Name = "Gold"
+	local gold = rgb(255, 176, 30)
+	local core
+	for i = 1, 7 do
+		local c = cylinderV(0.18, 0.9, vary(gold, 0.05), CFrame.new(pos + Vector3.new(rng:NextNumber(-0.7, 0.7), 0.15 + (i % 3) * 0.17, rng:NextNumber(-0.7, 0.7))) * CFrame.Angles(rng:NextNumber(-0.25, 0.25), 0, rng:NextNumber(-0.25, 0.25)), m, Enum.Material.Metal)
+		c.CastShadow = false
+		if not core then core = c end
+	end
+	local hit = part({ Name = "Hitbox", Size = Vector3.new(3.4, 3, 3.4), Transparency = 1, CFrame = CFrame.new(pos + Vector3.new(0, 1.2, 0)), Parent = m, CanCollide = false })
+	hit.CanTouch = true
+	local sp = Instance.new("Sparkles")
+	sp.SparkleColor = rgb(255, 210, 80)
+	sp.Parent = core
+	local light = Instance.new("PointLight")
+	light.Color = rgb(255, 196, 80)
+	light.Range = 8
+	light.Brightness = 1.2
+	light.Parent = core
+	m.PrimaryPart = hit
+	m.Parent = parent
+	return m, hit
+end
+
+function Models.bottle(pos, color, parent)
+	local m = Instance.new("Model")
+	m.Name = "Elixir"
+	local b = ball(1.3, color, CFrame.new(pos + Vector3.new(0, 0.7, 0)), m, Enum.Material.Glass)
+	b.Transparency = 0.1
+	cylinderV(0.7, 0.45, rgb(220, 228, 232), CFrame.new(pos + Vector3.new(0, 1.55, 0)), m, Enum.Material.Glass)
+	cylinderV(0.35, 0.55, rgb(138, 90, 43), CFrame.new(pos + Vector3.new(0, 2.0, 0)), m, Enum.Material.Wood)
+	local hit = part({ Name = "Hitbox", Size = Vector3.new(3, 3, 3), Transparency = 1, CFrame = CFrame.new(pos + Vector3.new(0, 1.2, 0)), Parent = m, CanCollide = false })
+	hit.CanTouch = true
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = 8
+	light.Brightness = 1.4
+	light.Parent = b
+	m.PrimaryPart = hit
+	m.Parent = parent
+	return m, hit
+end
+
+---------------------------------------------------------------- Оружие героя (инструменты)
+local function toolPart(tool, name, size, color, material, offset, handle)
+	local p = part({ Name = name, Size = size, Color = color, Material = material, CFrame = handle.CFrame * offset, Parent = tool })
+	p.Anchored = false
+	p.Massless = true
+	p.CanCollide = false
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = handle
+	w.Part1 = p
+	w.Parent = p
+	return p
+end
+
+function Models.weaponTool(id, displayName)
+	local tool = Instance.new("Tool")
+	tool.Name = displayName or id
+	tool.CanBeDropped = false
+	tool.RequiresHandle = true
+	tool:SetAttribute("WeaponId", id)
+	local handle = part({ Name = "Handle", Size = Vector3.new(0.35, 1.2, 0.35), Color = rgb(84, 54, 34), Material = Enum.Material.Leather, CFrame = CFrame.new(0, 100, 0), Parent = tool })
+	handle.Anchored = false
+	handle.Massless = true
+	if id == "spear" then
+		handle.Size = Vector3.new(0.3, 7, 0.3)
+		handle.Material = Enum.Material.Wood
+		handle.Color = rgb(122, 88, 56)
+		toolPart(tool, "Tip", Vector3.new(0.18, 1.4, 0.5), rgb(196, 200, 208), Enum.Material.Metal, CFrame.new(0, 4.1, 0), handle)
+		toolPart(tool, "Wrap", Vector3.new(0.4, 0.5, 0.4), rgb(140, 40, 36), Enum.Material.Fabric, CFrame.new(0, 3.2, 0), handle)
+		tool.Grip = CFrame.new(0, -1.2, 0)
+	elseif id == "axe" then
+		handle.Size = Vector3.new(0.35, 4.2, 0.35)
+		handle.Material = Enum.Material.Wood
+		toolPart(tool, "Blade", Vector3.new(0.25, 1.6, 1.8), rgb(170, 176, 184), Enum.Material.Metal, CFrame.new(0, 1.6, -0.9), handle)
+		tool.Grip = CFrame.new(0, -1.2, 0)
+	elseif id == "bow" then
+		handle.Size = Vector3.new(0.3, 1, 0.3)
+		toolPart(tool, "LimbTop", Vector3.new(0.25, 2.2, 0.25), rgb(110, 76, 44), Enum.Material.Wood, CFrame.new(0, 1.5, 0.35) * CFrame.Angles(-0.35, 0, 0), handle)
+		toolPart(tool, "LimbBottom", Vector3.new(0.25, 2.2, 0.25), rgb(110, 76, 44), Enum.Material.Wood, CFrame.new(0, -1.5, 0.35) * CFrame.Angles(0.35, 0, 0), handle)
+		toolPart(tool, "String", Vector3.new(0.05, 4.6, 0.05), rgb(230, 230, 220), Enum.Material.Fabric, CFrame.new(0, 0, 0.8), handle)
+	else -- меч
+		toolPart(tool, "Guard", Vector3.new(1.5, 0.22, 0.4), rgb(214, 172, 60), Enum.Material.Metal, CFrame.new(0, 0.7, 0), handle)
+		toolPart(tool, "Blade", Vector3.new(0.18, 3.4, 0.5), rgb(204, 210, 218), Enum.Material.Metal, CFrame.new(0, 2.5, 0), handle)
+		toolPart(tool, "Tip", Vector3.new(0.18, 0.4, 0.35), rgb(204, 210, 218), Enum.Material.Metal, CFrame.new(0, 4.35, 0), handle)
+		toolPart(tool, "Pommel", Vector3.new(0.4, 0.4, 0.4), rgb(214, 172, 60), Enum.Material.Metal, CFrame.new(0, -0.75, 0), handle)
+	end
+	return tool
+end
+
+-- Доспех поверх торса героя
+function Models.armorPiece(char, color)
+	local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+	if not torso then return nil end
+	local r15 = torso.Name == "UpperTorso"
+	local size = r15 and Vector3.new(2.15, 1.75, 1.25) or Vector3.new(2.15, 2.1, 1.2)
+	local p = part({ Name = "EldoriaArmor", Size = size, Color = color, Material = Enum.Material.Metal, CFrame = torso.CFrame, Parent = char })
+	p.Anchored = false
+	p.Massless = true
+	p.CanCollide = false
+	p.CanQuery = false
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = torso
+	w.Part1 = p
+	w.Parent = p
+	for _, sx in ipairs({ -1, 1 }) do
+		local pad = ellipsoid(Vector3.new(1.2, 0.7, 1.3), color, torso.CFrame * CFrame.new(sx * 1.15, size.Y / 2 - 0.15, 0), char, Enum.Material.Metal)
+		pad.Name = "EldoriaArmor"
+		pad.Anchored = false
+		pad.Massless = true
+		pad.CanQuery = false
+		local w2 = Instance.new("WeldConstraint")
+		w2.Part0 = torso
+		w2.Part1 = pad
+		w2.Parent = pad
+	end
+	return p
+end
+
+return Models
+]]></ProtectedString></Properties></Item><Item class="ModuleScript" referent="RBX00000003"><Properties><string name="Name">WorldGen</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Генерация мира: Оверворлд (поверхность) и логово Мортракса
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Eldoria"):WaitForChild("Config"))
+local Models = require(script.Parent:WaitForChild("Models"))
+
+local WorldGen = {}
+local rng = Random.new()
+local N, CELL = Config.MAP_N, Config.CELL
+local terrain = workspace.Terrain
+local M = Enum.Material
+
+local grid, reserved = {}, {}
+WorldGen.grid = grid
+
+local function inMap(x, z) return x >= 1 and z >= 1 and x <= N and z <= N end
+local function cellPos(x, z) return Vector3.new((x - N / 2 - 0.5) * CELL, 0, (z - N / 2 - 0.5) * CELL) end
+WorldGen.cellPos = cellPos
+function WorldGen.worldToCell(p)
+	return math.floor(p.X / CELL + N / 2 + 1), math.floor(p.Z / CELL + N / 2 + 1)
+end
+
+-- высота земли (только рельеф) в точке
+local groundParams = RaycastParams.new()
+groundParams.FilterType = Enum.RaycastFilterType.Include
+groundParams.FilterDescendantsInstances = { terrain }
+local function onGround(p)
+	local res = workspace:Raycast(Vector3.new(p.X, 80, p.Z), Vector3.new(0, -160, 0), groundParams)
+	return Vector3.new(p.X, res and res.Position.Y or p.Y, p.Z)
+end
+WorldGen.onGround = onGround
+
+local function each(cx, cz, r, fn)
+	for z = math.floor(cz - r), math.ceil(cz + r) do
+		for x = math.floor(cx - r), math.ceil(cx + r) do
+			if inMap(x, z) and (x - cx) ^ 2 + (z - cz) ^ 2 <= r * r then fn(x, z) end
+		end
+	end
+end
+
+-- Плавно меняющаяся глубина полосы гор (как в браузерной версии)
+local function bandDepth()
+	local a, b, c = rng:NextNumber(0, 6.3), rng:NextNumber(0, 6.3), rng:NextNumber(0, 6.3)
+	return function(i)
+		local v = 0.5 + 0.5 * (0.5 * math.sin(i * 0.13 + a) + 0.3 * math.sin(i * 0.31 + b) + 0.2 * math.sin(i * 0.77 + c))
+		return 2 + math.floor(v * 3)
+	end
+end
+
+local function carveRoad(x1, z1, x2, z2)
+	local x, z = x1, z1
+	local horizFirst = rng:NextNumber() < 0.5
+	local function mark(px, pz)
+		for dz = 0, 1 do
+			for dx = 0, 1 do
+				if inMap(px + dx, pz + dz) and grid[pz + dz][px + dx] ~= "^" then grid[pz + dz][px + dx] = "P" end
+			end
+		end
+	end
+	local function walkX() while x ~= x2 do mark(x, z); x = x + (x2 > x and 1 or -1) end end
+	local function walkZ() while z ~= z2 do mark(x, z); z = z + (z2 > z and 1 or -1) end end
+	if horizFirst then walkX(); walkZ() else walkZ(); walkX() end
+	mark(x, z)
+end
+
+function WorldGen.buildOverworld(folder)
+	local layout = {}
+	for z = 1, N do
+		grid[z], reserved[z] = {}, {}
+		for x = 1, N do grid[z][x] = "."; reserved[z][x] = false end
+	end
+	-- горы по краям
+	local dT, dB, dL, dR = bandDepth(), bandDepth(), bandDepth(), bandDepth()
+	for i = 1, N do
+		for k = 1, dT(i) do grid[k][i] = "^" end
+		for k = 1, dB(i) do grid[N + 1 - k][i] = "^" end
+		for k = 1, dL(i) do grid[i][k] = "^" end
+		for k = 1, dR(i) do grid[i][N + 1 - k] = "^" end
+	end
+	local c = math.floor(N / 2)
+	each(c, c, 6, function(x, z) reserved[z][x] = true end)
+	-- лавка в случайном углу
+	local corners = { { 11, 11 }, { N - 10, 11 }, { 11, N - 10 }, { N - 10, N - 10 } }
+	local sc = corners[rng:NextInteger(1, 4)]
+	local shopX, shopZ = sc[1], sc[2]
+	each(shopX, shopZ, 7, function(x, z) reserved[z][x] = true; if grid[z][x] ~= "^" then grid[z][x] = "." end end)
+	-- вход в логово: далеко от центра и от лавки
+	local caveX, caveZ
+	for t = 1, 400 do
+		local x, z = rng:NextInteger(12, N - 11), rng:NextInteger(12, N - 11)
+		local dc = math.sqrt((x - c) ^ 2 + (z - c) ^ 2)
+		local ds = math.sqrt((x - shopX) ^ 2 + (z - shopZ) ^ 2)
+		if dc >= 26 and ds >= 30 then caveX, caveZ = x, z; break end
+	end
+	if not caveX then caveX, caveZ = N - shopX + 1, shopZ end
+	each(caveX, caveZ, 6, function(x, z) reserved[z][x] = true end)
+	-- тропы от центра к лавке и к пещере
+	carveRoad(c, c, shopX, shopZ + 3)
+	carveRoad(c, c, caveX, caveZ)
+	-- озёра неправильной формы: несколько перекрывающихся кругов
+	local circles = {}
+	local lakes = 0
+	for t = 1, 120 do
+		if lakes >= 13 then break end
+		local lx, lz, r = rng:NextInteger(9, N - 8), rng:NextInteger(9, N - 8), rng:NextInteger(3, 6)
+		local parts = { { lx, lz, r } }
+		for k = 1, rng:NextInteger(1, 3) do
+			local a = rng:NextNumber(0, 6.28)
+			table.insert(parts, { lx + math.cos(a) * r * 0.7, lz + math.sin(a) * r * 0.7, r * rng:NextNumber(0.5, 0.8) })
+		end
+		local ok = true
+		for _, p in ipairs(parts) do
+			each(p[1], p[2], p[3] + 2, function(x, z)
+				if reserved[z][x] or grid[z][x] ~= "." then ok = false end
+			end)
+		end
+		if ok then
+			lakes = lakes + 1
+			for _, p in ipairs(parts) do
+				each(p[1], p[2], p[3], function(x, z) grid[z][x] = "~" end)
+				table.insert(circles, { pos = cellPos(p[1], p[2]), r = p[3] * CELL })
+			end
+		end
+	end
+
+	---------------------------------------------------------------- рельеф
+	terrain:Clear()
+	local span = N * CELL
+	terrain:FillBlock(CFrame.new(0, -8, 0), Vector3.new(span + 240, 16, span + 240), M.Grass)
+	-- пологие бугры и пятна сочной травы
+	for i = 1, 70 do
+		local x, z = rng:NextInteger(6, N - 5), rng:NextInteger(6, N - 5)
+		local free = true
+		each(x, z, 3, function(px, pz) if reserved[pz][px] or grid[pz][px] == "P" or grid[pz][px] == "~" then free = false end end)
+		if free then
+			local r = rng:NextNumber(8, 15)
+			local p = cellPos(x, z)
+			terrain:FillBall(Vector3.new(p.X, -(r - rng:NextNumber(0.8, 1.8)), p.Z), r, rng:NextNumber() < 0.5 and M.LeafyGrass or M.Grass)
+		end
+	end
+	-- тропы
+	for z = 1, N do
+		for x = 1, N do
+			if grid[z][x] == "P" then
+				local p = cellPos(x, z)
+				terrain:FillBlock(CFrame.new(p.X, -0.7, p.Z), Vector3.new(CELL + 1, 1.4, CELL + 1), M.Ground)
+			end
+		end
+	end
+	-- озёра с песчаным берегом
+	for _, ci in ipairs(circles) do
+		terrain:FillCylinder(CFrame.new(ci.pos.X, -0.8, ci.pos.Z), 1.6, ci.r + 4, M.Sand)
+	end
+	for _, ci in ipairs(circles) do
+		terrain:FillCylinder(CFrame.new(ci.pos.X, -4, ci.pos.Z), 8, ci.r, M.Water)
+	end
+	-- горы: тёмный базальт, у части вершин ледники
+	local half = span / 2
+	local function mountain(pos, r)
+		local cx, cz = WorldGen.worldToCell(pos)
+		each(cx, cz, r * 0.8 / CELL, function(x, z) if not reserved[z][x] then grid[z][x] = "^" end end)
+		local cy = -r * 0.32
+		terrain:FillBall(Vector3.new(pos.X, cy, pos.Z), r, rng:NextNumber() < 0.7 and M.Basalt or M.Rock)
+		terrain:FillBall(Vector3.new(pos.X, cy - r * 0.15, pos.Z), r * 0.9, M.Slate)
+		if rng:NextNumber() < 0.55 then
+			terrain:FillBall(Vector3.new(pos.X, cy + r * 0.62, pos.Z), r * 0.4, rng:NextNumber() < 0.5 and M.Snow or M.Glacier)
+		end
+	end
+	local step = 22
+	for d = -half - 10, half + 10, step do
+		for side = 1, 4 do
+			local inward = rng:NextNumber(-10, 4)
+			local r = rng:NextNumber(26, 38)
+			local along = d + rng:NextNumber(-6, 6)
+			local p
+			if side == 1 then p = Vector3.new(along, 0, -half + inward)
+			elseif side == 2 then p = Vector3.new(along, 0, half - inward)
+			elseif side == 3 then p = Vector3.new(-half + inward, 0, along)
+			else p = Vector3.new(half - inward, 0, along) end
+			mountain(p, r)
+		end
+	end
+	-- невидимые стены по краю карты
+	for i = 1, 4 do
+		local w = Models.part({ Name = "Boundary", Transparency = 1, CanCollide = true, Size = (i <= 2) and Vector3.new(span + 40, 300, 4) or Vector3.new(4, 300, span + 40),
+			CFrame = CFrame.new((i == 3 and -half) or (i == 4 and half) or 0, 140, (i == 1 and -half) or (i == 2 and half) or 0), Parent = folder })
+		w.CanQuery = false
+	end
+
+	---------------------------------------------------------------- растительность
+	local nature = Instance.new("Folder")
+	nature.Name = "Nature"
+	nature.Parent = folder
+	for z = 2, N - 1 do
+		for x = 2, N - 1 do
+			if grid[z][x] == "." and not reserved[z][x] then
+				local roll = rng:NextNumber()
+				local p = onGround(cellPos(x, z) + Vector3.new(rng:NextNumber(-2.5, 2.5), 0, rng:NextNumber(-2.5, 2.5)))
+				if roll < 0.06 then
+					grid[z][x] = "#"
+					Models.tree(p, nature)
+				elseif roll < 0.075 then
+					grid[z][x] = "#"
+					Models.pine(p, nature)
+				elseif roll < 0.10 then
+					Models.bush(p, nature)
+				elseif roll < 0.112 then
+					Models.rock(p, nature, rng:NextNumber(0.7, 1.4))
+				elseif roll < 0.16 then
+					Models.flowers(p, nature)
+				end
+			end
+		end
+	end
+	-- у подножия гор — валуны
+	for z = 1, N do
+		for x = 1, N do
+			if grid[z][x] == "^" and rng:NextNumber() < 0.03 then Models.rock(onGround(cellPos(x, z)), nature, rng:NextNumber(1.5, 2.6)) end
+		end
+	end
+
+	---------------------------------------------------------------- центр: место появления
+	local center = cellPos(c, c)
+	local plaza = Instance.new("Folder")
+	plaza.Name = "Plaza"
+	plaza.Parent = folder
+	terrain:FillCylinder(CFrame.new(center.X, -0.7, center.Z), 1.4, 16, M.Cobblestone)
+	local spawn = Instance.new("SpawnLocation")
+	spawn.Name = "EldoriaSpawn"
+	spawn.Anchored = true
+	spawn.Size = Vector3.new(8, 0.6, 8)
+	spawn.CFrame = CFrame.new(center + Vector3.new(0, 0.3, 0))
+	spawn.Material = M.Cobblestone
+	spawn.Color = Color3.fromRGB(150, 146, 136)
+	spawn.Neutral = true
+	spawn.Duration = 0
+	spawn.Transparency = 1
+	spawn.CanCollide = false
+	spawn.Parent = plaza
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		local h = rng:NextNumber(4, 7)
+		Models.part({ Size = Vector3.new(2.2, h, 1.4), Color = Models.vary(Color3.fromRGB(128, 126, 118), 0.08), Material = M.Slate, CanCollide = true,
+			CFrame = CFrame.new(center + Vector3.new(math.cos(a) * 14, h / 2 - 0.4, math.sin(a) * 14)) * CFrame.Angles(0, -a, rng:NextNumber(-0.06, 0.06)), Parent = plaza })
+	end
+	layout.spawn = center + Vector3.new(0, 4, 0)
+
+	---------------------------------------------------------------- лавка
+	local shopCenter = cellPos(shopX, shopZ)
+	terrain:FillCylinder(CFrame.new(shopCenter.X, -0.7, shopCenter.Z), 1.4, 20, M.Ground)
+	local toCenter = Vector3.new(center.X - shopCenter.X, 0, center.Z - shopCenter.Z).Unit
+	local stallCF = CFrame.lookAt(shopCenter, shopCenter + toCenter)
+	local shopFolder = Instance.new("Folder")
+	shopFolder.Name = "Shop"
+	shopFolder.Parent = folder
+	Models.stall(stallCF, shopFolder)
+	local merchant = Models.merchant(stallCF * CFrame.new(0, 3, 0.4), shopFolder)
+	Models.label(merchant:FindFirstChild("Head"), "Торговец", Color3.fromRGB(255, 220, 140), 2.2, 60)
+	layout.shopPos = shopCenter
+	layout.merchant = merchant
+
+	---------------------------------------------------------------- вход в логово
+	local cavePos = cellPos(caveX, caveZ)
+	local dir = Vector3.new(center.X - cavePos.X, 0, center.Z - cavePos.Z).Unit
+	local side = Vector3.new(-dir.Z, 0, dir.X)
+	terrain:FillBall(Vector3.new(cavePos.X, -8, cavePos.Z) - dir * 18, 22, M.Basalt)
+	terrain:FillBall(Vector3.new(cavePos.X, -14, cavePos.Z) - dir * 24, 24, M.Rock)
+	terrain:FillCylinder(CFrame.new(cavePos.X, -0.7, cavePos.Z) + dir * 3, 1.4, 9, M.Slate)
+	local caveFolder = Instance.new("Folder")
+	caveFolder.Name = "CaveEntrance"
+	caveFolder.Parent = folder
+	local doorCF = CFrame.lookAt(cavePos - dir * 0.3 + Vector3.new(0, 5, 0), cavePos - dir * 0.3 + Vector3.new(0, 5, 0) + dir)
+	local door = Models.part({ Name = "Door", Size = Vector3.new(9, 10, 1), Color = Color3.fromRGB(8, 6, 10), Material = M.SmoothPlastic, CFrame = doorCF, Parent = caveFolder, CanCollide = true })
+	-- каменная арка из глыб
+	for k = 0, 8 do
+		local a = math.pi * k / 8
+		local p = doorCF * CFrame.new(math.cos(a) * 6, -5 + math.sin(a) * 9.5, 0.6)
+		Models.part({ Size = Vector3.new(rng:NextNumber(2.6, 3.6), rng:NextNumber(2.6, 3.6), rng:NextNumber(2.6, 3.6)), Color = Models.vary(Color3.fromRGB(70, 66, 64), 0.06), Material = M.Slate, CanCollide = true,
+			CFrame = p * CFrame.Angles(rng:NextNumber(0, 1), rng:NextNumber(0, 1), rng:NextNumber(0, 1)), Parent = caveFolder })
+	end
+	-- черепа у входа
+	for k = -1, 1, 2 do
+		Models.part({ Shape = Enum.PartType.Ball, Size = Vector3.new(1.2, 1.2, 1.2), Color = Color3.fromRGB(226, 220, 200), CFrame = CFrame.new(cavePos + dir * 2.5 + side * k * 3.2 + Vector3.new(0, 0.5, 0)), Parent = caveFolder })
+	end
+	Models.torch(cavePos + dir * 1.5 + side * 6.5, caveFolder)
+	Models.torch(cavePos + dir * 1.5 - side * 6.5, caveFolder)
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = "Войти"
+	prompt.ObjectText = "Логово Мортракса"
+	prompt.HoldDuration = 0.3
+	prompt.MaxActivationDistance = 14
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = door
+	Models.label(door, "Логово Мортракса", Color3.fromRGB(255, 170, 120), 7, 120)
+	layout.cavePos = cavePos
+	layout.caveDoor = door
+	layout.caveReturn = cavePos + dir * 9 + Vector3.new(0, 4, 0)
+
+	---------------------------------------------------------------- данные для мини-карты
+	local rows = {}
+	for z = 1, N do rows[z] = table.concat(grid[z]) end
+	layout.mapString = table.concat(rows)
+	layout.shopCell = { shopX, shopZ }
+	layout.caveCell = { caveX, caveZ }
+	layout.centerCell = { c, c }
+	return layout
+end
+
+-- Случайная свободная точка на поверхности вдали от заданных мест
+function WorldGen.randomGround(avoid, minDist)
+	for t = 1, 300 do
+		local x, z = rng:NextInteger(4, N - 3), rng:NextInteger(4, N - 3)
+		if grid[z] and grid[z][x] == "." and not reserved[z][x] then
+			local p = cellPos(x, z)
+			local ok = true
+			for _, a in ipairs(avoid or {}) do
+				if (p - a.pos).Magnitude < (a.r or minDist or 40) then ok = false; break end
+			end
+			if ok then return onGround(p) end
+		end
+	end
+	return nil
+end
+
+---------------------------------------------------------------- Логово Мортракса
+function WorldGen.buildLair(folder)
+	local O = Config.LAIR_ORIGIN
+	local function at(x, y, z) return O + Vector3.new(x, y, z) end
+	local L = {}
+	terrain:FillBlock(CFrame.new(at(105, 14, 0)), Vector3.new(272, 52, 156), M.Rock)
+	-- передняя комната, коридор, круглый зал, туннель к гроту
+	terrain:FillBlock(CFrame.new(at(18, 11, 0)), Vector3.new(36, 22, 36), M.Air)
+	terrain:FillBlock(CFrame.new(at(52, 8, 0)), Vector3.new(36, 16, 18), M.Air)
+	terrain:FillCylinder(CFrame.new(at(115, 13, 0)), 26, 47, M.Air)
+	for k = 1, 9 do
+		local a = rng:NextNumber(0.7, math.pi * 2 - 0.7)   -- не у решётки (угол 0)
+		terrain:FillBall(at(115 + math.cos(a) * 44, 12, math.sin(a) * 44), rng:NextNumber(9, 15), M.Air)
+	end
+	terrain:FillBlock(CFrame.new(at(177, 8, 0)), Vector3.new(34, 16, 16), M.Air)
+	terrain:FillBall(at(206, 10, 0), 16, M.Air)
+	-- колонны по кругу
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2 + 0.5
+		terrain:FillCylinder(CFrame.new(at(115 + math.cos(a) * 27, 13, math.sin(a) * 27)), 26, 3.4, M.Basalt)
+	end
+	-- каменистый пол
+	terrain:FillBlock(CFrame.new(at(105, -1, 0)), Vector3.new(272, 2, 156), M.Slate)
+	for k = 1, 40 do
+		terrain:FillBall(at(rng:NextNumber(10, 210), -1.2, rng:NextNumber(-40, 40)), rng:NextNumber(2, 4), M.Rock)
+	end
+
+	local deco = Instance.new("Folder")
+	deco.Name = "LairDeco"
+	deco.Parent = folder
+	-- факелы
+	local torches = { { 4, -14 }, { 30, 14 }, { 40, -7 }, { 64, 7 }, { 80, -30 }, { 80, 30 }, { 115, -44 }, { 115, 44 }, { 150, -30 }, { 150, 30 }, { 160, -10 }, { 160, 10 } }
+	for _, t in ipairs(torches) do Models.torch(at(t[1], 0, t[2]), deco) end
+	-- кости и черепа в зале
+	for k = 1, 26 do
+		local p = at(rng:NextNumber(76, 156), 0.2, rng:NextNumber(-38, 38))
+		if rng:NextNumber() < 0.35 then
+			Models.part({ Shape = Enum.PartType.Ball, Size = Vector3.new(1.1, 1.1, 1.1), Color = Color3.fromRGB(222, 216, 194), CFrame = CFrame.new(p + Vector3.new(0, 0.4, 0)), Parent = deco })
+		else
+			Models.part({ Size = Vector3.new(0.35, 0.35, rng:NextNumber(1.4, 2.6)), Color = Color3.fromRGB(214, 208, 186), CFrame = CFrame.new(p) * CFrame.Angles(0, rng:NextNumber(0, 6.28), 0), Parent = deco })
+		end
+	end
+	-- выход на поверхность
+	local exitCF = CFrame.lookAt(at(2.2, 5, 0), at(10, 5, 0))
+	local exitPart = Models.part({ Name = "Exit", Size = Vector3.new(8, 10, 0.6), Color = Color3.fromRGB(150, 200, 255), Material = M.Neon, Transparency = 0.35, CFrame = exitCF, Parent = folder })
+	local el = Instance.new("PointLight")
+	el.Color = Color3.fromRGB(150, 200, 255)
+	el.Range = 20
+	el.Parent = exitPart
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = "Выйти"
+	prompt.ObjectText = "На поверхность"
+	prompt.HoldDuration = 0.3
+	prompt.MaxActivationDistance = 12
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = exitPart
+	L.exitPart = exitPart
+	L.spawn = at(12, 4, 0)
+	-- решётка в Грот Шорохов
+	local gate = Instance.new("Model")
+	gate.Name = "Gate"
+	for k = -3, 3 do
+		Models.cylinderV(17, 0.7, Color3.fromRGB(60, 58, 62), CFrame.new(at(161, 8.3, k * 2.1)), gate, M.Metal).CanCollide = true
+	end
+	for _, y in ipairs({ 3, 13 }) do
+		Models.part({ Size = Vector3.new(0.6, 0.6, 15), Color = Color3.fromRGB(70, 66, 70), Material = M.Metal, CFrame = CFrame.new(at(161, y, 0)), Parent = gate, CanCollide = true })
+	end
+	gate.Parent = folder
+	L.gate = gate
+	-- грот: светящиеся кристаллы и табличка
+	for k = 1, 6 do
+		local a = k / 6 * math.pi * 2
+		local cr = Models.part({ Size = Vector3.new(1.2, rng:NextNumber(2.5, 5), 1.2), Color = Color3.fromRGB(110, 170, 255), Material = M.Neon, Transparency = 0.15,
+			CFrame = CFrame.new(at(206 + math.cos(a) * 10, 1.5, math.sin(a) * 10)) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), 0, rng:NextNumber(-0.4, 0.4)), Parent = deco })
+		if k % 2 == 0 then
+			local pl = Instance.new("PointLight")
+			pl.Color = Color3.fromRGB(110, 170, 255)
+			pl.Range = 18
+			pl.Parent = cr
+		end
+	end
+	local sign = Models.part({ Size = Vector3.new(8, 4, 0.4), Color = Color3.fromRGB(70, 52, 36), Material = M.Wood, CFrame = CFrame.lookAt(at(214, 4, 0), at(150, 4, 0)), Parent = deco, CanCollide = true })
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Front
+	sg.PixelsPerStud = 30
+	sg.Parent = sign
+	local t = Instance.new("TextLabel")
+	t.Size = UDim2.fromScale(1, 1)
+	t.BackgroundTransparency = 1
+	t.TextScaled = true
+	t.Font = Enum.Font.Merriweather
+	t.TextColor3 = Color3.fromRGB(236, 214, 160)
+	t.Text = "Грот Шорохов\nпуть к Шелибе откроется в следующей сборке"
+	t.Parent = sg
+	L.bossPos = at(118, 6, 0)
+	L.hallCenter = at(115, 0, 0)
+	L.guardSpots = { at(84, 4, -18), at(84, 4, 18), at(142, 4, -24), at(142, 4, 24) }
+	return L
+end
+
+return WorldGen
+]]></ProtectedString></Properties></Item></Item></Item><Item class="StarterPlayer" referent="RBX00000010"><Properties><string name="Name">StarterPlayer</string><float name="CameraMaxZoomDistance">60</float></Properties><Item class="StarterPlayerScripts" referent="RBX0000000D"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX0000000C"><Properties><string name="Name">EldoriaClient</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Хроники Эльдории для Roblox — клиент: интерфейс, управление, эффекты
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local SoundService = game:GetService("SoundService")
+local Lighting = game:GetService("Lighting")
+local Debris = game:GetService("Debris")
+
+local player = Players.LocalPlayer
+local Eldoria = ReplicatedStorage:WaitForChild("Eldoria")
+local Config = require(Eldoria:WaitForChild("Config"))
+local Remotes = Eldoria:WaitForChild("Remotes")
+local Action = Remotes:WaitForChild("Action")
+local NotifyEv = Remotes:WaitForChild("Notify")
+local FxEv = Remotes:WaitForChild("Fx")
+
+task.spawn(function()
+	for i = 1, 20 do
+		local ok = pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false) end)
+		if ok then break end
+		task.wait(0.5)
+	end
+end)
+
+---------------------------------------------------------------- оформление
+local C = {
+	panel = Color3.fromRGB(24, 19, 14), gold = Color3.fromRGB(201, 160, 82), text = Color3.fromRGB(242, 230, 200),
+	dim = Color3.fromRGB(176, 160, 128), parch = Color3.fromRGB(233, 216, 172), ink = Color3.fromRGB(66, 44, 24),
+	btn = Color3.fromRGB(112, 72, 38), btnHover = Color3.fromRGB(138, 92, 48), red = Color3.fromRGB(200, 52, 52),
+	green = Color3.fromRGB(127, 224, 127), blue = Color3.fromRGB(80, 140, 230),
+}
+local FONT = Enum.Font.GothamMedium
+local FONT_B = Enum.Font.GothamBold
+local FONT_T = Enum.Font.Merriweather
+
+local function new(class, props, parent)
+	local o = Instance.new(class)
+	for k, v in pairs(props or {}) do o[k] = v end
+	if parent then o.Parent = parent end
+	return o
+end
+local function corner(p, r) return new("UICorner", { CornerRadius = UDim.new(0, r or 8) }, p) end
+local function stroke(p, col, th, tr)
+	return new("UIStroke", { Color = col or C.gold, Thickness = th or 1.5, Transparency = tr or 0.2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, p)
+end
+local function label(props, parent)
+	local t = new("TextLabel", { BackgroundTransparency = 1, Font = FONT, TextColor3 = C.text, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left }, parent)
+	for k, v in pairs(props) do t[k] = v end
+	return t
+end
+local function button(text, parent, onClick, props)
+	local b = new("TextButton", { Text = text, Font = FONT_B, TextSize = 14, TextColor3 = C.text, BackgroundColor3 = C.btn, AutoButtonColor = true, Size = UDim2.fromOffset(110, 32) }, parent)
+	corner(b, 7)
+	stroke(b, C.gold, 1, 0.4)
+	for k, v in pairs(props or {}) do b[k] = v end
+	b.Activated:Connect(onClick)
+	return b
+end
+
+local gui = new("ScreenGui", { Name = "EldoriaUI", ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, IgnoreGuiInset = false }, player:WaitForChild("PlayerGui"))
+local uiScales = {}
+local function scaled(obj)
+	table.insert(uiScales, new("UIScale", {}, obj))
+	return obj
+end
+local function rescale()
+	local cam = workspace.CurrentCamera
+	if not cam then return end
+	local v = cam.ViewportSize
+	local k = math.clamp(math.min(v.X / 980, v.Y / 560), 0.58, 1.15)
+	for _, u in ipairs(uiScales) do u.Scale = k end
+end
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
+-- левый верхний угол: панель героя, мини-карта, эликсиры, цель, сообщения
+local topLeft = scaled(new("Frame", { Name = "TopLeft", Size = UDim2.fromOffset(440, 420), BackgroundTransparency = 1 }, gui))
+
+---------------------------------------------------------------- звуки (встроенные в клиент Roblox)
+local SFX = {
+	swing = "rbxasset://sounds/swordslash.wav",
+	lunge = "rbxasset://sounds/swordlunge.wav",
+	equip = "rbxasset://sounds/unsheath.wav",
+	coin = "rbxasset://sounds/electronicpingshort.wav",
+}
+local function play(name, vol, pitch)
+	local id = SFX[name]
+	if not id then return end
+	local s = new("Sound", { SoundId = id, Volume = vol or 0.6, PlaybackSpeed = pitch or 1 }, SoundService)
+	s:Play()
+	Debris:AddItem(s, 3)
+end
+
+---------------------------------------------------------------- панель героя
+local hud = new("Frame", { Name = "Hud", Position = UDim2.fromOffset(12, 10), Size = UDim2.fromOffset(268, 96), BackgroundColor3 = C.panel, BackgroundTransparency = 0.18 }, topLeft)
+corner(hud, 10)
+stroke(hud)
+local lvlLabel = label({ Position = UDim2.fromOffset(12, 6), Size = UDim2.fromOffset(150, 20), Font = FONT_B, TextSize = 16, Text = "Ур. 1" }, hud)
+local coin = new("Frame", { Position = UDim2.new(1, -96, 0, 9), Size = UDim2.fromOffset(14, 14), BackgroundColor3 = Color3.fromRGB(255, 186, 40) }, hud)
+corner(coin, 7)
+stroke(coin, Color3.fromRGB(150, 96, 20), 1.5, 0)
+local goldLabel = label({ Position = UDim2.new(1, -78, 0, 6), Size = UDim2.fromOffset(70, 20), Font = FONT_B, TextSize = 16, Text = "0", TextColor3 = Color3.fromRGB(255, 214, 110) }, hud)
+local function bar(y, h, col)
+	local bg = new("Frame", { Position = UDim2.fromOffset(12, y), Size = UDim2.new(1, -24, 0, h), BackgroundColor3 = Color3.fromRGB(50, 38, 30), BorderSizePixel = 0 }, hud)
+	corner(bg, 5)
+	local fill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = col, BorderSizePixel = 0 }, bg)
+	corner(fill, 5)
+	local t = label({ Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center, TextSize = h > 12 and 13 or 10, Font = FONT_B, TextStrokeTransparency = 0.5 }, bg)
+	return fill, t
+end
+local hpFill, hpText = bar(30, 18, C.red)
+local xpFill, xpText = bar(52, 11, C.blue)
+local gearLabel = label({ Position = UDim2.fromOffset(12, 68), Size = UDim2.new(1, -24, 0, 20), TextSize = 12, TextColor3 = C.dim, Text = "" }, hud)
+
+---------------------------------------------------------------- мини-карта с туманом
+local mapFrame = new("Frame", { Name = "Minimap", Position = UDim2.fromOffset(288, 10), Size = UDim2.fromOffset(124, 124), BackgroundColor3 = Color3.fromRGB(20, 26, 18), BackgroundTransparency = 0.35, ClipsDescendants = true }, topLeft)
+corner(mapFrame, 10)
+stroke(mapFrame)
+local mapInner = new("Frame", { Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 1, -8), BackgroundTransparency = 1 }, mapFrame)
+local lairMapText = label({ Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center, Text = "Логово\nМортракса", Font = FONT_T, TextColor3 = C.dim, Visible = false, TextWrapped = true }, mapFrame)
+local fogCells = {}
+local FOG = 24
+local MAP_COLORS = {
+	["~"] = Color3.fromRGB(64, 124, 190), ["^"] = Color3.fromRGB(92, 88, 92), P = Color3.fromRGB(156, 126, 84),
+}
+local mapN = Config.MAP_N
+local shopDot, caveDot, meDot
+task.spawn(function()
+	local md = Eldoria:WaitForChild("MapData")
+	local s = md.Value
+	mapN = md:GetAttribute("N") or Config.MAP_N
+	local n = mapN
+	new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(72, 112, 54), BackgroundTransparency = 0.3, BorderSizePixel = 0 }, mapInner)
+	for z = 1, n do
+		local row = string.sub(s, (z - 1) * n + 1, z * n)
+		local x = 1
+		while x <= n do
+			local ch = string.sub(row, x, x)
+			local col = MAP_COLORS[ch]
+			local x2 = x
+			while x2 < n and string.sub(row, x2 + 1, x2 + 1) == ch do x2 = x2 + 1 end
+			if col then
+				new("Frame", { Position = UDim2.fromScale((x - 1) / n, (z - 1) / n), Size = UDim2.fromScale((x2 - x + 1) / n, 1.02 / n), BackgroundColor3 = col, BackgroundTransparency = 0.25, BorderSizePixel = 0 }, mapInner)
+			end
+			x = x2 + 1
+		end
+	end
+	local function dot(cx, cz, col, size)
+		local d = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale((cx - 0.5) / n, (cz - 0.5) / n), Size = UDim2.fromOffset(size, size), BackgroundColor3 = col, ZIndex = 3 }, mapInner)
+		corner(d, size)
+		stroke(d, Color3.fromRGB(20, 14, 10), 1, 0.2)
+		return d
+	end
+	shopDot = dot(md:GetAttribute("ShopX"), md:GetAttribute("ShopZ"), Color3.fromRGB(230, 50, 50), 8)
+	caveDot = dot(md:GetAttribute("CaveX"), md:GetAttribute("CaveZ"), Color3.fromRGB(140, 86, 42), 9)
+	for fz = 1, FOG do
+		fogCells[fz] = {}
+		for fx = 1, FOG do
+			fogCells[fz][fx] = new("Frame", { Position = UDim2.fromScale((fx - 1) / FOG, (fz - 1) / FOG), Size = UDim2.fromScale(1.02 / FOG, 1.02 / FOG), BackgroundColor3 = Color3.fromRGB(16, 14, 12), BackgroundTransparency = 0.05, BorderSizePixel = 0, ZIndex = 2 }, mapInner)
+		end
+	end
+	meDot = dot(n / 2, n / 2, Color3.fromRGB(255, 255, 255), 7)
+	meDot.ZIndex = 5
+end)
+
+---------------------------------------------------------------- эликсиры и зелья (клавиши 1–5)
+local slotsFrame = new("Frame", { Position = UDim2.fromOffset(12, 112), Size = UDim2.fromOffset(268, 48), BackgroundTransparency = 1 }, topLeft)
+new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }, slotsFrame)
+local slots = {}
+for i, k in ipairs(Config.ELIX_ORDER) do
+	local e = Config.ELIX[k]
+	local b = new("TextButton", { Text = "", Size = UDim2.fromOffset(48, 48), BackgroundColor3 = C.panel, BackgroundTransparency = 0.18, AutoButtonColor = true, LayoutOrder = i }, slotsFrame)
+	corner(b, 8)
+	stroke(b, C.gold, 1.2, 0.35)
+	local bulb = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.58), Size = UDim2.fromOffset(20, 20), BackgroundColor3 = e.color }, b)
+	corner(bulb, 10)
+	stroke(bulb, Color3.fromRGB(20, 10, 20), 1, 0.2)
+	new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.fromScale(0.5, 0.4), Size = UDim2.fromOffset(6, 8), BackgroundColor3 = Color3.fromRGB(217, 230, 238), BorderSizePixel = 0 }, b)
+	new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0.4, -7), Size = UDim2.fromOffset(8, 4), BackgroundColor3 = Color3.fromRGB(138, 90, 43), BorderSizePixel = 0 }, b)
+	label({ Position = UDim2.fromOffset(4, 1), Size = UDim2.fromOffset(14, 14), Text = tostring(i), TextSize = 11, TextColor3 = C.dim, Font = FONT_B }, b)
+	local cnt = label({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -4, 1, -1), Size = UDim2.fromOffset(24, 14), Text = "0", TextSize = 12, Font = FONT_B, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.4 }, b)
+	local timer = label({ Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center, Text = "", TextSize = 15, Font = FONT_B, TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeTransparency = 0, Visible = false, BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 0.5 }, b)
+	corner(timer, 8)
+	b.Activated:Connect(function() Action:FireServer("elixir", k) end)
+	slots[k] = { btn = b, count = cnt, timer = timer }
+end
+
+local tracker = label({ Position = UDim2.fromOffset(14, 166), Size = UDim2.fromOffset(400, 40), TextSize = 13, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextStrokeTransparency = 0.45, Text = "" }, topLeft)
+
+---------------------------------------------------------------- лента сообщений
+local feed = new("Frame", { Position = UDim2.fromOffset(12, 212), Size = UDim2.fromOffset(420, 200), BackgroundTransparency = 1 }, topLeft)
+new("UIListLayout", { Padding = UDim.new(0, 3), VerticalAlignment = Enum.VerticalAlignment.Top, SortOrder = Enum.SortOrder.LayoutOrder }, feed)
+local feedN = 0
+local function addNote(text, color)
+	feedN = feedN + 1
+	local t = label({ Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextWrapped = true, Text = text, TextColor3 = color or C.text, TextSize = 14, Font = FONT_B, TextStrokeTransparency = 0.35, LayoutOrder = feedN }, feed)
+	local kids = {}
+	for _, c in ipairs(feed:GetChildren()) do if c:IsA("TextLabel") then table.insert(kids, c) end end
+	if #kids > 6 then
+		table.sort(kids, function(a, b) return a.LayoutOrder < b.LayoutOrder end)
+		kids[1]:Destroy()
+	end
+	task.delay(6, function()
+		if t.Parent then
+			TweenService:Create(t, TweenInfo.new(0.8), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+			Debris:AddItem(t, 0.9)
+		end
+	end)
+end
+NotifyEv.OnClientEvent:Connect(addNote)
+
+---------------------------------------------------------------- полоса здоровья босса
+local bossBar = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 10), Size = UDim2.fromOffset(440, 46), BackgroundColor3 = C.panel, BackgroundTransparency = 0.15, Visible = false }, gui)
+scaled(bossBar)
+corner(bossBar, 8)
+stroke(bossBar, Color3.fromRGB(180, 50, 50))
+local bossName = label({ Position = UDim2.fromOffset(12, 3), Size = UDim2.new(1, -24, 0, 18), Font = FONT_T, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Center, Text = "Мортракс — Владыка костей", TextColor3 = Color3.fromRGB(255, 200, 180) }, bossBar)
+local bossBg = new("Frame", { Position = UDim2.fromOffset(12, 24), Size = UDim2.new(1, -24, 0, 14), BackgroundColor3 = Color3.fromRGB(50, 30, 30), BorderSizePixel = 0 }, bossBar)
+corner(bossBg, 5)
+local bossFill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(190, 40, 40), BorderSizePixel = 0 }, bossBg)
+corner(bossFill, 5)
+
+---------------------------------------------------------------- индикатор сильного удара и вспышка ранения
+local chargeBg = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -110), Size = UDim2.fromOffset(160, 10), BackgroundColor3 = Color3.fromRGB(30, 24, 18), Visible = false }, gui)
+corner(chargeBg, 5)
+stroke(chargeBg, C.gold, 1, 0.3)
+local chargeFill = new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.fromRGB(255, 220, 120), BorderSizePixel = 0 }, chargeBg)
+corner(chargeFill, 5)
+local hurtFlash = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(180, 0, 0), BackgroundTransparency = 1, ZIndex = 0, Active = false }, gui)
+
+---------------------------------------------------------------- кнопка меню
+local menuBtn = button("☰ Меню", gui, function() end, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 4), Size = UDim2.fromOffset(96, 34) })
+scaled(menuBtn)
+
+---------------------------------------------------------------- лавка
+local shop = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.52), Size = UDim2.fromOffset(600, 440), BackgroundColor3 = Color3.fromRGB(40, 30, 22), Visible = false, ZIndex = 10 }, gui)
+scaled(shop)
+corner(shop, 12)
+stroke(shop, C.gold, 2, 0)
+label({ Position = UDim2.fromOffset(18, 10), Size = UDim2.fromOffset(300, 28), Text = "Лавка торговца", Font = FONT_T, TextSize = 22, TextColor3 = Color3.fromRGB(240, 210, 150), ZIndex = 10 }, shop)
+local shopGold = label({ Position = UDim2.new(1, -230, 0, 14), Size = UDim2.fromOffset(160, 22), TextXAlignment = Enum.TextXAlignment.Right, Font = FONT_B, TextSize = 16, TextColor3 = Color3.fromRGB(255, 214, 110), ZIndex = 10 }, shop)
+button("✕", shop, function() shop.Visible = false end, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 8), Size = UDim2.fromOffset(40, 32), ZIndex = 10 })
+local shopTip = label({ Position = UDim2.fromOffset(18, 42), Size = UDim2.new(1, -36, 0, 36), TextWrapped = true, TextSize = 13, TextColor3 = C.dim, Font = Enum.Font.Gotham, ZIndex = 10, TextYAlignment = Enum.TextYAlignment.Top }, shop)
+local tabsFrame = new("Frame", { Position = UDim2.fromOffset(18, 82), Size = UDim2.new(1, -36, 0, 32), BackgroundTransparency = 1, ZIndex = 10 }, shop)
+new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }, tabsFrame)
+local list = new("ScrollingFrame", { Position = UDim2.fromOffset(18, 122), Size = UDim2.new(1, -36, 1, -136), BackgroundTransparency = 1, ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 10, ScrollingDirection = Enum.ScrollingDirection.Y }, shop)
+new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, list)
+local currentTab = "weapon"
+local tabButtons = {}
+
+local function attr(n, def)
+	local v = player:GetAttribute(n)
+	if v == nil then return def end
+	return v
+end
+local function csvHas(csv, k)
+	for item in string.gmatch(csv or "", "[^,]+") do if item == k then return true end end
+	return false
+end
+
+local function shopRow(order, title, desc, right)
+	local row = new("Frame", { Size = UDim2.new(1, -8, 0, 62), BackgroundColor3 = Color3.fromRGB(58, 44, 32), LayoutOrder = order, ZIndex = 10 }, list)
+	corner(row, 8)
+	label({ Position = UDim2.fromOffset(12, 6), Size = UDim2.new(1, -250, 0, 20), Text = title, Font = FONT_B, TextSize = 15, ZIndex = 10 }, row)
+	label({ Position = UDim2.fromOffset(12, 26), Size = UDim2.new(1, -250, 0, 32), Text = desc, TextSize = 12, TextWrapped = true, TextColor3 = C.dim, Font = Enum.Font.Gotham, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 10 }, row)
+	local r = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.fromOffset(236, 34), BackgroundTransparency = 1, ZIndex = 10 }, row)
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 6) }, r)
+	for i, item in ipairs(right) do
+		if item.text and not item.fn then
+			label({ Size = UDim2.fromOffset(item.w or 110, 30), Text = item.text, TextSize = 12, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = item.color or C.dim, LayoutOrder = i, ZIndex = 10, Font = FONT_B }, r)
+		else
+			button(item.label, r, item.fn, { Size = UDim2.fromOffset(item.w or 110, 30), LayoutOrder = i, ZIndex = 10, TextSize = 13 })
+		end
+	end
+	return row
+end
+
+local function lockText(unlock)
+	return "🔒 После победы над стражем №" .. unlock .. ": " .. (Config.BOSS_NAMES[unlock] or "?")
+end
+
+local function renderShop()
+	for _, c in ipairs(list:GetChildren()) do if not c:IsA("UIListLayout") then c:Destroy() end end
+	for id, b in pairs(tabButtons) do b.BackgroundColor3 = (id == currentTab) and C.btnHover or C.btn end
+	local gold = attr("Gold", 0)
+	local stage = attr("Stage", 0)
+	shopGold.Text = "Золото: " .. gold
+	if currentTab == "weapon" then
+		for i, id in ipairs(Config.WEAPON_ORDER) do
+			local w = Config.WEAPONS[id]
+			local owned = csvHas(attr("Owned", ""), id)
+			local right = {}
+			if attr("Weapon", "") == id then
+				table.insert(right, { text = "В руках", color = C.green, w = 90 })
+				if id ~= "sword" then table.insert(right, { label = "Продать " .. math.floor(w.price / 2), fn = function() Action:FireServer("sell", "weapon", id) end }) end
+			elseif owned then
+				table.insert(right, { label = "Взять", fn = function() Action:FireServer("equip", "weapon", id) end, w = 90 })
+				if id ~= "sword" then table.insert(right, { label = "Продать " .. math.floor(w.price / 2), fn = function() Action:FireServer("sell", "weapon", id) end }) end
+			elseif stage < w.unlock then
+				table.insert(right, { text = lockText(w.unlock), w = 230 })
+			else
+				table.insert(right, { label = "Купить · " .. w.price, fn = function() Action:FireServer("buy", "weapon", id) end, w = 130 })
+			end
+			shopRow(i, w.name .. "  ·  урон ×" .. w.mult, w.desc, right)
+		end
+	elseif currentTab == "armor" then
+		for i, id in ipairs(Config.ARMOR_ORDER) do
+			local a = Config.ARMORS[id]
+			local owned = csvHas(attr("OwnedArmor", "none"), id)
+			local right = {}
+			if attr("Armor", "none") == id then
+				table.insert(right, { text = "Надето", color = C.green, w = 90 })
+				if id ~= "none" then table.insert(right, { label = "Продать " .. math.floor(a.price / 2), fn = function() Action:FireServer("sell", "armor", id) end }) end
+			elseif owned then
+				table.insert(right, { label = "Надеть", fn = function() Action:FireServer("equip", "armor", id) end, w = 90 })
+				if id ~= "none" then table.insert(right, { label = "Продать " .. math.floor(a.price / 2), fn = function() Action:FireServer("sell", "armor", id) end }) end
+			elseif stage < a.unlock then
+				table.insert(right, { text = lockText(a.unlock), w = 230 })
+			else
+				table.insert(right, { label = "Купить · " .. a.price, fn = function() Action:FireServer("buy", "armor", id) end, w = 130 })
+			end
+			local prot = a.reduce > 0 and ("  ·  защита " .. math.floor(a.reduce * 100) .. "%") or ""
+			shopRow(i, a.name .. prot, a.desc, right)
+		end
+	elseif currentTab == "elixir" then
+		for i, id in ipairs(Config.ELIX_ORDER) do
+			local e = Config.ELIX[id]
+			local n = attr("E_" .. id, 0)
+			local right = { { label = "Купить · " .. e.price, fn = function() Action:FireServer("buy", "elixir", id) end, w = 116 } }
+			if n > 0 then table.insert(right, { label = "Продать " .. e.sell, fn = function() Action:FireServer("sell", "elixir", id) end, w = 104 }) end
+			shopRow(i, e.name .. "  ·  в сумке: " .. n, e.desc .. "  Клавиша " .. i .. ".", right)
+		end
+	else
+		local active = attr("Quest", "")
+		local prog = attr("QuestProg", 0)
+		local done = attr("QuestsDone", "")
+		for i, id in ipairs(Config.QUEST_ORDER) do
+			local q = Config.QUESTS[id]
+			local right = {}
+			local desc = q.desc .. "  Награда: " .. q.gold .. " золота, эликсиров: " .. q.elix .. "."
+			if csvHas(done, id) then
+				table.insert(right, { text = "✔ Выполнено", color = C.green, w = 120 })
+			elseif active == id then
+				if prog >= q.count then
+					table.insert(right, { label = "Получить Вознаграждение", fn = function() Action:FireServer("quest", "claim", id) end, w = 200 })
+				else
+					table.insert(right, { text = prog .. " / " .. q.count, color = Color3.fromRGB(255, 211, 74), w = 60 })
+					table.insert(right, { label = "Отменить", fn = function() Action:FireServer("quest", "cancel", id) end, w = 100 })
+				end
+			elseif active ~= "" then
+				table.insert(right, { text = "Сначала завершите текущее задание", w = 200 })
+			else
+				table.insert(right, { label = "Взять задание", fn = function() Action:FireServer("quest", "take", id) end, w = 130 })
+			end
+			shopRow(i, q.name, desc, right)
+		end
+	end
+end
+
+for i, tab in ipairs({ { "weapon", "Оружие" }, { "armor", "Броня" }, { "elixir", "Эликсиры и зелья" }, { "quest", "Задания" } }) do
+	tabButtons[tab[1]] = button(tab[2], tabsFrame, function()
+		currentTab = tab[1]
+		renderShop()
+	end, { LayoutOrder = i, Size = UDim2.fromOffset(tab[1] == "elixir" and 160 or 110, 30), ZIndex = 10 })
+end
+
+local function openShop(tip)
+	shopTip.Text = "Торговец: «" .. (tip or "") .. "»"
+	shop.Visible = true
+	renderShop()
+end
+
+---------------------------------------------------------------- меню-свиток
+local menu = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 0.35, Visible = false, ZIndex = 20, Active = true }, gui)
+local scroll = scaled(new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(520, 420), BackgroundColor3 = C.parch, ZIndex = 21 }, menu))
+-- номер сборки — на тёмной плашке над пергаментом
+local menuBuild = label({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, -16), Size = UDim2.fromOffset(300, 22), BackgroundTransparency = 0.1, BackgroundColor3 = Color3.fromRGB(16, 12, 8), TextXAlignment = Enum.TextXAlignment.Center, TextSize = 12, TextColor3 = C.dim, Text = "Сборка " .. Config.BUILD .. " · Roblox", ZIndex = 21 }, scroll)
+corner(menuBuild, 6)
+corner(scroll, 6)
+stroke(scroll, Color3.fromRGB(120, 84, 40), 3, 0)
+for _, y in ipairs({ 0, 1 }) do
+	local rod = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, y), Size = UDim2.new(1, 36, 0, 18), BackgroundColor3 = Color3.fromRGB(122, 82, 44), ZIndex = 22 }, scroll)
+	corner(rod, 9)
+	stroke(rod, Color3.fromRGB(70, 44, 20), 2, 0)
+end
+-- вьющийся орнамент по краям свитка
+for _, x in ipairs({ 0.035, 0.965 }) do
+	for k = 0, 9 do
+		local leaf = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(x, math.sin(k * 1.3) * 6, 0, 30 + k * 38), Size = UDim2.fromOffset(9, 14), Rotation = (k % 2 == 0) and 35 or -35, BackgroundColor3 = Color3.fromRGB(96, 130, 66), BackgroundTransparency = 0.15, ZIndex = 22 }, scroll)
+		corner(leaf, 7)
+	end
+end
+label({ Position = UDim2.fromOffset(30, 20), Size = UDim2.new(1, -60, 0, 36), Text = Config.TITLE, Font = FONT_T, TextSize = 30, TextColor3 = C.ink, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 22 }, scroll)
+local menuSub = label({ Position = UDim2.fromOffset(30, 56), Size = UDim2.new(1, -60, 0, 18), Text = "Глава I. Логово Мортракса", Font = FONT_T, TextSize = 14, TextColor3 = Color3.fromRGB(120, 84, 40), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 22 }, scroll)
+local menuBody = label({ Position = UDim2.fromOffset(40, 84), Size = UDim2.new(1, -80, 0, 210), Text = "", Font = Enum.Font.Merriweather, TextSize = 14, TextColor3 = C.ink, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 22 }, scroll)
+local menuButtons = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -22), Size = UDim2.fromOffset(380, 78), BackgroundTransparency = 1, ZIndex = 22 }, scroll)
+new("UIGridLayout", { CellSize = UDim2.fromOffset(186, 34), CellPadding = UDim2.fromOffset(8, 8), HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }, menuButtons)
+
+local CONTROLS = "Компьютер: WASD — ходьба, мышь — камера, ЛКМ или F — удар (удерживайте для сильного удара), Q — рывок с неуязвимостью, 1–5 — эликсиры и зелья, E — торговать или войти.\n\n"
+	.. "Телефон: джойстик слева, кнопка ⚔ — удар (удерживайте для сильного), » — рывок, касание слотов — выпить эликсир.\n\n"
+	.. "Геймпад: R2 или X — удар, L1 — рывок.\n\nСоветы: чем ближе враг, тем больнее удар. Красный круг на земле — сейчас будет удар Мортракса, отбегите!"
+
+local function menuPage(kind)
+	for _, c in ipairs(menuButtons:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+	local function mb(text, order, fn)
+		button(text, menuButtons, fn, { LayoutOrder = order, ZIndex = 23, TextSize = 14 })
+	end
+	if kind == "intro" then
+		menuSub.Text = "Глава I. Логово Мортракса"
+		menuBody.Text = table.concat(Config.STORY_INTRO, "\n\n")
+		mb("В путь", 1, function()
+			menu.Visible = false
+			Action:FireServer("intro")
+		end)
+		mb("Управление", 2, function() menuPage("controls") end)
+	elseif kind == "controls" then
+		menuSub.Text = "Управление"
+		menuBody.Text = CONTROLS
+		mb("Назад", 1, function() menuPage("main") end)
+		mb("Продолжить", 2, function() menu.Visible = false end)
+	else
+		menuSub.Text = "Глава I. Логово Мортракса"
+		local saved = attr("SavedAt", nil)
+		local tip = Config.STORY_TIPS[math.min(attr("Stage", 0), 1)]
+		menuBody.Text = "Уровень героя: " .. attr("Level", 1) .. "   ·   Золото: " .. attr("Gold", 0) .. "\n\n" .. tip .. "\n\nПоследнее сохранение: " .. (saved or "ещё не было (сохраняется автоматически)")
+		mb("Продолжить", 1, function() menu.Visible = false end)
+		mb("Управление", 2, function() menuPage("controls") end)
+		mb("История", 3, function() menuPage("intro") end)
+		mb("Сохранить", 4, function()
+			Action:FireServer("save")
+			task.delay(1.5, function() if menu.Visible then menuPage("main") end end)
+		end)
+	end
+end
+menuBtn.Activated:Connect(function()
+	if menu.Visible then menu.Visible = false else menu.Visible = true; menuPage("main") end
+end)
+task.spawn(function()
+	local t = 0
+	while player:GetAttribute("IntroSeen") == nil and t < 90 do t = t + task.wait(0.2) end
+	if player:GetAttribute("IntroSeen") ~= true then
+		menu.Visible = true
+		menuPage("intro")
+	end
+end)
+
+---------------------------------------------------------------- победа
+local function victory(title)
+	local banner = label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.32), Size = UDim2.new(0.9, 0, 0, 60), Text = title, Font = FONT_T, TextScaled = true, TextColor3 = Color3.fromRGB(255, 214, 110), TextStrokeTransparency = 0.2, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 15, TextTransparency = 1 }, gui)
+	TweenService:Create(banner, TweenInfo.new(0.6), { TextTransparency = 0 }):Play()
+	task.delay(4.5, function()
+		TweenService:Create(banner, TweenInfo.new(1), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		Debris:AddItem(banner, 1.1)
+	end)
+end
+
+---------------------------------------------------------------- обновление интерфейса из атрибутов
+local function refresh()
+	lvlLabel.Text = "Ур. " .. attr("Level", 1) .. "  ·  " .. player.DisplayName
+	goldLabel.Text = tostring(attr("Gold", 0))
+	local xp, xpn = attr("XP", 0), attr("XPNext", 50)
+	xpFill.Size = UDim2.fromScale(math.clamp(xp / math.max(1, xpn), 0, 1), 1)
+	xpText.Text = "опыт " .. xp .. " / " .. xpn
+	local w = Config.WEAPONS[attr("Weapon", "sword")]
+	local a = Config.ARMORS[attr("Armor", "none")]
+	gearLabel.Text = (w and w.name or "") .. "  ·  " .. (a and a.name or "")
+	for _, k in ipairs(Config.ELIX_ORDER) do slots[k].count.Text = tostring(attr("E_" .. k, 0)) end
+	-- цель и задание
+	local stage = attr("Stage", 0)
+	local goal = stage < 1 and "Цель: найдите логово Мортракса (коричневая точка на карте) и победите его" or "Цель: Грот Шорохов — продолжение пути в следующей сборке"
+	local q = Config.QUESTS[attr("Quest", "")]
+	if q then
+		local prog = attr("QuestProg", 0)
+		if prog >= q.count then goal = goal .. "\nЗадание «" .. q.name .. "» выполнено — к торговцу (красная точка)"
+		else goal = goal .. "\nЗадание: " .. q.name .. " — " .. prog .. "/" .. q.count end
+	end
+	tracker.Text = goal
+	if shop.Visible then renderShop() end
+end
+player.AttributeChanged:Connect(function(name)
+	if name ~= "Zone" then refresh() end
+end)
+refresh()
+
+---------------------------------------------------------------- атака и рывок
+local attackHeld, holdStart, lastSend = false, 0, -1e9
+local function weaponDef() return Config.WEAPONS[attr("Weapon", "sword")] or Config.WEAPONS.sword end
+local function beginAttack()
+	if attackHeld or menu.Visible then return end
+	attackHeld = true
+	holdStart = os.clock()
+end
+local function endAttack()
+	if not attackHeld then return end
+	attackHeld = false
+	chargeBg.Visible = false
+	local held = os.clock() - holdStart
+	local w = weaponDef()
+	if os.clock() - lastSend < w.cooldown then return end
+	lastSend = os.clock()
+	local charged = held >= Config.CHARGE_TIME
+	Action:FireServer("attack", charged)
+	play(charged and "lunge" or "swing", 0.55, charged and 0.85 or (0.95 + math.random() * 0.1))
+end
+
+local dashReady = -1e9
+local function dash()
+	local ch = player.Character
+	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+	local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+	if not hum or not hrp or hum.Health <= 0 or os.clock() < dashReady then return end
+	dashReady = os.clock() + Config.DASH.cooldown
+	local dir = hum.MoveDirection
+	if dir.Magnitude < 0.1 then dir = hrp.CFrame.LookVector end
+	dir = Vector3.new(dir.X, 0, dir.Z).Unit
+	local bv = new("BodyVelocity", { MaxForce = Vector3.new(1e5, 0, 1e5), P = 1e4, Velocity = dir * Config.DASH.power }, hrp)
+	Debris:AddItem(bv, 0.18)
+	Action:FireServer("dash")
+	play("lunge", 0.4, 1.3)
+	for _, p in ipairs(ch:GetDescendants()) do
+		if p:IsA("BasePart") and p.Transparency < 0.5 and p.Name ~= "HumanoidRootPart" then
+			local ghost = new("Part", { Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, CastShadow = false,
+				Material = Enum.Material.Neon, Color = Color3.fromRGB(150, 200, 255), Transparency = 0.6, Size = p.Size, CFrame = p.CFrame }, workspace)
+			TweenService:Create(ghost, TweenInfo.new(0.3), { Transparency = 1 }):Play()
+			Debris:AddItem(ghost, 0.32)
+		end
+	end
+end
+
+ContextActionService:BindAction("EldoriaAttack", function(_, state)
+	if state == Enum.UserInputState.Begin then beginAttack()
+	elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then endAttack() end
+	return Enum.ContextActionResult.Sink
+end, true, Enum.KeyCode.F, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonX)
+ContextActionService:SetTitle("EldoriaAttack", "⚔")
+ContextActionService:BindAction("EldoriaDash", function(_, state)
+	if state == Enum.UserInputState.Begin then dash() end
+	return Enum.ContextActionResult.Sink
+end, true, Enum.KeyCode.Q, Enum.KeyCode.ButtonL1)
+ContextActionService:SetTitle("EldoriaDash", "»")
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	local keys = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four, Enum.KeyCode.Five }
+	for i, kc in ipairs(keys) do
+		if input.KeyCode == kc then Action:FireServer("elixir", Config.ELIX_ORDER[i]) end
+	end
+	if input.KeyCode == Enum.KeyCode.Escape and shop.Visible then shop.Visible = false end
+end)
+
+-- атака мышью и касанием через инструмент в руке
+local function hookTool(tool)
+	if not tool:IsA("Tool") or tool:GetAttribute("Hooked") then return end
+	tool:SetAttribute("Hooked", true)
+	tool.Activated:Connect(beginAttack)
+	tool.Deactivated:Connect(endAttack)
+	play("equip", 0.35)
+end
+local function onCharacter(ch)
+	for _, c in ipairs(ch:GetChildren()) do hookTool(c) end
+	ch.ChildAdded:Connect(hookTool)
+	attackHeld = false
+end
+if player.Character then onCharacter(player.Character) end
+player.CharacterAdded:Connect(onCharacter)
+
+---------------------------------------------------------------- эффекты
+local function attachAt(pos)
+	local a = Instance.new("Attachment")
+	a.WorldPosition = pos
+	a.Parent = workspace.Terrain
+	return a
+end
+
+local function floatText(pos, text, color, size)
+	local a = attachAt(pos)
+	local bg = new("BillboardGui", { Size = UDim2.fromOffset(160, 40), AlwaysOnTop = true, Adornee = a, MaxDistance = 120 }, a)
+	local t = label({ Size = UDim2.fromScale(1, 1), Text = text, TextColor3 = color, Font = Enum.Font.GothamBlack, TextSize = size or 22, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2 }, bg)
+	TweenService:Create(bg, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { StudsOffset = Vector3.new(math.random(-10, 10) / 10, 3.5, 0) }):Play()
+	TweenService:Create(t, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+	Debris:AddItem(a, 1)
+end
+
+local function burst(pos, colors, n, speed, size, life)
+	local a = attachAt(pos)
+	local seq = {}
+	for i, c in ipairs(colors) do table.insert(seq, ColorSequenceKeypoint.new((i - 1) / math.max(1, #colors - 1), c)) end
+	if #seq == 1 then table.insert(seq, ColorSequenceKeypoint.new(1, colors[1])) end
+	local pe = new("ParticleEmitter", {
+		Color = ColorSequence.new(seq), Rate = 0, Speed = NumberRange.new(speed * 0.5, speed), SpreadAngle = Vector2.new(180, 180),
+		Lifetime = NumberRange.new(life * 0.6, life), Size = NumberSequence.new(size, 0), LightEmission = 0.6,
+		Acceleration = Vector3.new(0, -speed * 0.8, 0), Drag = 2,
+	}, a)
+	pe:Emit(n)
+	Debris:AddItem(a, life + 0.2)
+end
+
+local function slashArc(d)
+	local cf = d.cf
+	local look = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z).Unit
+	local n = d.arc >= 360 and 16 or 9
+	local col = d.charged and Color3.fromRGB(255, 214, 110) or Color3.fromRGB(220, 236, 255)
+	local r = d.range * 0.75
+	for i = 0, n - 1 do
+		local ang
+		if d.arc >= 360 then ang = i / n * 360 else ang = -d.arc / 2 + d.arc * i / (n - 1) end
+		local dir = CFrame.Angles(0, math.rad(ang), 0):VectorToWorldSpace(look)
+		local p = cf.Position + dir * r + Vector3.new(0, 0.6 - i * 0.05, 0)
+		local tangent = Vector3.new(-dir.Z, 0, dir.X)
+		local seg = new("Part", { Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, CastShadow = false, Material = Enum.Material.Neon, Color = col,
+			Size = Vector3.new(0.2, 0.35, math.max(1, r * 0.5)), CFrame = CFrame.lookAt(p, p + tangent), Transparency = 0.25 }, workspace)
+		TweenService:Create(seg, TweenInfo.new(0.22, Enum.EasingStyle.Quad), { Transparency = 1, Size = Vector3.new(0.05, 0.1, math.max(1, r * 0.5)) }):Play()
+		Debris:AddItem(seg, 0.25)
+	end
+end
+
+local function shake(power, dur)
+	local cam = workspace.CurrentCamera
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local k = 1 - (os.clock() - t0) / dur
+		if k <= 0 then conn:Disconnect(); return end
+		cam.CFrame = cam.CFrame * CFrame.new(math.random(-10, 10) / 10 * power * k, math.random(-10, 10) / 10 * power * k, 0)
+	end)
+end
+
+local function myPos()
+	local ch = player.Character
+	local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+	return hrp and hrp.Position
+end
+
+FxEv.OnClientEvent:Connect(function(kind, d)
+	d = d or {}
+	if kind == "slash" then
+		slashArc(d)
+		if d.by ~= player.UserId then
+			local p = myPos()
+			if p and (p - d.cf.Position).Magnitude < 60 then play("swing", 0.25) end
+		end
+	elseif kind == "dmg" then
+		floatText(d.pos, d.text, d.hero and Color3.fromRGB(255, 90, 80) or (d.big and Color3.fromRGB(255, 214, 80) or Color3.fromRGB(255, 255, 255)), d.big and 28 or 22)
+	elseif kind == "death" then
+		if d.boss then
+			burst(d.pos, { Color3.fromRGB(240, 230, 200), Color3.fromRGB(255, 60, 40) }, 80, 40, 1.6, 1.6)
+			shake(0.6, 0.8)
+		else
+			burst(d.pos, { Color3.fromRGB(230, 222, 200), Color3.fromRGB(120, 110, 100) }, 22, 18, 0.9, 0.9)
+		end
+	elseif kind == "summon" then
+		burst(d.pos, { Color3.fromRGB(150, 90, 255), Color3.fromRGB(40, 20, 60) }, 30, 16, 1.2, 1)
+	elseif kind == "boom" then
+		burst(d.pos + Vector3.new(0, 0.5, 0), { Color3.fromRGB(255, 220, 120), Color3.fromRGB(255, 70, 30) }, 50, 34, 1.4, 0.8)
+		local p = myPos()
+		if p and (p - d.pos).Magnitude < 60 then shake(0.35, 0.35) end
+	elseif kind == "levelup" then
+		burst(d.pos, { Color3.fromRGB(255, 240, 160), Color3.fromRGB(255, 200, 60) }, 60, 22, 1, 1.4)
+		local p = myPos()
+		if p and (p - d.pos).Magnitude < 3 then play("equip", 0.6, 1.4) end
+	elseif kind == "drink" then
+		burst(d.pos + Vector3.new(0, 1, 0), { d.color or Color3.new(1, 1, 1), Color3.new(1, 1, 1) }, 18, 10, 0.6, 0.8)
+	elseif kind == "loot" then
+		if d.gold and d.gold > 0 then floatText(d.pos + Vector3.new(0, 2, 0), "+" .. d.gold .. " золота", Color3.fromRGB(255, 200, 60), 18); play("coin", 0.4, 1.2) end
+		if d.xp then floatText(d.pos + Vector3.new(0, 3.5, 0), "+" .. d.xp .. " опыта", Color3.fromRGB(140, 190, 255), 16) end
+		if d.item then floatText(d.pos + Vector3.new(0, 2, 0), "+ " .. d.item, Color3.fromRGB(255, 140, 160), 18); play("coin", 0.4, 0.9) end
+	elseif kind == "hurt" then
+		hurtFlash.BackgroundTransparency = 0.7
+		TweenService:Create(hurtFlash, TweenInfo.new(0.35), { BackgroundTransparency = 1 }):Play()
+	elseif kind == "openShop" then
+		openShop(d.tip)
+	elseif kind == "victory" then
+		victory(d.title or "Победа!")
+		local p = myPos()
+		if p then
+			for i = 1, 6 do
+				task.delay(i * 0.35, function()
+					local q = p + Vector3.new(math.random(-14, 14), math.random(10, 18), math.random(-14, 14))
+					local cols = { Color3.fromRGB(255, 90, 90), Color3.fromRGB(255, 220, 90), Color3.fromRGB(110, 220, 255), Color3.fromRGB(180, 120, 255) }
+					burst(q, { cols[math.random(1, 4)], Color3.new(1, 1, 1) }, 60, 26, 0.8, 1.4)
+				end)
+			end
+		end
+	elseif kind == "coin" then
+		play("coin", 0.45)
+	end
+end)
+
+---------------------------------------------------------------- логово: тьма и свет
+local lightSaved = nil
+local lairCC = new("ColorCorrectionEffect", { Name = "LairTint", Enabled = false, Brightness = -0.04, Saturation = -0.15, TintColor = Color3.fromRGB(226, 214, 236) }, Lighting)
+local function applyZone()
+	local inLair = player:GetAttribute("Zone") == "lair"
+	local atm = Lighting:FindFirstChildOfClass("Atmosphere")
+	if inLair and not lightSaved then
+		lightSaved = { amb = Lighting.Ambient, out = Lighting.OutdoorAmbient, dens = atm and atm.Density, haze = atm and atm.Haze, col = atm and atm.Color }
+		Lighting.Ambient = Color3.fromRGB(34, 30, 40)
+		Lighting.OutdoorAmbient = Color3.fromRGB(40, 36, 48)
+		if atm then atm.Density = 0.42; atm.Haze = 0; atm.Color = Color3.fromRGB(28, 24, 30) end
+		lairCC.Enabled = true
+	elseif not inLair and lightSaved then
+		Lighting.Ambient = lightSaved.amb
+		Lighting.OutdoorAmbient = lightSaved.out
+		if atm then atm.Density = lightSaved.dens; atm.Haze = lightSaved.haze; atm.Color = lightSaved.col end
+		lightSaved = nil
+		lairCC.Enabled = false
+	end
+	mapInner.Visible = not inLair
+	lairMapText.Visible = inLair
+end
+player:GetAttributeChangedSignal("Zone"):Connect(applyZone)
+applyZone()
+
+---------------------------------------------------------------- покадровое обновление
+local motorCache = setmetatable({}, { __mode = "k" })
+local function motorsOf(model)
+	local c = motorCache[model]
+	if c then return c end
+	c = { legs = {}, armL = nil, armR = nil, body = nil }
+	for _, m in ipairs(model:GetDescendants()) do
+		if m:IsA("Motor6D") then
+			if string.sub(m.Name, 1, 8) == "LegMotor" then table.insert(c.legs, { m = m, ph = m:GetAttribute("Phase") or 0 })
+			elseif m.Name == "ArmMotorL" then c.armL = m
+			elseif m.Name == "ArmMotorR" then c.armR = m
+			elseif m.Name == "BodyMotor" then c.body = m end
+		end
+	end
+	motorCache[model] = c
+	return c
+end
+
+local enemiesFolder
+local revealed = {}
+RunService.RenderStepped:Connect(function()
+	local t = os.clock()
+	local ch = player.Character
+	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+	local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+	-- здоровье
+	if hum then
+		hpFill.Size = UDim2.fromScale(math.clamp(hum.Health / math.max(1, hum.MaxHealth), 0, 1), 1)
+		hpText.Text = math.floor(hum.Health + 0.5) .. " / " .. math.floor(hum.MaxHealth)
+	end
+	-- заряд сильного удара
+	if attackHeld then
+		local k = (t - holdStart) / Config.CHARGE_TIME
+		chargeBg.Visible = k > 0.25
+		chargeFill.Size = UDim2.fromScale(math.clamp(k, 0, 1), 1)
+		chargeFill.BackgroundColor3 = k >= 1 and Color3.fromRGB(255, 170, 40) or Color3.fromRGB(255, 230, 160)
+	end
+	-- таймеры зелий
+	local now = workspace:GetServerTimeNow()
+	for _, k in ipairs({ "speed", "might", "guard" }) do
+		local left = attr("Buff_" .. k, 0) - now
+		slots[k].timer.Visible = left > 0
+		if left > 0 then slots[k].timer.Text = tostring(math.ceil(left)) end
+	end
+	-- мини-карта и туман
+	if hrp and meDot then
+		local n = mapN
+		local cx = hrp.Position.X / Config.CELL + n / 2 + 0.5
+		local cz = hrp.Position.Z / Config.CELL + n / 2 + 0.5
+		meDot.Position = UDim2.fromScale(math.clamp((cx - 0.5) / n, 0, 1), math.clamp((cz - 0.5) / n, 0, 1))
+		if player:GetAttribute("Zone") ~= "lair" and #fogCells > 0 then
+			local fx = math.floor((cx - 1) / n * FOG) + 1
+			local fz = math.floor((cz - 1) / n * FOG) + 1
+			for dz = -2, 2 do
+				for dx = -2, 2 do
+					local gx, gz = fx + dx, fz + dz
+					if dx * dx + dz * dz <= 5 and fogCells[gz] and fogCells[gz][gx] and not revealed[gz * 100 + gx] then
+						revealed[gz * 100 + gx] = true
+						TweenService:Create(fogCells[gz][gx], TweenInfo.new(0.8), { BackgroundTransparency = 1 }):Play()
+					end
+				end
+			end
+		end
+	end
+	-- анимация врагов и полоса босса
+	enemiesFolder = enemiesFolder or (workspace:FindFirstChild("Eldoria") and workspace.Eldoria:FindFirstChild("Enemies"))
+	local bossShown = false
+	if enemiesFolder then
+		for _, model in ipairs(enemiesFolder:GetChildren()) do
+			local root = model.PrimaryPart
+			if root then
+				local near = hrp and (root.Position - hrp.Position).Magnitude < 160
+				if near then
+					local c = motorsOf(model)
+					local v = root.AssemblyLinearVelocity
+					local moving = math.clamp(Vector3.new(v.X, 0, v.Z).Magnitude / 8, 0, 1)
+					local seed = (root.Position.X % 7)
+					for _, L in ipairs(c.legs) do
+						L.m.Transform = CFrame.Angles(math.sin(t * 10 + L.ph + seed) * 0.65 * moving, 0, 0)
+					end
+					local atk = model:GetAttribute("AtkAt")
+					local sinceAtk = atk and (now - atk) or 99
+					if c.armR then
+						if sinceAtk < 0.5 then
+							local k = sinceAtk / 0.5
+							local ang = k < 0.4 and (-2.6 * k / 0.4) or (-2.6 + 3.4 * (k - 0.4) / 0.6)
+							c.armR.Transform = CFrame.Angles(ang, 0, 0)
+						else
+							c.armR.Transform = CFrame.Angles(-math.sin(t * 10 + seed) * 0.5 * moving, 0, 0)
+						end
+					end
+					if c.armL then c.armL.Transform = CFrame.Angles(math.sin(t * 10 + seed) * 0.5 * moving, 0, 0) end
+					if c.body then
+						local hop = math.abs(math.sin(t * 6 + seed)) * (0.25 + 0.9 * moving)
+						c.body.Transform = CFrame.new(0, hop, 0)
+					end
+				end
+				if model:GetAttribute("Boss") and player:GetAttribute("Zone") == "lair" then
+					local h = model:FindFirstChildOfClass("Humanoid")
+					if h and h.Health > 0 and near then
+						bossShown = true
+						bossFill.Size = UDim2.fromScale(math.clamp(h.Health / h.MaxHealth, 0, 1), 1)
+						bossName.Text = "Мортракс — Владыка костей   " .. math.ceil(h.Health) .. " / " .. math.floor(h.MaxHealth)
+					end
+				end
+			end
+		end
+	end
+	bossBar.Visible = bossShown
+end)
+
+rescale()
+addNote(Config.TITLE .. " · сборка " .. Config.BUILD, C.dim)
+]]></ProtectedString></Properties></Item></Item><Item class="StarterCharacterScripts" referent="RBX0000000F"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX0000000E"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Пустой скрипт с именем Health отключает стандартное восстановление здоровья Roblox:
+-- в Эльдории здоровье лечат только эликсиры и новый уровень.
+]]></ProtectedString></Properties></Item></Item></Item></roblox>
