@@ -2,7 +2,7 @@
 const SAVE_KEY = 'eldoria_save_v1';                      // автосохранение
 const SLOT_KEYS = ['eldoria_slot_1','eldoria_slot_2','eldoria_slot_3'];   // ручные слоты
 try{ localStorage.setItem('__eldoria_t','1'); localStorage.removeItem('__eldoria_t'); storageOK=true; }catch(e){ storageOK=false; }
-const PLAYER_KEYS = ['forks','stash','home','pet','daily','secrets','ach','stat','ngp','comp','x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','visited','track','stories'];
+const PLAYER_KEYS = ['mercs','genq','wild','bhSeen','forks','stash','home','pet','daily','secrets','ach','stat','ngp','comp','x','y','dir','hp','maxHp','atk','level','xp','xpNext','gold','potions','vkeys','weapon','owned','armor','ownedArmor','quest','questsDone','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','visited','track','stories'];
 const savesBtn = document.getElementById('savesBtn');
 const loadBtn = document.getElementById('loadBtn');
 const saveInfoEl = document.getElementById('saveInfo');
@@ -231,7 +231,7 @@ function gearRow(kind, id, def){
 function renderQuests(){
   const act = player.quest;
   for(const id of Object.keys(QUESTS)){
-    const d = QUESTS[id];
+    const d = QUESTS[id]; if(d.gen) continue;
     const reward = 'Награда: '+d.gold+' ◆'+(d.potions ? ' и '+d.potions+' зел.' : '');
     let btn, extra = '', extraBtn = null;
     if(player.questsDone && player.questsDone[id]) btn = shopButton('Выполнено ✓', null, true);
@@ -251,6 +251,7 @@ function renderQuests(){
     }
     shopRow(d.name, d.desc+' '+reward+extra, extraBtn ? [btn, extraBtn] : [btn]);
   }
+  renderGenQuests();
 }
 function elixShopRow(k){
       const d = ELIX[k], price = Math.round(d.price*shopMul());

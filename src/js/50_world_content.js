@@ -345,7 +345,7 @@ function resetGame(){
   fullInvNoticeTimer = 0;
   resetHero();
   resetEnv();
-  ensureMetaWorld(world); ensureMapExtras(world); ensureHerbs(world); ensureNewPlayerFields(); storiesEnsure();
+  ensureMetaWorld(world); ensureMapExtras(world); ensureHerbs(world); ensureNewPlayerFields(); storiesEnsure(); extEnsureWorld(world);
 }
 
 // старые сохранения: достраиваем новые уровни и спуск из Провала
@@ -580,7 +580,7 @@ function ensureWorldExtras(){
   if(!world.town || !world.house1 || !world.house2) Object.assign(world, makeTownSet());
   if(world.overworld && !world.overworld.entrances.some(en=>en.dungeon==='town')) placeTownGate(world.overworld, world.overworld.entrances[0]);
   for(const id of CHAIN) if(!world[id]) world[id] = genLoc(id);
-  ensureSecrets(world); ensureAirWater(world); ensurePOIs(world); ensureMetaWorld(world); ensureMapExtras(world); ensureHerbs(world);
+  ensureSecrets(world); ensureAirWater(world); ensurePOIs(world); ensureMetaWorld(world); ensureMapExtras(world); ensureHerbs(world); extEnsureWorld(world);
 }
 
 const CHAIN = ['lair1','dungeon1','lair2','dungeon3','lair3','lava','lair4','desert','lair5','ice','lair6','grave','lair7','jungle','lair8','city','lair9','manor','lair10'];

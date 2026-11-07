@@ -1,7 +1,7 @@
 // ======================= Достижения и «Новая игра+», арена, напарник, рыбалка, травы и варка =======================
 let ngpKeep = 0, lairHit = false, achAcc = 0, herbAcc = 0;
 const NGP_KEY = 'eldoria_ngp';
-const NGP_KEYS = ['maxHp','atk','level','xp','xpNext','gold','potions','weapon','owned','armor','ownedArmor','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','ach','stat','comp','stash','home','pet','daily'];
+const NGP_KEYS = ['maxHp','atk','level','xp','xpNext','gold','potions','weapon','owned','armor','ownedArmor','sp','skills','gear','bag','wLvl','ench','elix','codex','boots','sb','mats','ach','stat','comp','stash','home','pet','daily','mercs'];
 function ngMul(){ return 1+0.4*(player.ngp||0); }
 
 function ensureMetaFields(){
@@ -205,7 +205,7 @@ function renderPartyTab(){
     const C = COMP[k], S = compStats(k), here = currentLocId==='house1';
     jRow(C.name+' — '+C.price+' ◆', C.desc+' Здоровье '+S.maxHp+', урон '+S.dmg+'.'+(c ? ' Новый наёмник заменит текущего.' : ''), [shopButton(here ? 'Нанять — '+C.price+' ◆' : 'В трактире', ()=>{ if(hireComp(k)) renderJournal('Наёмник теперь с вами.'); }, !here || player.gold<C.price || (c && c.type===k))]);
   }
-  renderRecords(); renderForkSection();
+  renderMercSection(); renderRecords(); renderForkSection();
 }
 function compSpawn(){
   const S = compStats(player.comp.type), pcx = player.x+player.w/2, pcy = player.y+player.h/2;
@@ -425,11 +425,11 @@ function metaTalk(n){
   }
 }
 function metaEnter(prev){
-  fish = null; compObj = null; lairHit = false; enterE();
+  fish = null; compObj = null; lairHit = false; enterE(); mercObjs.clear(); bev.length = 0; bhCd = 5;
   if(prev && prev.arena && prev.run){ prev.run = null; prev.enemies.length = 0; addNote('🏟 Испытание закончено', '#c8c8c8'); }
 }
 function metaTick(dt){
   achAcc += dt; if(achAcc>1){ achAcc = 0; achCheck(); }
-  arenaTick(dt); compTick(dt); fishTick(dt); herbTick(dt); extraTick(dt);
+  arenaTick(dt); compTick(dt); fishTick(dt); herbTick(dt); extraTick(dt); extTick(dt);
 }
-function drawMeta(camX, camY){ drawSeason(); drawCompanion(camX, camY); drawFishing(camX, camY); drawExtra(camX, camY); }
+function drawMeta(camX, camY){ drawSeason(); drawCompanion(camX, camY); drawFishing(camX, camY); drawExtra(camX, camY); extDraw(camX, camY); }

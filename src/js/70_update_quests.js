@@ -109,6 +109,7 @@ const QUESTS = {
 };
 function questKill(type){
   const q = player.quest; if(!q || q.done) return;
+  if(q.gen){ genQuestKill(type); return; }
   const d = QUESTS[q.id]; if(!d || d.type!==type) return;
   q.progress = Math.min(d.target, q.progress+1);
   if(q.progress>=d.target){ q.done = true; addNote('📜 Задание выполнено: «'+d.name+'». Вернитесь к торговцу!', '#7fe07f'); SFX.play('levelup'); }
@@ -122,7 +123,7 @@ function killEnemy(e){
   questKill(e.type); if(player.codex){ player.codex.e[e.type] = 1; player.codex.k[e.type] = (player.codex.k[e.type]||0)+1; }
   maybeDropGear(e); maybeDropElixir(e);
   addNote(`Повержен враг: +${gx} опыта, +${gg} золота`, '#e0c96a');
-  if(BOSS_TYPES.includes(e.type) && !loc.arena){
+  if(BOSS_TYPES.includes(e.type) && !loc.arena && !loc.wild){
     if(e.type==='phantom') loc.items.push(makeItem('treasure', e.x, e.y));
     else if(loc.portal){
       loc.grid[loc.portal.ty][loc.portal.tx]='v'; loc.portal.open=true;
@@ -358,6 +359,7 @@ function update(dt){
 }
 
 function onPlayerDeath(){
+  if(sandboxOn()){ player.hp = player.maxHp; player.invuln = 1000; addNote('🧪 Песочница: герой бессмертен', '#e8c8ff'); return; }
   setTimeout(renderDiff,0);
   gameState='dead'; showDeathTip();
   SFX.play('death');

@@ -102,7 +102,7 @@ async def main():
               t.saveGame(); const ok=t.loadGame(); out.load=ok&&P.comp&&P.comp.type==='hound';
               // журнал
               t.goTo('house1',t.world.house1.spawn.x,t.world.house1.spawn.y,''); t.openJournal('party'); const btns=[...document.querySelectorAll('#questList button')].filter(b=>b.textContent.indexOf('Нанять')===0&&!b.disabled).length; t.closeJournal(true); out.hireBtns=btns>=2;
-              t.goTo('overworld',P.x,P.y,''); t.openJournal('party'); const dis=[...document.querySelectorAll('#questList button')].filter(b=>b.textContent==='В трактире'&&b.disabled).length; t.closeJournal(true); out.outside=dis===3;
+              t.goTo('overworld',P.x,P.y,''); t.openJournal('party'); const dis=[...document.querySelectorAll('#questList button')].filter(b=>b.textContent==='В трактире'&&b.disabled).length; t.closeJournal(true); out.outside=dis===3+Object.keys(t.MERC).length;
               t.dismissComp(); out.dismiss=P.comp===null&&t.compObj===null;
               return out}""")
             if all(r.values()): break

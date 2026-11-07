@@ -228,6 +228,8 @@ function renderSettings(){
   box.appendChild(row('Сезонные эффекты', toggle('season','Вкл','Выкл')));
   box.appendChild(row('Управление на экране', toggle('lefty','Для левши','Для правши')));
   box.appendChild(row('Размер кнопок', slider('ctrl',0.8,1.3,0.1)));
+  box.appendChild(row('Панель FPS (на ПК — клавиша F3)', toggle('perf','Вкл','Выкл')));
+  box.appendChild(row('Режим песочницы: бессмертие и всё снаряжение', toggle('sandbox','Вкл','Выкл')));
   const note = document.createElement('p'); note.style.cssText = 'font-size:12px;color:#a89d78;max-width:420px;margin:4px 0 0'; note.textContent = 'Настройки хранятся на этом устройстве. Графика и сложность — на главном экране.';
   const back = document.createElement('button'); back.className = 'startBtn'; back.textContent = 'Назад';
   back.addEventListener('click', ()=>{ settingsScreen.classList.add('hidden'); startScreenEl.classList.remove('hidden'); });

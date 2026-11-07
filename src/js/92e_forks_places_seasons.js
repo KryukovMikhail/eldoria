@@ -107,7 +107,7 @@ function ensureAirWater(w){
   }
 }
 function entranceGate(id){
-  const d = world[id]; if(d && d.reqStage && storyStage()<d.reqStage){ addNote('🚫 '+d.reqText, '#e07f7f'); SFX.play('deny'); transitionCooldown = 2500; return true; }
+  const d = world[id]; if(d && d.reqStage && storyStage()<d.reqStage && !sandboxOn()){ addNote('🚫 '+d.reqText, '#e07f7f'); SFX.play('deny'); transitionCooldown = 2500; return true; }
   return false;
 }
 function placesTickB(dt){

@@ -93,8 +93,8 @@ const WEAPON_SFX = { sword:'swing', spear:'spear', axe:'axe', bow:'bow', crossbo
 const WEAPON_UNLOCK = { sword:0, spear:1, bow:2, axe:3, crossbow:4, musket:5, dagger:2, hammer:6, staff:7 };
 const BOSS_NAME_BY_STAGE = ['Мортракс','Шелиба','Ноктурн','Игнаррок','Хар-Атеп','Криомир','Морвейн','Ольхарон','Вархаал','Эфирий'];
 const ARMOR_UNLOCK = { none:0, leather:0, chain:1, plate:2 };
-function armorUnlocked(id){ return (ARMOR_UNLOCK[id]||0) <= storyStage(); }
-function weaponUnlocked(id){ return (WEAPON_UNLOCK[id]||0) <= storyStage(); }
+function armorUnlocked(id){ return sandboxOn() || (ARMOR_UNLOCK[id]||0) <= storyStage(); }
+function weaponUnlocked(id){ return sandboxOn() || (WEAPON_UNLOCK[id]||0) <= storyStage(); }
 function weaponLockText(id){ const n = WEAPON_UNLOCK[id]||0; return '🔒 После победы над стражем №'+n+': '+BOSS_NAME_BY_STAGE[n-1]; }
 
 // ---------- Броня ----------
@@ -120,7 +120,7 @@ const player = {
 };
 function incomingDamage(d){
   const red = Math.min(0.85, ARMORS[player.armor].reduce + gearStat('def')/100);
-  return Math.max(1, Math.round(d * (1-red) * (player.shield>0 ? 0.2 : 1) * (player.buff.guard>0 ? 0.5 : 1) * (player.sb && player.sb.might==='b' ? 0.88 : 1) * diffMul('dmg') * dailyMul('inn')));
+  return Math.max(1, Math.round(d * (1-red) * (player.shield>0 ? 0.2 : 1) * (player.buff.guard>0 ? 0.5 : 1) * (player.sb && player.sb.might==='b' ? 0.88 : 1) * diffMul('dmg') * dailyMul('inn') * partyGuardMul()));
 }
 function playerDamage(){ return Math.round(player.atk * WEAPONS[player.weapon].mult * weaponMul() * (1 + (gearStat('dmg') + 6*player.skills.might + (player.buff.might>0 ? 50 : 0))/100) * (player.counterT>0 ? 1.5 : 1)); }
 

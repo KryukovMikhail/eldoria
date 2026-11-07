@@ -37,7 +37,7 @@ async def main():
         r=await pg.evaluate("()=>({g:__t.player.gold,a:__t.player.armor})"); print(r)
         chk('sold plate',r['a']=='none' and r['g']==355)
         await pg.evaluate("()=>{__t.setShopTab('quests'); __t.renderShop('')}")
-        n=await pg.evaluate("()=>document.querySelectorAll('#shopList .shopItem').length"); chk('19 quests',n==19,n)
+        n=await pg.evaluate("()=>document.querySelectorAll('#shopList .shopItem').length"); chk('19 story quests + 3 guild offers + refresh',n==19+3+1,n)
         await pg.evaluate("()=>{__t.closeShop()}")
         # --- 2. цепочка боссов и переходов
         chain=[('lair1','dungeon1'),('lair2','dungeon3'),('lair3','lava'),('lair4','desert'),('lair5','ice'),('lair6','grave'),('lair7','jungle'),('lair8','city'),('lair9','manor')]

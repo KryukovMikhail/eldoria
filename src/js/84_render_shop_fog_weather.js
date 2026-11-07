@@ -248,7 +248,7 @@ function draw(){
     drawHPBar(sx, sy-8-lift, e.w, 4, e.hp/e.maxHp, isBoss?'#ff5050':'#e05a5a');
     if(isBoss){
       ctx.fillStyle='#fff'; ctx.font='10px sans-serif'; ctx.textAlign='center';
-      ctx.fillText(BOSS_LABEL[e.type], sx+e.w/2, sy-12-lift);
+      ctx.fillText(e.label||BOSS_LABEL[e.type], sx+e.w/2, sy-12-lift);
     }
   }
 
@@ -288,6 +288,7 @@ function draw(){
   drawHUD();
   drawSkillBar(); drawElixHUD();
   if(loc.type==='overworld') drawMinimap();
+  extHUD();
   if(restFade>0){ const p = restFade/1400; ctx.fillStyle = 'rgba(4,4,12,'+(0.92*(1-Math.abs(2*p-1)))+')'; ctx.fillRect(0,0,canvas.width,canvas.height); }
 }
 
@@ -362,7 +363,7 @@ function drawHUD(){
   ctx.font='bold 14px sans-serif';
   const locName2 = getLocName(loc) + atmoLabel();
   const bw = Math.max(150, ctx.measureText(locName2).width+28);
-  const mmRight = UI.l + 246 + (loc.type==='overworld' ? minimapSize()+6 : 0);
+  const mmRight = UI.l + 246 + (loc.type==='overworld' ? minimapSize()+6 : loc.wild ? 7*13+10 : 0);
   const Lb = mmRight + 8, Rb = canvas.width - UI.r - 260;
   const fits = (Rb-Lb) >= 270;                      // иначе — под верхним рядом
   const cxA = fits ? (Lb+Rb)/2 : canvas.width/2;

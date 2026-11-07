@@ -18,6 +18,7 @@ function openPause(){
   add('📜 Журнал', ()=>questBtn.click());
   add('🎒 Герой'+(player.sp>0 ? ' ★' : ''), ()=>heroBtn.click());
   add('📖 Энциклопедия', ()=>codexBtn.click());
+  if(sandboxOn()) add('🧪 Песочница', ()=>openSandbox());
   add(SFX.muted ? '🔇 Звук выкл.' : '🔊 Звук вкл.', ()=>soundBtn.click());
   add(document.fullscreenElement || document.webkitFullscreenElement ? '🗗 Окно' : '⛶ Полный экран', ()=>fullscreenBtn.click());
   add('🚪 Выйти в меню', ()=>menuBtn.click());
