@@ -21,36 +21,176 @@ function unpackLoc(o){
   if(L.type==='dungeon') L.boss = L.enemies.find(e=>BOSS_TYPES.includes(e.type)) || null;
   return L;
 }
+// ---------- Формат хранения сохранений ----------
+// Версия данных сохранения. Меняете формат — поднимите SAVE_VERSION и добавьте шаг в SAVE_MIGRATIONS.
+const SAVE_VERSION = 2;
+const SAVE_MIGRATIONS = {
+  // v1 -> v2: изменился только способ хранения (сжатие); заодно переносим сюда старую проверку «мир до логов боссов»
+  1: d=>{ const w = d.world; if(w && w.overworld && !w.lair1) d.legacy = true; },
+};
+function migrateSave(d){
+  if(!d || typeof d.v!=='number' || d.v<1 || d.v>SAVE_VERSION) return null;   // сохранение из более новой версии игры не трогаем
+  while(d.v < SAVE_VERSION){ const step = SAVE_MIGRATIONS[d.v]; if(step) step(d); d.v++; }
+  return d;
+}
+// Сжатие: LZ77 по символам строки. Совпадение кодируется тремя символами: U+0001, длина, расстояние.
+// Сырой U+0001 в JSON не встречается (JSON.stringify экранирует управляющие символы), поэтому он свободен как маркер.
+// Функции самодостаточны: их исходный текст отдаётся фоновому потоку (Worker).
+function lzPack(s){
+  const BASE = 0x100, MIN = 5, MAXLEN = 4096, WIN = 50000;      // значения BASE+n < 0xD800: без суррогатов
+  const n = s.length, head = new Int32Array(1<<16).fill(-1), prev = new Int32Array(n), out = [];
+  const h = p => (((s.charCodeAt(p)*31 + s.charCodeAt(p+1))*31 + s.charCodeAt(p+2))*31 + s.charCodeAt(p+3)) & 0xFFFF;
+  let lit = 0, i = 0;
+  const ins = p => { if(p+3 < n){ const k = h(p); prev[p] = head[k]; head[k] = p; } };
+  while(i < n){
+    let bl = 0, bd = 0;
+    const c0 = s.charCodeAt(i);
+    if(i+MIN <= n && !(c0>=0xDC00 && c0<=0xDFFF)){                // не начинаем совпадение посреди суррогатной пары
+      let c = head[h(i)], tries = 24;
+      while(c >= 0 && i-c <= WIN && tries--){
+        if(s.charCodeAt(c+bl) === s.charCodeAt(i+bl)){
+          let l = 0; const lim = Math.min(MAXLEN, n-i);
+          while(l < lim && s.charCodeAt(c+l) === s.charCodeAt(i+l)) l++;
+          if(l > bl){ bl = l; bd = i-c; if(l === lim) break; }
+        }
+        c = prev[c];
+      }
+      if(bl >= MIN){ const e = s.charCodeAt(i+bl-1); if(e>=0xD800 && e<=0xDBFF) bl--; }   // и не заканчиваем посреди неё
+    }
+    if(bl >= MIN){
+      if(lit < i) out.push(s.slice(lit, i));
+      out.push('\u0001' + String.fromCharCode(BASE+bl, BASE+bd));
+      const end = i+bl; for(; i < end; i++) ins(i); lit = i;
+    } else { ins(i); i++; }
+  }
+  if(lit < n) out.push(s.slice(lit));
+  return out.join('');
+}
+function lzUnpack(z){
+  const BASE = 0x100; let n = 0, i = 0;
+  while(i < z.length){ if(z.charCodeAt(i)===1){ n += z.charCodeAt(i+1)-BASE; i += 3; } else { n++; i++; } }
+  const o = new Uint16Array(n); let p = 0; i = 0;
+  while(i < z.length){
+    const c = z.charCodeAt(i);
+    if(c === 1){ const len = z.charCodeAt(i+1)-BASE, d = z.charCodeAt(i+2)-BASE; if(d<1 || d>p) throw new Error('bad lz'); for(let k=0;k<len;k++,p++) o[p] = o[p-d]; i += 3; }
+    else { o[p++] = c; i++; }
+  }
+  let r = ''; for(let k=0;k<n;k+=8192) r += String.fromCharCode.apply(null, o.subarray(k, k+8192));
+  return r;
+}
+const LZ_TAG = 'ELZ1:';
+// дробные числа (координаты, таймеры, зёрна анимаций) храним с 6 значащими цифрами — на игру не влияет, а места меньше
+function saveNum(k, v){ return (typeof v==='number' && !Number.isInteger(v) && isFinite(v)) ? +v.toPrecision(6) : v; }
+function saveJSON(data){ return JSON.stringify(data, saveNum); }
+function encodeSave(data){ return LZ_TAG + lzPack(saveJSON(data)); }
+function decodeSave(raw){ return JSON.parse(raw.indexOf(LZ_TAG)===0 ? lzUnpack(raw.slice(LZ_TAG.length)) : raw); }
+const saveCache = new Map();                                     // ключ -> {raw, d}: меню читает слоты часто, распаковываем один раз
+// незаписанное фоновое сохранение дописываем сразу, если кто-то читает сохранения (загрузка, меню, экспорт)
+function flushSaves(key){
+  for(const [id, job] of lzJobs){ if(key && job.key!==key) continue; lzJobs.delete(id); writeSaveRawNow(job); }
+}
+function readSave(key){
+  flushSaves(key);
+  let raw; try{ raw = localStorage.getItem(key); }catch(e){ return null; }
+  if(!raw){ saveCache.delete(key); return null; }
+  const c = saveCache.get(key); if(c && c.raw===raw) return c.d;
+  let d = null; try{ d = migrateSave(decodeSave(raw)); }catch(e){ d = null; }
+  if(d && !(d.player && d.world)) d = null;
+  saveCache.set(key, {raw, d});
+  return d;
+}
 function getSaveInfo(key){
   if(!storageOK) return null;
+  return readSave(key || SAVE_KEY);                              // общий объект из кэша: не изменять (loadGame делает копию)
+}
+// ---------- Запись ----------
+let saveFailT = -1e9, saveErr = '', lzJobId = 0;
+const saveSeq = {};                                             // ключ -> номер последней записи; старые фоновые результаты отбрасываются
+const nextSeq = key => (saveSeq[key] = (saveSeq[key]||0)+1);
+function storeRaw(key, raw){
+  try{ localStorage.setItem(key, raw); saveCache.delete(key); return true; }catch(e){}
+  compactStoredSaves();                                          // место могли занимать несжатые сохранения прошлых версий
+  try{ localStorage.setItem(key, raw); saveCache.delete(key); return true; }catch(e){}
+  return false;
+}
+function saveFailed(){
+  saveErr = 'Не удалось сохранить: в памяти браузера кончилось место. Удалите лишний слот в «Сохранениях» или выгрузите их в файл.';
+  if(performance.now()-saveFailT > 60000){ saveFailT = performance.now(); addNote('⚠ '+saveErr, '#ff6b5a'); }
+  return false;
+}
+function writeSave(key, data){
+  if(!storageOK || !data) return false;
+  nextSeq(key);
+  let raw; try{ raw = encodeSave(data); }catch(e){ return saveFailed(); }
+  if(!storeRaw(key, raw)) return saveFailed();
+  saveErr = ''; return true;
+}
+// Сжатие в фоновом потоке, чтобы переходы между локациями и покупки не подтормаживали.
+// Снимок состояния делается сразу (синхронно), в фон уходит только упаковка строки.
+let lzWorker = null, lzWorkerOK = typeof Worker!=='undefined' && typeof Blob!=='undefined';
+const lzJobs = new Map();
+function lzWorkerGet(){
+  if(lzWorker || !lzWorkerOK) return lzWorker;
   try{
-    const raw = localStorage.getItem(key || SAVE_KEY);
-    if(!raw) return null;
-    const d = JSON.parse(raw);
-    return (d && d.v===1 && d.player && d.world) ? d : null;
-  }catch(e){ return null; }
+    const src = lzPack.toString()+'\nonmessage=e=>{ let z=null; try{ z=lzPack(e.data.s); }catch(err){} postMessage({id:e.data.id, z}); };';
+    lzWorker = new Worker(URL.createObjectURL(new Blob([src], {type:'text/javascript'})));
+    lzWorker.onmessage = e=>{
+      const job = lzJobs.get(e.data.id); lzJobs.delete(e.data.id); if(!job) return;
+      if(job.seq !== saveSeq[job.key]) return;                   // после этого уже записано более свежее состояние
+      if(e.data.z===null){ writeSaveRawNow(job); return; }
+      if(storeRaw(job.key, LZ_TAG+e.data.z)){ saveErr = ''; if(job.flash) saveFlash = 1500; } else saveFailed();
+    };
+    lzWorker.onerror = ()=>{ lzWorkerOK = false; lzWorker = null; for(const job of lzJobs.values()) writeSaveRawNow(job); lzJobs.clear(); };
+  }catch(e){ lzWorkerOK = false; lzWorker = null; }
+  return lzWorker;
+}
+function writeSaveRawNow(job){
+  if(job.seq !== saveSeq[job.key]) return;
+  try{ if(storeRaw(job.key, LZ_TAG+lzPack(job.s))){ saveErr = ''; if(job.flash) saveFlash = 1500; } else saveFailed(); }catch(e){ saveFailed(); }
+}
+function writeSaveAsync(key, data, flash){
+  if(!storageOK || !data) return false;
+  const w = lzWorkerGet();
+  if(!w){ const ok = writeSave(key, data); if(ok && flash) saveFlash = 1500; return ok; }
+  const job = {id:++lzJobId, seq:nextSeq(key), key, s:saveJSON(data), flash};
+  lzJobs.set(job.id, job); w.postMessage({id:job.id, s:job.s});
+  return true;
+}
+// Пережать сохранения, записанные прошлыми версиями игры без сжатия (освобождает место в хранилище)
+function compactStoredSaves(){
+  if(!storageOK) return;
+  for(const k of [SAVE_KEY, ...SLOT_KEYS]){
+    let raw = null; try{ raw = localStorage.getItem(k); }catch(e){}
+    if(!raw || raw.indexOf(LZ_TAG)===0) continue;
+    try{ const z = LZ_TAG+lzPack(saveJSON(JSON.parse(raw))); localStorage.removeItem(k); localStorage.setItem(k, z); saveCache.delete(k); }
+    catch(e){ try{ if(!localStorage.getItem(k)) localStorage.setItem(k, raw); }catch(e2){} }
+  }
 }
 function buildSaveData(){
   if(!hasActiveGame || gameState==='dead' || gameState==='won' || player.hp<=0) return null;
-  const data = { v:1, diff:difficulty, t:Date.now(), locId:currentLocId, locName:getLocName(loc), player:{}, world:{}, env:packEnv() };
+  const data = { v:SAVE_VERSION, diff:difficulty, t:Date.now(), locId:currentLocId, locName:getLocName(loc), player:{}, world:{}, env:packEnv() };
   for(const k of PLAYER_KEYS) data.player[k] = player[k];
   for(const id of Object.keys(world)) data.world[id] = packLoc(world[id]);
   return data;
 }
+// обычное сохранение: снимок сразу, сжатие и запись в фоне
 function saveGame(){
   if(!storageOK) return false;
-  const data = buildSaveData(); if(!data) return false;
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(data)); saveFlash = 1500; return true; }catch(e){ return false; }
+  return writeSaveAsync(SAVE_KEY, buildSaveData(), true);
+}
+// немедленное сохранение: при сворачивании и закрытии страницы ждать фонового потока нельзя
+function saveGameNow(){
+  if(!storageOK) return false;
+  const ok = writeSave(SAVE_KEY, buildSaveData()); if(ok) saveFlash = 1500; return ok;
 }
 function saveToSlot(n){
   if(!storageOK) return false;
-  const data = buildSaveData(); if(!data) return false;
-  try{ localStorage.setItem(SLOT_KEYS[n], JSON.stringify(data)); return true; }catch(e){ return false; }
+  return writeSave(SLOT_KEYS[n], buildSaveData());
 }
-function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} saveCache.delete(SAVE_KEY); }
 function latestSaveKey(){
   let best = null, bt = -1;
-  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ const i = getSaveInfo(k); if(i && i.t>bt){ bt = i.t; best = k; } }
+  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ const i = storageOK ? readSave(k) : null; if(i && i.t>bt){ bt = i.t; best = k; } }
   return best;
 }
 function fmtSave(info){
@@ -66,13 +206,14 @@ function refreshSaveUI(){
   } else saveInfoEl.classList.add('hidden');
 }
 function loadGame(key){
-  const d = getSaveInfo(key);
-  if(!d) return false;
+  const d0 = getSaveInfo(key);
+  if(!d0) return false;
+  const d = JSON.parse(JSON.stringify(d0));                       // копия: мир игры не должен делить объекты с кэшем
   try{
     const w = {};
     for(const id of Object.keys(d.world)) w[id] = unpackLoc(d.world[id]);
-    let legacy = false;
-    if(w.overworld && !w.lair1){                 // сохранение до переделки уровней: герой остаётся, карты подземелий создаются заново
+    let legacy = !!d.legacy;
+    if(legacy){                 // сохранение до переделки уровней: герой остаётся, карты подземелий создаются заново
       legacy = true;
       for(const id of Object.keys(w)) if(!['overworld','town','house1','house2'].includes(id)) delete w[id];
       for(const en of w.overworld.entrances) if(en.dungeon==='dungeon1') en.dungeon = 'lair1';
@@ -129,7 +270,7 @@ function saveRow(title, desc, buttons){
 function renderSaves(msg){
   const last = latestSaveKey(), li = last ? getSaveInfo(last) : null;
   document.getElementById('savesLast').textContent = li ? 'Последнее сохранение: '+fmtSave(li) : 'Сохранений пока нет.';
-  document.getElementById('savesMsg').textContent = msg || '';
+  document.getElementById('savesMsg').textContent = msg || (saveErr ? '⚠ '+saveErr : '');
   savesList.innerHTML = '';
   const ai = getSaveInfo(SAVE_KEY);
   saveRow('Автосохранение', ai ? fmtSave(ai) : 'Пусто. Появится само при переходах, в лавке и по ходу игры.',
@@ -139,9 +280,9 @@ function renderSaves(msg){
     btns.push(shopButton('Загрузить', ()=>{ loadGame(key); }, !info));
     btns.push(shopButton(info ? 'Записать' : 'Сохранить сюда', ()=>{
       if(info && !confirm('Перезаписать слот '+(n+1)+'?')) return;
-      renderSaves(saveToSlot(n) ? 'Игра сохранена в слот '+(n+1)+'.' : 'Не удалось сохранить (нет места или хранилище недоступно).');
+      renderSaves(saveToSlot(n) ? 'Игра сохранена в слот '+(n+1)+'.' : (saveErr || 'Не удалось сохранить (хранилище недоступно).'));
     }, !hasActiveGame));
-    if(info) btns.push(shopButton('Удалить', ()=>{ if(!confirm('Удалить слот '+(n+1)+'?')) return; try{ localStorage.removeItem(key); }catch(e){} renderSaves('Слот '+(n+1)+' удалён.'); }));
+    if(info) btns.push(shopButton('Удалить', ()=>{ if(!confirm('Удалить слот '+(n+1)+'?')) return; try{ localStorage.removeItem(key); }catch(e){} saveCache.delete(key); saveErr = ''; renderSaves('Слот '+(n+1)+' удалён.'); }));
     saveRow('Слот '+(n+1), info ? fmtSave(info) : (hasActiveGame ? 'Пусто' : 'Пусто. Начните или загрузите игру, чтобы сохранять сюда.'), btns);
   });
 }
@@ -154,8 +295,10 @@ setInterval(()=>{
   if(calm) saveGame();
 }, 20000);
 // при сворачивании вкладки и закрытии страницы сохраняем точное состояние
-document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveGame(); });
-window.addEventListener('pagehide', saveGame);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveGameNow(); });
+window.addEventListener('pagehide', saveGameNow);
+// один раз при запуске: пережать старые несжатые сохранения, чтобы освободить место
+setTimeout(compactStoredSaves, 1500);
 
 // ---------- Торговая лавка ----------
 const shopScreen = document.getElementById('shopScreen');

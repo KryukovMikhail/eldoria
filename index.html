@@ -240,7 +240,7 @@
   </div>
 
   <div id="startScreen" class="overlay">
-    <div id="buildTag">сборка D001.048</div>
+    <div id="buildTag">сборка D001.049</div>
     <div class="scroll"><div class="scrollIn">
     <h2>Легенды Эльдории</h2>
     <div id="introText">
@@ -1027,7 +1027,7 @@ function drawStatusFx(sx,sy){
 }
 function drawStatusHUD(){
   const f = player.fx; if(!f) return;
-  let y = UI.t+244+(player.slowT>0?24:0);
+  let y = UI.t+hudH()+58+(player.slowT>0?24:0);
   for(const k of ['freeze','burn','poison']){
     if(!(f[k]>0)) continue;
     const I = STATUS_INFO[k], w = 112;
@@ -1054,7 +1054,7 @@ function maybeDropElixir(e){
 }
 function elixLayout(){
   const list = ELIX_KEYS.filter(k=> player.elix[k]>0 || (k!=='big' && player.buff[k]>0));
-  return list.map((k,i)=>({k, x:UI.l+8+i*40, y:UI.t+202, w:36, h:36}));
+  return list.map((k,i)=>({k, x:UI.l+8+i*40, y:UI.t+hudH()+16, w:36, h:36}));
 }
 function drawElixHUD(){
   const L = elixLayout();
@@ -1070,7 +1070,7 @@ function drawElixHUD(){
   }
   drawStatusHUD();
   if(player.slowT>0){
-    const y = UI.t+184, w = 112;
+    const y = UI.t+hudH()-2, w = 112;
     ctx.fillStyle = 'rgba(40,40,56,0.8)'; ctx.fillRect(UI.l+52,y,w,20); ctx.strokeStyle = '#a8a8c0'; ctx.lineWidth = 1; ctx.strokeRect(UI.l+52.5,y+0.5,w-1,19);
     ctx.fillStyle = '#e4e4f4'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('🕸 Замедление '+(player.slowT/1000).toFixed(1), UI.l+58, y+14);
   }
@@ -2235,7 +2235,7 @@ function goTo(locId, x, y, message){
   loc = world[locId];
   // большие карты кешируются в крупные холсты: при уходе на другой большой уровень освобождаем память (важно для iOS)
   if(prevLoc && prevLoc!==loc && loc.width*loc.height>=2000){
-    for(const m of [groundLayers, dungeonLayers, waterLayers]){ const c = m.get(prevLoc); if(c){ if(c.getContext){ c.width = 1; c.height = 1; } m.delete(prevLoc); } }
+    for(const m of [groundLayers, dungeonLayers, waterLayers]){ const c = m.get(prevLoc); if(c){ if(c.getContext){ c.width = 1; c.height = 1; } else if(c.dispose) c.dispose(); m.delete(prevLoc); } }
   }
   player.x = x; player.y = y;
   transitionCooldown = 700;
@@ -2833,9 +2833,11 @@ function vnoise(x,y,seed){
   return top+(bot-top)*v;
 }
 function boxBlur(src,dst,W,H,r,vertical){
+  if(vertical){ boxBlurV(src,dst,W,H,r); return; }
   const n = vertical ? W : H, len = vertical ? H : W, step = vertical ? W : 1, w = 2*r+1;
   for(let k=0;k<n;k++){
     const base = vertical ? k : k*W;
+    if(!vertical){ let any = false; for(let i=0;i<len;i++) if(src[base+i]!==0){ any = true; break; } if(!any){ dst.fill(0, base, base+len); continue; } }   // пустая строка
     let acc=0;
     for(let i=-r;i<=r;i++) if(i>=0 && i<len) acc += src[base+i*step];
     for(let i=0;i<len;i++){
@@ -2846,25 +2848,106 @@ function boxBlur(src,dst,W,H,r,vertical){
     }
   }
 }
-function buildWaterLayer(L){
-  const cpt = TILE/WATER_SCALE, W = L.width*cpt, H = L.height*cpt;
-  let a = new Float32Array(W*H), b = new Float32Array(W*H);
-  for(let ty=0; ty<L.height; ty++) for(let tx=0; tx<L.width; tx++){
-    if(L.grid[ty][tx]!=='~') continue;
-    for(let yy=0; yy<cpt; yy++){ const row=(ty*cpt+yy)*W+tx*cpt; for(let xx=0; xx<cpt; xx++) a[row+xx]=1; }
+// ---------- Кэш земли кусками ----------
+// Большие карты (поверхность, пустыня, джунгли…) раньше рисовались целиком в один огромный холст при входе:
+// на телефоне это давало паузу в 1–3 секунды. Теперь земля строится кусками по CHUNK px: сразу — только видимые,
+// остальные — по одному за кадр рядом с камерой. Построители рисуют в мировых координатах, кусок лишь сдвигает холст.
+const CHUNK = 256, CHUNK_MARGIN = 2, CHUNK_MAX = 110, CHUNK_MIN_TILES = 2400, CHUNK_GAP = 34;
+let chunkMadeT = -1e9;
+function layerTarget(L, clip){
+  const W = L.width*TILE, H = L.height*TILE, cv = document.createElement('canvas');
+  if(!clip){ cv.width = W; cv.height = H; return {cv, g:cv.getContext('2d'), W, H, clip:null, TX0:0, TY0:0, TX1:L.width, TY1:L.height, PX0:0, PY0:0, PX1:W, PY1:H}; }
+  cv.width = clip.w; cv.height = clip.h;
+  const g = cv.getContext('2d'); g.translate(-clip.x, -clip.y);
+  const m = CHUNK_MARGIN;
+  return {cv, g, W, H, clip,
+    TX0:Math.max(0, Math.floor(clip.x/TILE)-m), TY0:Math.max(0, Math.floor(clip.y/TILE)-m),
+    TX1:Math.min(L.width, Math.ceil((clip.x+clip.w)/TILE)+m), TY1:Math.min(L.height, Math.ceil((clip.y+clip.h)/TILE)+m),
+    PX0:clip.x, PY0:clip.y, PX1:Math.min(W, clip.x+clip.w), PY1:Math.min(H, clip.y+clip.h)};   // CHUNK кратен 8: сетка шума совпадает
+}
+// крупный объект с центром (x,y) и «радиусом» r попадает в кусок?
+function clipNear(T, x, y, r){ const c = T.clip; return !c || (x+r >= c.x && x-r <= c.x+c.w && y+r >= c.y && y-r <= c.y+c.h); }
+class ChunkLayer{
+  constructor(L, build, blit){ this.L = L; this.build = build; this.blit = blit || null; this.W = L.width*TILE; this.H = L.height*TILE; this.nx = Math.ceil(this.W/CHUNK); this.ny = Math.ceil(this.H/CHUNK); this.chunks = new Map(); this.built = 0; }
+  key(i,j){ return j*this.nx+i; }
+  make(i,j){
+    const x = i*CHUNK, y = j*CHUNK, c = this.build(this.L, {x, y, w:Math.min(CHUNK, this.W-x), h:Math.min(CHUNK, this.H-y)});
+    this.chunks.set(this.key(i,j), c); this.built++; chunkMadeT = performance.now(); return c;
   }
-  for(let pass=0; pass<2; pass++){ boxBlur(a,b,W,H,6,false); boxBlur(b,a,W,H,6,true); }
-  const cv = document.createElement('canvas'); cv.width=W; cv.height=H;
-  const g = cv.getContext('2d'), img = g.createImageData(W,H), d = img.data;
-  for(let y=0;y<H;y++){
-    for(let x=0;x<W;x++){
-      let F = a[y*W+x];
+  get(i,j){ const k = this.key(i,j); if(this.chunks.has(k)){ const c = this.chunks.get(k); this.chunks.delete(k); this.chunks.set(k, c); return c; } return this.make(i,j); }  // порядок Map = давность использования; кусок может быть пустым (null)
+  range(camX, camY){ return [Math.max(0, Math.floor(camX/CHUNK)), Math.max(0, Math.floor(camY/CHUNK)), Math.min(this.nx-1, Math.floor((camX+canvas.width-1)/CHUNK)), Math.min(this.ny-1, Math.floor((camY+canvas.height-1)/CHUNK))]; }
+  draw(camX, camY){
+    const [i0,j0,i1,j1] = this.range(camX, camY);
+    for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const c = this.get(i,j); if(!c) continue; if(this.blit) this.blit(c, i*CHUNK-camX, j*CHUNK-camY); else ctx.drawImage(c, i*CHUNK-camX, j*CHUNK-camY); }
+    this.prefetch(i0-1, j0-1, i1+1, j1+1);
+    while(this.chunks.size > CHUNK_MAX){ const k = this.chunks.keys().next().value, c = this.chunks.get(k); if(c){ c.width = 1; c.height = 1; } this.chunks.delete(k); }
+  }
+  // заранее строим один соседний кусок за кадр, чтобы при движении камеры не было рывков
+  prefetch(i0, j0, i1, j1){
+    if(performance.now()-chunkMadeT < CHUNK_GAP) return;              // не больше одного куска за CHUNK_GAP мс на все слои
+    for(let j=Math.max(0,j0);j<=Math.min(this.ny-1,j1);j++) for(let i=Math.max(0,i0);i<=Math.min(this.nx-1,i1);i++)
+      if(!this.chunks.has(this.key(i,j))){ this.make(i,j); return; }
+  }
+  dispose(){ for(const c of this.chunks.values()) if(c){ c.width = 1; c.height = 1; } this.chunks.clear(); }
+}
+// фон из клеток 8×8: цвет считаем на маленькой картинке, затем растягиваем без сглаживания (вместо тысяч fillRect)
+function noiseFill(T, col){
+  const x0 = T.PX0 & ~7, y0 = T.PY0 & ~7, cw = Math.ceil((T.PX1-x0)/8), ch = Math.ceil((T.PY1-y0)/8);
+  if(cw<=0 || ch<=0) return;
+  const sm = document.createElement('canvas'); sm.width = cw; sm.height = ch;
+  const sg = sm.getContext('2d'), img = sg.createImageData(cw, ch), d = img.data;
+  for(let j=0;j<ch;j++) for(let i=0;i<cw;i++){ const c = col(x0+i*8, y0+j*8), k = (j*cw+i)*4; d[k] = c[0]|0; d[k+1] = c[1]|0; d[k+2] = c[2]|0; d[k+3] = 255; }
+  sg.putImageData(img, 0, 0);
+  const g = T.g, ps = g.imageSmoothingEnabled; g.imageSmoothingEnabled = false; g.drawImage(sm, x0, y0, cw*8, ch*8); g.imageSmoothingEnabled = ps;
+}
+function L_big(L){ return L.width*L.height >= CHUNK_MIN_TILES; }
+function makeLayer(L, build){ return L_big(L) ? new ChunkLayer(L, build) : build(L, null); }
+function blitLayer(layer, camX, camY){
+  if(layer instanceof ChunkLayer){ layer.draw(camX, camY); return; }
+  const wx0 = Math.max(0,camX), wy0 = Math.max(0,camY);
+  const wx1 = Math.min(loc.width*TILE, camX+canvas.width), wy1 = Math.min(loc.height*TILE, camY+canvas.height);
+  if(wx1>wx0 && wy1>wy0) ctx.drawImage(layer, wx0, wy0, wx1-wx0, wy1-wy0, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
+}
+// вертикальное размытие построчно (все столбцы сразу): тот же результат, что столбцами, но память читается подряд — в разы быстрее
+function boxBlurV(src,dst,W,H,r){
+  const w = 2*r+1, acc = new Float64Array(W);
+  for(let i=-r;i<=r;i++) if(i>=0 && i<H){ const o = i*W; for(let x=0;x<W;x++) acc[x] += src[o+x]; }
+  for(let i=0;i<H;i++){
+    const o = i*W, add = i+r+1, rem = i-r;
+    for(let x=0;x<W;x++) dst[o+x] = acc[x]/w;
+    if(add<H){ const oa = add*W; for(let x=0;x<W;x++) acc[x] += src[oa+x]; }
+    if(rem>=0){ const orm = rem*W; for(let x=0;x<W;x++) acc[x] -= src[orm+x]; }
+  }
+}
+// Вода: маска клеток '~' размывается и шумится. Кусок воды считает размытие с запасом WATER_PAD вокруг,
+// поэтому внутри куска результат тот же, что у целой карты; по краю куска оставлена 1 px «рамка» для сглаживания без швов.
+const WATER_PAD = 26, WATER_RIM = 1;
+function waterRegion(L, ox, oy, OW, OH){                  // область маски (в px маски), может выходить за карту
+  const cpt = TILE/WATER_SCALE, MW = L.width*cpt, MH = L.height*cpt;
+  const rx = ox-WATER_PAD, ry = oy-WATER_PAD, RW = OW+2*WATER_PAD, RH = OH+2*WATER_PAD;
+  const tx0 = Math.max(0, Math.floor(rx/cpt)), ty0 = Math.max(0, Math.floor(ry/cpt)), tx1 = Math.min(L.width, Math.ceil((rx+RW)/cpt)), ty1 = Math.min(L.height, Math.ceil((ry+RH)/cpt));
+  let a = null;
+  for(let ty=ty0; ty<ty1; ty++) for(let tx=tx0; tx<tx1; tx++){
+    if(L.grid[ty][tx]!=='~') continue;
+    if(!a) a = new Float32Array(RW*RH);
+    for(let yy=Math.max(0,ty*cpt-ry); yy<Math.min(RH,(ty+1)*cpt-ry); yy++){ const row = yy*RW; for(let xx=Math.max(0,tx*cpt-rx); xx<Math.min(RW,(tx+1)*cpt-rx); xx++) a[row+xx] = 1; }
+  }
+  if(!a) return null;                                     // воды рядом нет — кусок пустой
+  let b = new Float32Array(RW*RH);
+  for(let pass=0; pass<2; pass++){ boxBlur(a,b,RW,RH,6,false); boxBlur(b,a,RW,RH,6,true); }
+  const cv = document.createElement('canvas'); cv.width = OW; cv.height = OH;
+  const g = cv.getContext('2d'), img = g.createImageData(OW,OH), d = img.data;
+  for(let y=0;y<OH;y++){
+    const Y = oy+y; if(Y<0 || Y>=MH) continue;
+    for(let x=0;x<OW;x++){
+      const X = ox+x; if(X<0 || X>=MW) continue;
+      let F = a[(y+WATER_PAD)*RW + x+WATER_PAD];
       if(F<0.2) continue;
-      F += (vnoise(x/28,y/28,11)-0.5)*0.26 + (vnoise(x/11,y/11,23)-0.5)*0.12 + (vnoise(x/60,y/60,5)-0.5)*0.22;
+      F += (vnoise(X/28,Y/28,11)-0.5)*0.26 + (vnoise(X/11,Y/11,23)-0.5)*0.12 + (vnoise(X/60,Y/60,5)-0.5)*0.22;
       const alpha = sstep(0.47,0.53,F);
       if(alpha<=0) continue;
       const t = sstep(0.55,0.95,F);               // мелководье светлее, глубина темнее
-      const i = (y*W+x)*4;
+      const i = (y*OW+x)*4;
       d[i]   = 74 + (40-74)*t;
       d[i+1] = 138 + (92-138)*t;
       d[i+2] = 182 + (140-182)*t;
@@ -2874,15 +2957,25 @@ function buildWaterLayer(L){
   g.putImageData(img,0,0);
   return cv;
 }
+function buildWaterLayer(L, clip){
+  const S = WATER_SCALE;
+  if(!clip) return waterRegion(L, 0, 0, L.width*TILE/S, L.height*TILE/S) || (()=>{ const c = document.createElement('canvas'); c.width = c.height = 1; return c; })();
+  return waterRegion(L, clip.x/S-WATER_RIM, clip.y/S-WATER_RIM, clip.w/S+2*WATER_RIM, clip.h/S+2*WATER_RIM);
+}
+function blitWaterChunk(c, dx, dy){
+  const S = WATER_SCALE, r = WATER_RIM, w = c.width-2*r, h = c.height-2*r;
+  ctx.drawImage(c, r, r, w, h, dx, dy, w*S, h*S);
+}
 function drawWater(x0,y0,x1,y1,camX,camY){
   let layer = waterLayers.get(loc);
-  if(!layer){ layer = buildWaterLayer(loc); waterLayers.set(loc, layer); }
+  if(!layer){ layer = L_big(loc) ? new ChunkLayer(loc, buildWaterLayer, blitWaterChunk) : buildWaterLayer(loc); waterLayers.set(loc, layer); }
   const S = WATER_SCALE;
   const wx0 = Math.max(0,camX), wy0 = Math.max(0,camY);
   const wx1 = Math.min(loc.width*TILE, camX+canvas.width), wy1 = Math.min(loc.height*TILE, camY+canvas.height);
   if(wx1>wx0 && wy1>wy0){
     const prev = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(layer, wx0/S, wy0/S, (wx1-wx0)/S, (wy1-wy0)/S, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
+    if(layer instanceof ChunkLayer) layer.draw(camX, camY);
+    else ctx.drawImage(layer, wx0/S, wy0/S, (wx1-wx0)/S, (wy1-wy0)/S, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
     ctx.imageSmoothingEnabled = prev;
   }
   // лёгкая рябь на воде (только там, где вокруг клетки тоже вода)
@@ -4258,19 +4351,13 @@ function drawCoinPile(cx,cy,value){
 // ---------- Земля: трава, цветы, горы по краям (рисуется один раз и кешируется) ----------
 const groundLayers = new WeakMap();
 const FLOWER_COLORS = ['#f4f4f0','#f2d13a','#e87aa8','#a97ae8','#e0574f','#7ab8f0'];
-function buildGroundLayer(L){
-  const W = L.width*TILE, H = L.height*TILE;
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const g = cv.getContext('2d');
-  // 1) трава: плавные пятна светлее/темнее
-  for(let y=0;y<H;y+=8) for(let x=0;x<W;x+=8){
-    const n = vnoise(x/90,y/90,3)*0.6 + vnoise(x/30,y/30,9)*0.4;
-    g.fillStyle = 'rgb('+((52+n*22)|0)+','+((112+n*28)|0)+','+((44+n*14)|0)+')';
-    g.fillRect(x,y,8,8);
-  }
+function buildGroundLayer(L, clip){
+  const T = layerTarget(L, clip), {cv, g, TX0, TY0, TX1, TY1} = T;
+  // 1) трава: плавные пятна светлее/темнее (клетки 8×8 считаем в маленькой картинке и растягиваем без сглаживания)
+  noiseFill(T, (x,y)=>{ const n = vnoise(x/90,y/90,3)*0.6 + vnoise(x/30,y/30,9)*0.4; return [52+n*22, 112+n*28, 44+n*14]; });
   // 2) травинки, цветы, камешки
-  for(let ty=0;ty<L.height;ty++){
-    for(let tx=0;tx<L.width;tx++){
+  for(let ty=TY0;ty<TY1;ty++){
+    for(let tx=TX0;tx<TX1;tx++){
       const t = L.grid[ty][tx]; if(t==='^') continue;
       const x0 = tx*TILE, y0 = ty*TILE, R = (k)=>hash2(tx,ty,k);
       for(let i=0;i<5;i++){
@@ -4290,7 +4377,7 @@ function buildGroundLayer(L){
   }
   // 3) горы по краям: пологие и редкие, у подножия темнее, снежные шапки не у всех
   const GW = L.width, GH = L.height;
-  for(let ty=0;ty<GH;ty++) for(let tx=0;tx<GW;tx++){
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(L.grid[ty][tx]!=='^') continue;
     const x0 = tx*TILE, y0 = ty*TILE, R = (k)=>hash2(tx,ty,200+k), n = vnoise(tx*0.7,ty*0.7,17);
     g.fillStyle = 'rgb('+((58+n*24)|0)+','+((56+n*22)|0)+','+((60+n*22)|0)+')'; g.fillRect(x0,y0,TILE,TILE);
@@ -4323,7 +4410,7 @@ function buildGroundLayer(L){
     else { while(d<8 && L.grid[i][GW-1-d]==='^') d++; }
     return Math.max(1,d); };
   // рваный край: валуны и осыпь заходят на траву, а трава — на камень
-  for(let ty=0;ty<GH;ty++) for(let tx=0;tx<GW;tx++){
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(L.grid[ty][tx]!=='^') continue;
     for(const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
       const nx = tx+dx, ny = ty+dy; if(nx<0||ny<0||nx>=GW||ny>=GH || L.grid[ny][nx]==='^') continue;
@@ -4350,6 +4437,7 @@ function buildGroundLayer(L){
   mounds.push({bx:20,base:36,top:true,seed:901},{bx:GW*TILE-20,base:36,top:true,seed:902},{bx:20,base:GH*TILE-4,seed:903},{bx:GW*TILE-20,base:GH*TILE-4,seed:904});
   mounds.sort((a,b)=>a.base-b.base);
   for(const m of mounds){
+    if(!clipNear(T, m.bx, m.base-60, 150)) continue;                                            // гора далеко от этого куска
     const R = (k)=>hash2(m.seed,k,320);
     const bw = m.side ? 52+R(1)*28 : 70+R(1)*46, h = (m.top ? 34+R(2)*14 : m.side ? 26+R(3)*16 : 42+R(3)*26)*1.12;
     const bx = m.bx, baseY = m.base, ax = bx+(R(5)-0.5)*bw*0.3, ay = baseY-h, l = bx-bw/2, r = bx+bw/2;
@@ -4388,10 +4476,8 @@ function buildGroundLayer(L){
 }
 function drawGround(camX,camY){
   let layer = groundLayers.get(loc);
-  if(!layer){ layer = buildGroundLayer(loc); groundLayers.set(loc, layer); }
-  const wx0 = Math.max(0,camX), wy0 = Math.max(0,camY);
-  const wx1 = Math.min(loc.width*TILE, camX+canvas.width), wy1 = Math.min(loc.height*TILE, camY+canvas.height);
-  if(wx1>wx0 && wy1>wy0) ctx.drawImage(layer, wx0, wy0, wx1-wx0, wy1-wy0, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
+  if(!layer){ layer = makeLayer(loc, buildGroundLayer); groundLayers.set(loc, layer); }
+  blitLayer(layer, camX, camY);
 }
 
 // ---------- Пещеры: входы (overworld) и спуск в Провал (в подземелье) ----------
@@ -4620,10 +4706,7 @@ function townWell(g,p){
 function buildTownLayer(L){
   const T = TILE, W = L.width*T, H = L.height*T, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g = cv.getContext('2d'), P = townPaths(L), mk = L.shop;
-  for(let y=0;y<H;y+=8) for(let x=0;x<W;x+=8){
-    const n = vnoise(x/60,y/60,11)*0.5 + vnoise(x/18,y/18,12)*0.5, k = (n-0.5)*26;
-    g.fillStyle = 'rgb('+((74+k)|0)+','+((128+k)|0)+','+((58+k*0.8)|0)+')'; g.fillRect(x,y,8,8);
-  }
+  noiseFill({g, PX0:0, PY0:0, PX1:W, PY1:H}, (x,y)=>{ const n = vnoise(x/60,y/60,11)*0.5 + vnoise(x/18,y/18,12)*0.5, k = (n-0.5)*26; return [74+k, 128+k, 58+k*0.8]; });
   const wall = (x,y)=> x===0||y===0||x===L.width-1||y===L.height-1;
   const plaza = (x,y)=> mk && Math.hypot(x-mk.tx,y-(mk.ty+1))<=4.4;
   for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
@@ -4860,19 +4943,14 @@ const DPAL = { 1:{f:[78,72,66],w:[38,34,30],a:[150,136,118]}, 2:{f:[64,70,84],w:
   4:{f:[66,40,38],w:[30,15,14],a:[176,104,84]}, 5:{f:[204,174,112],w:[136,98,56],a:[232,196,136]}, 6:{f:[184,210,228],w:[74,112,156],a:[228,244,254]},
   7:{f:[62,70,64],w:[24,30,28],a:[150,162,152]}, 8:{f:[52,100,46],w:[16,52,26],a:[120,200,90]},
   11:{f:[108,102,94],w:[72,52,44],a:[176,160,140]}, 12:{f:[96,66,48],w:[40,26,28],a:[170,130,100]} , 13:{f:[46,98,132],w:[18,44,78],a:[130,210,240]}, 14:{f:[206,214,228],w:[96,132,190],a:[255,255,255]}};
-function buildDungeonLayer(L){
+function buildDungeonLayer(L, clip){
   if(L.biome==='town') return buildTownLayer(L);
   if(L.biome==='house') return buildHouseLayer(L);
-  const W = L.width*TILE, H = L.height*TILE, P = DPAL[L.pal||L.level] || DPAL[1];
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const g = cv.getContext('2d');
+  const T = layerTarget(L, clip), {cv, g, TX0, TY0, TX1, TY1} = T, P = DPAL[L.pal||L.level] || DPAL[1];
   const isF = (x,y)=> y>=0 && x>=0 && y<L.height && x<L.width && L.grid[y][x]!=='#';
   // пол: неровная каменная поверхность
-  for(let y=0;y<H;y+=8) for(let x=0;x<W;x+=8){
-    const n = vnoise(x/70,y/70,5)*0.5 + vnoise(x/22,y/22,8)*0.5, k = (n-0.5)*30;
-    g.fillStyle = 'rgb('+((P.f[0]+k)|0)+','+((P.f[1]+k)|0)+','+((P.f[2]+k)|0)+')'; g.fillRect(x,y,8,8);
-  }
-  for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+  noiseFill(T, (x,y)=>{ const n = vnoise(x/70,y/70,5)*0.5 + vnoise(x/22,y/22,8)*0.5, k = (n-0.5)*30; return [P.f[0]+k, P.f[1]+k, P.f[2]+k]; });
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(!isF(tx,ty)) continue;
     const x0 = tx*TILE, y0 = ty*TILE, R = (k)=>hash2(tx,ty,400+k);
     if(L.grid[ty][tx]==='L') continue;
@@ -4960,7 +5038,7 @@ function buildDungeonLayer(L){
   // лавовые озёра: свечение на камне, остывшая корка, жидкий огонь
   if(L.level===4){
     const isL = (x,y)=> y>=0 && x>=0 && y<L.height && x<L.width && L.grid[y][x]==='L';
-    for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+    for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
       if(!isL(tx,ty)) continue;
       const cx = tx*TILE+16, cy = ty*TILE+16, gr = g.createRadialGradient(cx,cy,6,cx,cy,52);
       gr.addColorStop(0,'rgba(255,110,20,0.34)'); gr.addColorStop(1,'rgba(255,110,20,0)');
@@ -4975,7 +5053,7 @@ function buildDungeonLayer(L){
     };
     for(const [rad,col,dx] of [[22,'rgba(255,92,24,0.30)',0],[18,'#c43a0a',1],[11,'#e8620f',2]]){
       g.fillStyle = col;
-      for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+      for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
         if(!isL(tx,ty)) continue;
         const sd = tx*131+ty*17+dx, jx = (hash2(tx,ty,720)-0.5)*9, jy = (hash2(tx,ty,721)-0.5)*9, cx = tx*TILE+16+jx, cy = ty*TILE+16+jy;
         blob(cx,cy,rad*(0.9+0.28*hash2(tx,ty,722)),sd);
@@ -4984,7 +5062,7 @@ function buildDungeonLayer(L){
         if(isL(tx+1,ty+1) && isL(tx+1,ty) && isL(tx,ty+1)) blob(tx*TILE+32,ty*TILE+32,rad*0.85,sd+13);
       }
     }
-    for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+    for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
       if(!isL(tx,ty)) continue;
       const R = (k)=>hash2(tx,ty,700+k);
       for(let i=0;i<5;i++){
@@ -4994,11 +5072,11 @@ function buildDungeonLayer(L){
     }
   }
   // стены: тёмная масса + валуны
-  for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(isF(tx,ty)) continue;
     g.fillStyle = 'rgb('+P.w[0]+','+P.w[1]+','+P.w[2]+')'; g.fillRect(tx*TILE,ty*TILE,TILE,TILE);
   }
-  for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(isF(tx,ty)) continue;
     const R = (k)=>hash2(tx,ty,500+k);
     if(L.biome==='city' && L.level===11 && tx>=2 && ty>=2 && tx<L.width-2 && ty<L.height-2){                       // дома с крышами (вид сверху)
@@ -5095,10 +5173,8 @@ function drawLavaAnim(x0,y0,x1,y1,camX,camY){
 }
 function drawDungeonGround(camX,camY){
   let layer = dungeonLayers.get(loc);
-  if(!layer){ layer = buildDungeonLayer(loc); dungeonLayers.set(loc, layer); }
-  const wx0 = Math.max(0,camX), wy0 = Math.max(0,camY);
-  const wx1 = Math.min(loc.width*TILE, camX+canvas.width), wy1 = Math.min(loc.height*TILE, camY+canvas.height);
-  if(wx1>wx0 && wy1>wy0) ctx.drawImage(layer, wx0, wy0, wx1-wx0, wy1-wy0, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
+  if(!layer){ layer = (loc.biome==='town' || loc.biome==='house') ? buildDungeonLayer(loc) : makeLayer(loc, buildDungeonLayer); dungeonLayers.set(loc, layer); }
+  blitLayer(layer, camX, camY);
   if(loc.biome==='house') drawHouseAnim(camX,camY);
   else if(loc.biome!=='town') drawDungeonExit(camX,camY);
 }
@@ -5347,6 +5423,7 @@ function draw(){
   for(const e of loc.enemies){
     if(e.hp<=0) continue;
     const sx=e.x-camX, sy=e.y-camY;
+    if(!onScreen(sx-120, sy-160, e.w+240, e.h+280)) continue;      // за краем экрана не рисуем (с запасом на крылья, ауры и подписи боссов)
     if(e.elite){ ctx.strokeStyle='rgba(255,210,70,'+(0.6+0.3*Math.sin(Date.now()/200))+')'; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(sx+e.w/2, sy+e.h-2, e.w*0.7, e.w*0.28, 0, 0, 6.283); ctx.stroke(); }
     drawEnemy(e, sx, sy);
     const lift = ENEMY_LIFT[e.type] || 0, isBoss = BOSS_TYPES.includes(e.type);
@@ -5404,7 +5481,58 @@ function getLocName(l){
   return LEVEL_NAMES[l.level] || 'Подземелье';
 }
 
+// ---------- Панель героя: полная и компактная ----------
+// На телефоне (низкий экран) по умолчанию компактная: уровень, здоровье, опыт, деньги и цель в четыре строки.
+// Касание панели переключает вид; выбор запоминается.
+let hudPref = null; try{ hudPref = localStorage.getItem('eldoria_hud'); }catch(e){}
+function hudCompact(){ return hudPref ? hudPref==='compact' : canvas.height < 520; }
+function hudW(){ return hudCompact() ? 206 : 230; }
+function hudH(){ return hudCompact() ? 80 : 186; }
+function hudToggle(){
+  hudPref = hudCompact() ? 'full' : 'compact';
+  try{ localStorage.setItem('eldoria_hud', hudPref); }catch(e){}
+  mmCache.t = -1e9;
+}
+canvas.addEventListener('pointerdown', e=>{
+  if(gameState!=='playing') return;
+  const r = canvas.getBoundingClientRect(); if(!r.width) return;
+  const x = (e.clientX-r.left)*canvas.width/r.width - UI.l, y = (e.clientY-r.top)*canvas.height/r.height - UI.t;
+  if(x>=8 && x<=8+hudW() && y>=8 && y<=8+hudH()) hudToggle();
+});
+function xpText(){ return 'опыт '+Math.floor(player.xp)+'/'+player.xpNext; }
+function drawHUDCompact(){
+  ctx.save(); ctx.translate(UI.l, UI.t); ctx.textAlign = 'left';
+  const W = hudW(), H = hudH();
+  ctx.fillStyle = 'rgba(10,8,4,0.6)'; ctx.fillRect(8,8,W,H);
+  ctx.strokeStyle = '#5c4415'; ctx.strokeRect(8,8,W,H);
+  // 1: уровень и здоровье
+  ctx.fillStyle = '#f0e6c8'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('Ур. '+player.level, 14, 23);
+  drawHPBar(60,13,W-58,12, player.hp/player.maxHp, '#d9534f');
+  ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(Math.ceil(player.hp)+'/'+player.maxHp, 60+(W-58)/2, 22.5); ctx.textAlign = 'left';
+  // 2: опыт с подписью
+  drawHPBar(60,29,W-58,5, player.xp/player.xpNext, '#5aa7e0');
+  ctx.fillStyle = '#9cc8ea'; ctx.font = '9px sans-serif'; ctx.fillText(Math.floor(player.xp)+'/'+player.xpNext, 14, 36);   // опыт
+  // 3: золото, эликсиры, ключи, урон, защита, очки навыков
+  let x = 14; const y = 53;
+  const put = (txt, col, w)=>{ ctx.fillStyle = col; ctx.fillText(txt, x, y); x += w || (ctx.measureText(txt).width+9); };
+  ctx.font = '11px sans-serif';
+  coinAt(x+4,y-4,4.4,0); x += 11; put(String(player.gold), '#e0c23a');
+  drawPotionIcon(x+3,y-5,0.6,false); x += 9; put(String(player.potions), '#e05a5a');
+  if(player.vkeys>0) put('🗝'+player.vkeys, '#ffd34a');
+  put('⚔'+playerDamage(), '#cfc7a8');
+  put('🛡'+Math.round(Math.min(0.85, ARMORS[player.armor].reduce+gearStat('def')/100)*100)+'%', '#cfc7a8');
+  if(player.sp>0 && x < W-14) put('★'+player.sp, '#ffd34a');
+  // 4: задание или цель
+  ctx.font = 'italic 11px sans-serif';
+  let gt, col = '#d8b86a';
+  if(player.quest && QUESTS[player.quest.id]){ const qd = QUESTS[player.quest.id]; gt = player.quest.done ? '✔ «'+qd.name+'» — сдать' : '📜 '+qd.name+' '+player.quest.progress+'/'+qd.target; col = player.quest.done ? '#7fe07f' : '#e0c96a'; }
+  else gt = '➤ '+goalText();
+  while(gt.length>8 && ctx.measureText(gt).width>W-12) gt = gt.slice(0,-2);
+  ctx.fillStyle = col; ctx.fillText(gt, 14, 77);
+  ctx.restore();
+}
 function drawHUD(){
+  if(hudCompact()){ drawHUDCompact(); drawHUDTop(); return; }
   ctx.save(); ctx.translate(UI.l, UI.t);
   ctx.textAlign='left';
   // панель
@@ -5424,6 +5552,7 @@ function drawHUD(){
   if(player.vkeys>0){ ctx.fillStyle='#ffd34a'; ctx.font='bold 12px sans-serif'; ctx.fillText('🗝 '+player.vkeys, 176, 40); ctx.fillStyle='#f0e6c8'; }
 
   drawHPBar(16,46,150,7, player.xp/player.xpNext, '#5aa7e0');
+  ctx.fillStyle='#9cc8ea'; ctx.font='9px sans-serif'; ctx.fillText(xpText(), 172, 53);
 
   coinAt(22,64,5.2,0); drawPotionIcon(137,63,0.72,false);
   ctx.fillStyle='#e0c23a'; ctx.font='12px sans-serif';
@@ -5463,16 +5592,19 @@ function drawHUD(){
     ctx.fillText(gt, 16, 184); }
 
   ctx.restore();
-
+  drawHUDTop();
+}
+// название локации, уведомления и значок сохранения
+function drawHUDTop(){
   // название локации и уведомления — в свободной полосе между миникартой и кнопками
   ctx.font='bold 14px sans-serif';
   const locName2 = getLocName(loc) + atmoLabel();
   const bw = Math.max(150, ctx.measureText(locName2).width+28);
-  const mmRight = UI.l + 246 + (loc.type==='overworld' ? minimapSize()+6 : loc.wild ? 7*13+10 : 0);
+  const mmRight = UI.l + hudW() + 16 + (loc.type==='overworld' ? minimapSize()+6 : loc.wild ? 7*13+10 : 0);
   const Lb = mmRight + 8, Rb = canvas.width - UI.r - 260;
   const fits = (Rb-Lb) >= 270;                      // иначе — под верхним рядом
   const cxA = fits ? (Lb+Rb)/2 : canvas.width/2;
-  const by0 = fits ? UI.t+8 : UI.t+202, ny0 = fits ? UI.t+40 : UI.t+230;
+  const by0 = fits ? UI.t+8 : UI.t+hudH()+16, ny0 = fits ? UI.t+40 : UI.t+hudH()+44;
   ctx.textAlign='center';
   ctx.fillStyle='rgba(10,8,4,0.55)'; ctx.fillRect(cxA-bw/2, by0, bw, 22);
   ctx.fillStyle='#e8c873'; ctx.fillText(locName2, cxA, by0+16);
@@ -5502,22 +5634,35 @@ function drawHUD(){
 
 function minimapSize(){ return canvas.width<900 ? 112 : 146; }
 const MM_COL = { '~':[47,102,144], '^':[90,90,90], '#':[31,77,26], 'S':[138,90,43], 'B':[138,90,43], '.':[63,125,50] }, MM_FOG = [74,82,96];
+// клетки миникарты (2×2 клетки карты на точку) рисуются в маленький холст и обновляются не чаще раза в 0,3 с,
+// а не тремя тысячами fillRect каждый кадр
+const mmCache = {L:null, cv:null, t:-1e9};
+function minimapCells(F){
+  const now = performance.now(), L = loc;
+  if(mmCache.L===L && now-mmCache.t < 300) return mmCache.cv;
+  const cw = Math.ceil(L.width/2), ch = Math.ceil(L.height/2);
+  let cv = mmCache.cv; if(!cv){ cv = mmCache.cv = document.createElement('canvas'); }
+  if(cv.width!==cw || cv.height!==ch){ cv.width = cw; cv.height = ch; }
+  const g = cv.getContext('2d'), img = g.createImageData(cw, ch), d = img.data;
+  for(let y=0;y<L.height;y+=2) for(let x=0;x<L.width;x+=2){
+    const c = MM_COL[L.grid[y][x]] || MM_COL['.'];
+    const v = Math.max(F.data[y*F.W+x], x+1<F.W ? F.data[y*F.W+x+1] : 0, y+1<F.H ? F.data[(y+1)*F.W+x] : 0);   // неоткрытое скрыто туманом
+    const k = ((y>>1)*cw+(x>>1))*4;
+    d[k] = (MM_FOG[0]+(c[0]-MM_FOG[0])*v)|0; d[k+1] = (MM_FOG[1]+(c[1]-MM_FOG[1])*v)|0; d[k+2] = (MM_FOG[2]+(c[2]-MM_FOG[2])*v)|0; d[k+3] = 255;
+  }
+  g.putImageData(img, 0, 0); mmCache.L = L; mmCache.t = now;
+  return cv;
+}
 function drawMinimap(){
-  const mw=minimapSize(), mh=mw, mx=UI.l+248, my=UI.t+10;   // вверху, правее панели экипировки
+  const mw=minimapSize(), mh=mw, mx=UI.l+hudW()+18, my=UI.t+10;   // вверху, правее панели экипировки
   const F = getFog(loc);
   ctx.save();
   ctx.fillStyle='rgba(10,8,4,0.3)'; ctx.fillRect(mx-2,my-2,mw+4,mh+4);
   ctx.strokeStyle='rgba(92,68,21,0.8)'; ctx.strokeRect(mx-2,my-2,mw+4,mh+4);
   const sx = mw/loc.width, sy = mh/loc.height;
   ctx.globalAlpha = 0.5; // сама карта полупрозрачная — сквозь неё видно игру
-  for(let y=0;y<loc.height;y+=2){
-    for(let x=0;x<loc.width;x+=2){
-      const c = MM_COL[loc.grid[y][x]] || MM_COL['.'];
-      const v = Math.max(F.data[y*F.W+x], x+1<F.W ? F.data[y*F.W+x+1] : 0, y+1<F.H ? F.data[(y+1)*F.W+x] : 0);   // неоткрытое скрыто туманом
-      ctx.fillStyle = 'rgb('+((MM_FOG[0]+(c[0]-MM_FOG[0])*v)|0)+','+((MM_FOG[1]+(c[1]-MM_FOG[1])*v)|0)+','+((MM_FOG[2]+(c[2]-MM_FOG[2])*v)|0)+')';
-      ctx.fillRect(mx+x*sx, my+y*sy, sx*2, sy*2);
-    }
-  }
+  const MC = minimapCells(F), ps = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(MC, mx, my, MC.width*2*sx, MC.height*2*sy); ctx.imageSmoothingEnabled = ps;
   ctx.globalAlpha = 0.95;
   // лавка (красная точка) и входы в пещеры (коричневые) показываются, когда их уже нашли
   if(loc.shop && F.data[loc.shop.ty*F.W+loc.shop.tx]>0.5){
@@ -6077,7 +6222,7 @@ function trackPoint(){
   if(s.loc===currentLocId && s.x!==undefined) return {x:s.x, y:s.y, label:s.label};
   if(s.loc===currentLocId){ return null; }
   const r = routeInfo(s.loc); if(!r) return null;
-  return {x:r.first.x, y:r.first.y, label:'→ '+locLabel(r.first.to)};
+  return {x:r.first.x, y:r.first.y, label:locLabel(r.first.to)};   // направление показывает сама стрелка
 }
 function drawTrackArrow(camX, camY){
   if(gameState!=='playing') return;
@@ -6093,7 +6238,11 @@ function drawTrackArrow(camX, camY){
   } else {
     const cx = W/2, cy = H/2, dx = px-cx, dy = py-cy;
     const k = Math.min((cx-m-UI.r)/Math.max(Math.abs(dx),1e-6), (cy-m-UI.b)/Math.max(Math.abs(dy),1e-6));
-    const ax = cx+dx*k, ay = cy+dy*k, pulse = 1+Math.sin(t*5)*0.12;
+    let ax = cx+dx*k, ay = cy+dy*k;
+    // не заезжать на панель героя и миникарту: стрелку сдвигаем по тому же лучу ниже них
+    const topBand = UI.t+hudH()+34, leftBand = UI.l+hudW()+24+(loc.type==='overworld' ? minimapSize() : loc.wild ? 7*13 : 0);
+    if(dy<0 && ay<topBand && ax<leftBand){ const k2 = (topBand-cy)/dy; if(k2>0 && k2<k){ ax = cx+dx*k2; ay = topBand; } }
+    const pulse = 1+Math.sin(t*5)*0.12;
     ctx.translate(ax,ay); ctx.rotate(Math.atan2(dy,dx)); ctx.scale(pulse,pulse);
     ctx.fillStyle = '#ffd34a'; ctx.strokeStyle = '#3a2a06'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-8,-10); ctx.lineTo(-3,0); ctx.lineTo(-8,10); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -7299,14 +7448,23 @@ const ARTIFACT_INFO = (()=>{
 const codexScreen = document.getElementById('codexScreen'), codexList = document.getElementById('codexList'), codexTabsEl = document.getElementById('codexTabs'), codexBtn = document.getElementById('codexBtn');
 let codexTab = 'enemies', codexAcc = 0;
 function codexEnsure(){ if(!player.codex) player.codex = {e:{},a:{},k:{}}; return player.codex; }
+// новые записи энциклопедии, открытые почти одновременно, собираются в одно уведомление, а не в столбик плашек
+function codexNote(name){
+  const last = notifications.length ? notifications[notifications.length-1] : null;
+  const n = (last && last.codex && last.timer>600) ? last : notifications.find(x=>x.codex && x.timer>600);
+  if(!n){ notifications.push({text:'📖 Энциклопедия: '+name, color:'#8ad8ff', timer:2600, max:2600, codex:[name]}); return; }
+  n.codex.push(name); n.timer = n.max = 3200;
+  const k = n.codex.length, m10 = k%10, m100 = k%100, word = (m10===1 && m100!==11) ? 'запись' : (m10>=2 && m10<=4 && (m100<12 || m100>14)) ? 'записи' : 'записей';
+  n.text = '📖 Энциклопедия: +'+k+' '+word+' — '+n.codex.slice(0,2).join(', ')+(k>2 ? '…' : '');
+}
 function codexAddEnemy(type){
   const c = codexEnsure(); if(c.e[type] || !ENEMY_INFO[type]) return;
-  c.e[type] = 1; addNote('📖 Энциклопедия: '+ENEMY_INFO[type][1], '#8ad8ff');
+  c.e[type] = 1; codexNote(ENEMY_INFO[type][1]);
 }
 function codexAddArt(key, info){
   const c = codexEnsure(); if(c.a[key]) return;
   const a = info || ARTIFACT_INFO[key]; if(!a) return;
-  c.a[key] = {i:a.i, n:a.n, d:a.d, c:a.c||null}; addNote('📖 Энциклопедия: '+a.n, '#8ad8ff');
+  c.a[key] = {i:a.i, n:a.n, d:a.d, c:a.c||null}; codexNote(a.n);
 }
 function codexTick(dt){
   codexAcc += dt; if(codexAcc<0.4) return; codexAcc = 0;
@@ -7673,36 +7831,176 @@ function unpackLoc(o){
   if(L.type==='dungeon') L.boss = L.enemies.find(e=>BOSS_TYPES.includes(e.type)) || null;
   return L;
 }
+// ---------- Формат хранения сохранений ----------
+// Версия данных сохранения. Меняете формат — поднимите SAVE_VERSION и добавьте шаг в SAVE_MIGRATIONS.
+const SAVE_VERSION = 2;
+const SAVE_MIGRATIONS = {
+  // v1 -> v2: изменился только способ хранения (сжатие); заодно переносим сюда старую проверку «мир до логов боссов»
+  1: d=>{ const w = d.world; if(w && w.overworld && !w.lair1) d.legacy = true; },
+};
+function migrateSave(d){
+  if(!d || typeof d.v!=='number' || d.v<1 || d.v>SAVE_VERSION) return null;   // сохранение из более новой версии игры не трогаем
+  while(d.v < SAVE_VERSION){ const step = SAVE_MIGRATIONS[d.v]; if(step) step(d); d.v++; }
+  return d;
+}
+// Сжатие: LZ77 по символам строки. Совпадение кодируется тремя символами: U+0001, длина, расстояние.
+// Сырой U+0001 в JSON не встречается (JSON.stringify экранирует управляющие символы), поэтому он свободен как маркер.
+// Функции самодостаточны: их исходный текст отдаётся фоновому потоку (Worker).
+function lzPack(s){
+  const BASE = 0x100, MIN = 5, MAXLEN = 4096, WIN = 50000;      // значения BASE+n < 0xD800: без суррогатов
+  const n = s.length, head = new Int32Array(1<<16).fill(-1), prev = new Int32Array(n), out = [];
+  const h = p => (((s.charCodeAt(p)*31 + s.charCodeAt(p+1))*31 + s.charCodeAt(p+2))*31 + s.charCodeAt(p+3)) & 0xFFFF;
+  let lit = 0, i = 0;
+  const ins = p => { if(p+3 < n){ const k = h(p); prev[p] = head[k]; head[k] = p; } };
+  while(i < n){
+    let bl = 0, bd = 0;
+    const c0 = s.charCodeAt(i);
+    if(i+MIN <= n && !(c0>=0xDC00 && c0<=0xDFFF)){                // не начинаем совпадение посреди суррогатной пары
+      let c = head[h(i)], tries = 24;
+      while(c >= 0 && i-c <= WIN && tries--){
+        if(s.charCodeAt(c+bl) === s.charCodeAt(i+bl)){
+          let l = 0; const lim = Math.min(MAXLEN, n-i);
+          while(l < lim && s.charCodeAt(c+l) === s.charCodeAt(i+l)) l++;
+          if(l > bl){ bl = l; bd = i-c; if(l === lim) break; }
+        }
+        c = prev[c];
+      }
+      if(bl >= MIN){ const e = s.charCodeAt(i+bl-1); if(e>=0xD800 && e<=0xDBFF) bl--; }   // и не заканчиваем посреди неё
+    }
+    if(bl >= MIN){
+      if(lit < i) out.push(s.slice(lit, i));
+      out.push('\u0001' + String.fromCharCode(BASE+bl, BASE+bd));
+      const end = i+bl; for(; i < end; i++) ins(i); lit = i;
+    } else { ins(i); i++; }
+  }
+  if(lit < n) out.push(s.slice(lit));
+  return out.join('');
+}
+function lzUnpack(z){
+  const BASE = 0x100; let n = 0, i = 0;
+  while(i < z.length){ if(z.charCodeAt(i)===1){ n += z.charCodeAt(i+1)-BASE; i += 3; } else { n++; i++; } }
+  const o = new Uint16Array(n); let p = 0; i = 0;
+  while(i < z.length){
+    const c = z.charCodeAt(i);
+    if(c === 1){ const len = z.charCodeAt(i+1)-BASE, d = z.charCodeAt(i+2)-BASE; if(d<1 || d>p) throw new Error('bad lz'); for(let k=0;k<len;k++,p++) o[p] = o[p-d]; i += 3; }
+    else { o[p++] = c; i++; }
+  }
+  let r = ''; for(let k=0;k<n;k+=8192) r += String.fromCharCode.apply(null, o.subarray(k, k+8192));
+  return r;
+}
+const LZ_TAG = 'ELZ1:';
+// дробные числа (координаты, таймеры, зёрна анимаций) храним с 6 значащими цифрами — на игру не влияет, а места меньше
+function saveNum(k, v){ return (typeof v==='number' && !Number.isInteger(v) && isFinite(v)) ? +v.toPrecision(6) : v; }
+function saveJSON(data){ return JSON.stringify(data, saveNum); }
+function encodeSave(data){ return LZ_TAG + lzPack(saveJSON(data)); }
+function decodeSave(raw){ return JSON.parse(raw.indexOf(LZ_TAG)===0 ? lzUnpack(raw.slice(LZ_TAG.length)) : raw); }
+const saveCache = new Map();                                     // ключ -> {raw, d}: меню читает слоты часто, распаковываем один раз
+// незаписанное фоновое сохранение дописываем сразу, если кто-то читает сохранения (загрузка, меню, экспорт)
+function flushSaves(key){
+  for(const [id, job] of lzJobs){ if(key && job.key!==key) continue; lzJobs.delete(id); writeSaveRawNow(job); }
+}
+function readSave(key){
+  flushSaves(key);
+  let raw; try{ raw = localStorage.getItem(key); }catch(e){ return null; }
+  if(!raw){ saveCache.delete(key); return null; }
+  const c = saveCache.get(key); if(c && c.raw===raw) return c.d;
+  let d = null; try{ d = migrateSave(decodeSave(raw)); }catch(e){ d = null; }
+  if(d && !(d.player && d.world)) d = null;
+  saveCache.set(key, {raw, d});
+  return d;
+}
 function getSaveInfo(key){
   if(!storageOK) return null;
+  return readSave(key || SAVE_KEY);                              // общий объект из кэша: не изменять (loadGame делает копию)
+}
+// ---------- Запись ----------
+let saveFailT = -1e9, saveErr = '', lzJobId = 0;
+const saveSeq = {};                                             // ключ -> номер последней записи; старые фоновые результаты отбрасываются
+const nextSeq = key => (saveSeq[key] = (saveSeq[key]||0)+1);
+function storeRaw(key, raw){
+  try{ localStorage.setItem(key, raw); saveCache.delete(key); return true; }catch(e){}
+  compactStoredSaves();                                          // место могли занимать несжатые сохранения прошлых версий
+  try{ localStorage.setItem(key, raw); saveCache.delete(key); return true; }catch(e){}
+  return false;
+}
+function saveFailed(){
+  saveErr = 'Не удалось сохранить: в памяти браузера кончилось место. Удалите лишний слот в «Сохранениях» или выгрузите их в файл.';
+  if(performance.now()-saveFailT > 60000){ saveFailT = performance.now(); addNote('⚠ '+saveErr, '#ff6b5a'); }
+  return false;
+}
+function writeSave(key, data){
+  if(!storageOK || !data) return false;
+  nextSeq(key);
+  let raw; try{ raw = encodeSave(data); }catch(e){ return saveFailed(); }
+  if(!storeRaw(key, raw)) return saveFailed();
+  saveErr = ''; return true;
+}
+// Сжатие в фоновом потоке, чтобы переходы между локациями и покупки не подтормаживали.
+// Снимок состояния делается сразу (синхронно), в фон уходит только упаковка строки.
+let lzWorker = null, lzWorkerOK = typeof Worker!=='undefined' && typeof Blob!=='undefined';
+const lzJobs = new Map();
+function lzWorkerGet(){
+  if(lzWorker || !lzWorkerOK) return lzWorker;
   try{
-    const raw = localStorage.getItem(key || SAVE_KEY);
-    if(!raw) return null;
-    const d = JSON.parse(raw);
-    return (d && d.v===1 && d.player && d.world) ? d : null;
-  }catch(e){ return null; }
+    const src = lzPack.toString()+'\nonmessage=e=>{ let z=null; try{ z=lzPack(e.data.s); }catch(err){} postMessage({id:e.data.id, z}); };';
+    lzWorker = new Worker(URL.createObjectURL(new Blob([src], {type:'text/javascript'})));
+    lzWorker.onmessage = e=>{
+      const job = lzJobs.get(e.data.id); lzJobs.delete(e.data.id); if(!job) return;
+      if(job.seq !== saveSeq[job.key]) return;                   // после этого уже записано более свежее состояние
+      if(e.data.z===null){ writeSaveRawNow(job); return; }
+      if(storeRaw(job.key, LZ_TAG+e.data.z)){ saveErr = ''; if(job.flash) saveFlash = 1500; } else saveFailed();
+    };
+    lzWorker.onerror = ()=>{ lzWorkerOK = false; lzWorker = null; for(const job of lzJobs.values()) writeSaveRawNow(job); lzJobs.clear(); };
+  }catch(e){ lzWorkerOK = false; lzWorker = null; }
+  return lzWorker;
+}
+function writeSaveRawNow(job){
+  if(job.seq !== saveSeq[job.key]) return;
+  try{ if(storeRaw(job.key, LZ_TAG+lzPack(job.s))){ saveErr = ''; if(job.flash) saveFlash = 1500; } else saveFailed(); }catch(e){ saveFailed(); }
+}
+function writeSaveAsync(key, data, flash){
+  if(!storageOK || !data) return false;
+  const w = lzWorkerGet();
+  if(!w){ const ok = writeSave(key, data); if(ok && flash) saveFlash = 1500; return ok; }
+  const job = {id:++lzJobId, seq:nextSeq(key), key, s:saveJSON(data), flash};
+  lzJobs.set(job.id, job); w.postMessage({id:job.id, s:job.s});
+  return true;
+}
+// Пережать сохранения, записанные прошлыми версиями игры без сжатия (освобождает место в хранилище)
+function compactStoredSaves(){
+  if(!storageOK) return;
+  for(const k of [SAVE_KEY, ...SLOT_KEYS]){
+    let raw = null; try{ raw = localStorage.getItem(k); }catch(e){}
+    if(!raw || raw.indexOf(LZ_TAG)===0) continue;
+    try{ const z = LZ_TAG+lzPack(saveJSON(JSON.parse(raw))); localStorage.removeItem(k); localStorage.setItem(k, z); saveCache.delete(k); }
+    catch(e){ try{ if(!localStorage.getItem(k)) localStorage.setItem(k, raw); }catch(e2){} }
+  }
 }
 function buildSaveData(){
   if(!hasActiveGame || gameState==='dead' || gameState==='won' || player.hp<=0) return null;
-  const data = { v:1, diff:difficulty, t:Date.now(), locId:currentLocId, locName:getLocName(loc), player:{}, world:{}, env:packEnv() };
+  const data = { v:SAVE_VERSION, diff:difficulty, t:Date.now(), locId:currentLocId, locName:getLocName(loc), player:{}, world:{}, env:packEnv() };
   for(const k of PLAYER_KEYS) data.player[k] = player[k];
   for(const id of Object.keys(world)) data.world[id] = packLoc(world[id]);
   return data;
 }
+// обычное сохранение: снимок сразу, сжатие и запись в фоне
 function saveGame(){
   if(!storageOK) return false;
-  const data = buildSaveData(); if(!data) return false;
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(data)); saveFlash = 1500; return true; }catch(e){ return false; }
+  return writeSaveAsync(SAVE_KEY, buildSaveData(), true);
+}
+// немедленное сохранение: при сворачивании и закрытии страницы ждать фонового потока нельзя
+function saveGameNow(){
+  if(!storageOK) return false;
+  const ok = writeSave(SAVE_KEY, buildSaveData()); if(ok) saveFlash = 1500; return ok;
 }
 function saveToSlot(n){
   if(!storageOK) return false;
-  const data = buildSaveData(); if(!data) return false;
-  try{ localStorage.setItem(SLOT_KEYS[n], JSON.stringify(data)); return true; }catch(e){ return false; }
+  return writeSave(SLOT_KEYS[n], buildSaveData());
 }
-function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} saveCache.delete(SAVE_KEY); }
 function latestSaveKey(){
   let best = null, bt = -1;
-  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ const i = getSaveInfo(k); if(i && i.t>bt){ bt = i.t; best = k; } }
+  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ const i = storageOK ? readSave(k) : null; if(i && i.t>bt){ bt = i.t; best = k; } }
   return best;
 }
 function fmtSave(info){
@@ -7718,13 +8016,14 @@ function refreshSaveUI(){
   } else saveInfoEl.classList.add('hidden');
 }
 function loadGame(key){
-  const d = getSaveInfo(key);
-  if(!d) return false;
+  const d0 = getSaveInfo(key);
+  if(!d0) return false;
+  const d = JSON.parse(JSON.stringify(d0));                       // копия: мир игры не должен делить объекты с кэшем
   try{
     const w = {};
     for(const id of Object.keys(d.world)) w[id] = unpackLoc(d.world[id]);
-    let legacy = false;
-    if(w.overworld && !w.lair1){                 // сохранение до переделки уровней: герой остаётся, карты подземелий создаются заново
+    let legacy = !!d.legacy;
+    if(legacy){                 // сохранение до переделки уровней: герой остаётся, карты подземелий создаются заново
       legacy = true;
       for(const id of Object.keys(w)) if(!['overworld','town','house1','house2'].includes(id)) delete w[id];
       for(const en of w.overworld.entrances) if(en.dungeon==='dungeon1') en.dungeon = 'lair1';
@@ -7781,7 +8080,7 @@ function saveRow(title, desc, buttons){
 function renderSaves(msg){
   const last = latestSaveKey(), li = last ? getSaveInfo(last) : null;
   document.getElementById('savesLast').textContent = li ? 'Последнее сохранение: '+fmtSave(li) : 'Сохранений пока нет.';
-  document.getElementById('savesMsg').textContent = msg || '';
+  document.getElementById('savesMsg').textContent = msg || (saveErr ? '⚠ '+saveErr : '');
   savesList.innerHTML = '';
   const ai = getSaveInfo(SAVE_KEY);
   saveRow('Автосохранение', ai ? fmtSave(ai) : 'Пусто. Появится само при переходах, в лавке и по ходу игры.',
@@ -7791,9 +8090,9 @@ function renderSaves(msg){
     btns.push(shopButton('Загрузить', ()=>{ loadGame(key); }, !info));
     btns.push(shopButton(info ? 'Записать' : 'Сохранить сюда', ()=>{
       if(info && !confirm('Перезаписать слот '+(n+1)+'?')) return;
-      renderSaves(saveToSlot(n) ? 'Игра сохранена в слот '+(n+1)+'.' : 'Не удалось сохранить (нет места или хранилище недоступно).');
+      renderSaves(saveToSlot(n) ? 'Игра сохранена в слот '+(n+1)+'.' : (saveErr || 'Не удалось сохранить (хранилище недоступно).'));
     }, !hasActiveGame));
-    if(info) btns.push(shopButton('Удалить', ()=>{ if(!confirm('Удалить слот '+(n+1)+'?')) return; try{ localStorage.removeItem(key); }catch(e){} renderSaves('Слот '+(n+1)+' удалён.'); }));
+    if(info) btns.push(shopButton('Удалить', ()=>{ if(!confirm('Удалить слот '+(n+1)+'?')) return; try{ localStorage.removeItem(key); }catch(e){} saveCache.delete(key); saveErr = ''; renderSaves('Слот '+(n+1)+' удалён.'); }));
     saveRow('Слот '+(n+1), info ? fmtSave(info) : (hasActiveGame ? 'Пусто' : 'Пусто. Начните или загрузите игру, чтобы сохранять сюда.'), btns);
   });
 }
@@ -7806,8 +8105,10 @@ setInterval(()=>{
   if(calm) saveGame();
 }, 20000);
 // при сворачивании вкладки и закрытии страницы сохраняем точное состояние
-document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveGame(); });
-window.addEventListener('pagehide', saveGame);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveGameNow(); });
+window.addEventListener('pagehide', saveGameNow);
+// один раз при запуске: пережать старые несжатые сохранения, чтобы освободить место
+setTimeout(compactStoredSaves, 1500);
 
 // ---------- Торговая лавка ----------
 const shopScreen = document.getElementById('shopScreen');
@@ -8704,7 +9005,7 @@ function b64dec(str){ const s = atob(str), a = new Uint8Array(s.length); for(let
 async function pipeBytes(bytes, stream){ return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer()); }
 async function makeSaveCode(){
   const bundle = {format:'eldoria-saves', v:1, t:Date.now(), saves:{}}; let n = 0;
-  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ let v = null; try{ v = localStorage.getItem(k); }catch(e){} if(v){ bundle.saves[k] = v; n++; } }
+  flushSaves(); for(const k of [SAVE_KEY, ...SLOT_KEYS]){ let v = null; try{ v = localStorage.getItem(k); }catch(e){} if(v){ bundle.saves[k] = v; n++; } }
   if(!n) return null;
   const raw = new TextEncoder().encode(JSON.stringify(bundle));
   if(typeof CompressionStream!=='undefined'){ try{ return 'ELD1.'+b64enc(await pipeBytes(raw, new CompressionStream('gzip'))); }catch(e){} }
@@ -9512,7 +9813,7 @@ function drawPerf(){
     ['Карта '+loc.width+'×'+loc.height+' · '+currentLocId+(loc.wild ? ' '+loc.wild.rx+','+loc.wild.ry : ''), '#e8dcc0'],
     ['Качество: '+(QLEVELS[quality] ? QLEVELS[quality].name : quality)+(autoQ ? ' (авто)' : '')+' · отряд '+c.party, '#e8dcc0']
   ];
-  const x = UI.l+8, w = 214, lh = 14, h = lines.length*lh+10, y = Math.max(UI.t+212, Math.round(canvas.height*0.45)-h/2);
+  const x = UI.l+8, w = 214, lh = 14, h = lines.length*lh+10, y = Math.max(UI.t+hudH()+26, Math.round(canvas.height*0.45)-h/2);
   ctx.save(); ctx.fillStyle = 'rgba(8,10,14,0.72)'; ctx.fillRect(x, y, w, h); ctx.strokeStyle = 'rgba(160,200,255,0.35)'; ctx.lineWidth = 1; ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
   ctx.font = '11px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   lines.forEach((l,i)=>{ ctx.fillStyle = l[1]; ctx.fillText(l[0], x+6, y+5+i*lh); });
@@ -9536,7 +9837,7 @@ function devTick(dt){
 function drawSandboxTag(){
   if(!sandboxOn() || gameState==='start') return;
   ctx.save(); ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-  const t = '🧪 ПЕСОЧНИЦА', w = ctx.measureText(t).width+14, x = UI.l+10, y = UI.t+188;
+  const t = '🧪 ПЕСОЧНИЦА', w = ctx.measureText(t).width+14, x = UI.l+10, y = UI.t+hudH()+2;
   ctx.fillStyle = 'rgba(60,20,90,0.75)'; ctx.fillRect(x, y, w, 16); ctx.fillStyle = '#e8c8ff'; ctx.fillText(t, x+7, y+2); ctx.restore();
 }
 const sandboxScreen = document.createElement('div');
@@ -10472,7 +10773,7 @@ function drawWild(camX, camY){
 function drawWildMap(){
   if(!loc.wild) return;
   const W = loc.wild, P = player.wild || {seen:{}, done:{}}, R = 3, cell = 13, n = R*2+1;
-  const mx = UI.l+248, my = UI.t+10, size = n*cell;
+  const mx = UI.l+hudW()+18, my = UI.t+10, size = n*cell;
   ctx.save(); ctx.fillStyle = 'rgba(10,8,4,0.55)'; ctx.fillRect(mx-3, my-3, size+6, size+22);
   ctx.strokeStyle = 'rgba(92,68,21,0.9)'; ctx.lineWidth = 1; ctx.strokeRect(mx-3, my-3, size+6, size+22);
   for(let j=-R;j<=R;j++) for(let i=-R;i<=R;i++){
@@ -10506,9 +10807,9 @@ function extHUD(){ drawWildMap(); drawColdHUD(); drawSandboxTag(); }
 function extEnsureWorld(wd){ ensureWildWorld(wd); ensureBiomeHazardsAll(wd); }
 // ---------- Экспорт и импорт сохранений файлом ----------
 function exportSaves(){
-  const bundle = {format:'eldoria-saves', v:1, build:'D001.031', t:Date.now(), saves:{}};
+  const bundle = {format:'eldoria-saves', v:1, build:((document.getElementById('buildTag')||{}).textContent||'').replace('сборка ',''), t:Date.now(), saves:{}};
   let n = 0;
-  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ let v = null; try{ v = localStorage.getItem(k); }catch(e){} if(v){ bundle.saves[k] = v; n++; } }
+  flushSaves(); for(const k of [SAVE_KEY, ...SLOT_KEYS]){ let v = null; try{ v = localStorage.getItem(k); }catch(e){} if(v){ bundle.saves[k] = v; n++; } }
   if(!n){ renderSaves('Нечего экспортировать: сохранений пока нет.'); return; }
   const d = new Date(), pad = x=>String(x).padStart(2,'0');
   const name = 'eldoria-saves-'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.json';
@@ -10533,7 +10834,7 @@ function importSaves(file){
     const allowed = new Set([SAVE_KEY, ...SLOT_KEYS]); let ok = 0, bad = 0;
     for(const k of Object.keys(b.saves)){
       if(!allowed.has(k)){ bad++; continue; }
-      try{ const d = JSON.parse(b.saves[k]); if(!d || !d.player || !d.world) throw 0; localStorage.setItem(k, b.saves[k]); ok++; }catch(e){ bad++; }
+      try{ const raw = String(b.saves[k]), d = migrateSave(decodeSave(raw)); if(!d || !d.player || !d.world) throw 0; localStorage.setItem(k, raw.indexOf(LZ_TAG)===0 ? raw : encodeSave(d)); saveCache.delete(k); ok++; }catch(e){ bad++; }
     }
     renderSaves(ok ? 'Загружено сохранений: '+ok+(bad?' (пропущено: '+bad+')':'')+'. Теперь выберите «Загрузить».' : 'В файле нет подходящих сохранений.');
     refreshSaveUI();

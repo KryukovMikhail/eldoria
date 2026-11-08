@@ -70,7 +70,7 @@ async def main():
         chk('secret bosses: gated by stage, night/weather, one at a time, respawn if lost, reward once, saved',all(r.values()),r)
         # 4. настройки
         r=await run("""const out={}; localStorage.removeItem('eldoria_settings'); out.def=t.SET.music===1&&t.SET.shake===true&&t.SET.nums===false&&t.SET.tips===true;
-          t.SET.music=0; t.SET.sfx=0.5; t.applySettings(); out.gain=!t.SFX.music||t.SFX.music.gain.value===0; t.saveSet(); const sv=JSON.parse(localStorage.getItem('eldoria_settings')); out.saved=sv.music===0&&sv.sfx===0.5;
+          t.SET.music=0; t.SET.sfx=0.5; t.applySettings(); out.gain=!t.SFX.music||t.SFX.music.gain.value===0; t.saveSet(); const sv=__t.decodeSave(localStorage.getItem('eldoria_settings')); out.saved=sv.music===0&&sv.sfx===0.5;
           t.SET.shake=false; t.shakeT=900; t.applySettings(); out.shake=t.shakeT===0; t.SET.shake=true; t.SET.music=1; t.SET.sfx=1;
           t.SET.lefty=true; t.SET.ctrl=1.2; t.applySettings(); const tc=document.getElementById('touchControls'); out.lefty=tc.classList.contains('lefty')&&tc.style.getPropertyValue('--cs')==='1.2'; t.SET.lefty=false; t.SET.ctrl=1; t.applySettings(); out.righty=!tc.classList.contains('lefty');
           t.renderSettings(); const sc=document.getElementById('settingsScreen'); out.rows=sc.querySelectorAll('input[type=range]').length===3&&sc.querySelectorAll('button').length>=6;
@@ -81,7 +81,7 @@ async def main():
         r=await run("""t.resetGame(); const out={}; t.setLoc('overworld'); """+calm+"""; t.loc.enemies.length=0; localStorage.removeItem('eldoria_tips'); for(const k in t.tipsSeen) delete t.tipsSeen[k];
           t.SET.tips=true; t.tipCd=0; const n0=document.title; const e=t.makeEnemy('ram',P.x+100,P.y,1); t.loc.enemies.push(e);
           t.tipsTick(0.5); out.shown=!!t.tipsSeen.charge; t.tipCd=0; t.tipsTick(0.5); out.once=Object.keys(t.tipsSeen).length===1;
-          out.stored=JSON.parse(localStorage.getItem('eldoria_tips')).charge===1;
+          out.stored=__t.decodeSave(localStorage.getItem('eldoria_tips')).charge===1;
           t.SET.tips=false; t.tipCd=0; const e2=t.makeEnemy('gelcube',P.x+100,P.y+30,1); t.loc.enemies.push(e2); t.tipsTick(0.5); out.off=!t.tipsSeen.split; t.SET.tips=true;
           t.loc.enemies.length=0; P.hp=P.maxHp*0.1; const e3=t.makeEnemy('wolf',P.x+60,P.y,1); t.loc.enemies.push(e3); t.tipCd=0; t.tipsTick(0.5); out.low=!!t.tipsSeen.lowhp; P.hp=P.maxHp;
           t.showDeathTip(); out.death=document.getElementById('deathTip').textContent.indexOf('💡')===0;

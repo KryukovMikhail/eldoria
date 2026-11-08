@@ -243,7 +243,7 @@ function b64dec(str){ const s = atob(str), a = new Uint8Array(s.length); for(let
 async function pipeBytes(bytes, stream){ return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer()); }
 async function makeSaveCode(){
   const bundle = {format:'eldoria-saves', v:1, t:Date.now(), saves:{}}; let n = 0;
-  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ let v = null; try{ v = localStorage.getItem(k); }catch(e){} if(v){ bundle.saves[k] = v; n++; } }
+  flushSaves(); for(const k of [SAVE_KEY, ...SLOT_KEYS]){ let v = null; try{ v = localStorage.getItem(k); }catch(e){} if(v){ bundle.saves[k] = v; n++; } }
   if(!n) return null;
   const raw = new TextEncoder().encode(JSON.stringify(bundle));
   if(typeof CompressionStream!=='undefined'){ try{ return 'ELD1.'+b64enc(await pipeBytes(raw, new CompressionStream('gzip'))); }catch(e){} }

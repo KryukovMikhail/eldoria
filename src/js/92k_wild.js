@@ -320,7 +320,7 @@ function drawWild(camX, camY){
 function drawWildMap(){
   if(!loc.wild) return;
   const W = loc.wild, P = player.wild || {seen:{}, done:{}}, R = 3, cell = 13, n = R*2+1;
-  const mx = UI.l+248, my = UI.t+10, size = n*cell;
+  const mx = UI.l+hudW()+18, my = UI.t+10, size = n*cell;
   ctx.save(); ctx.fillStyle = 'rgba(10,8,4,0.55)'; ctx.fillRect(mx-3, my-3, size+6, size+22);
   ctx.strokeStyle = 'rgba(92,68,21,0.9)'; ctx.lineWidth = 1; ctx.strokeRect(mx-3, my-3, size+6, size+22);
   for(let j=-R;j<=R;j++) for(let i=-R;i<=R;i++){

@@ -1,8 +1,8 @@
 // ---------- Экспорт и импорт сохранений файлом ----------
 function exportSaves(){
-  const bundle = {format:'eldoria-saves', v:1, build:'D001.031', t:Date.now(), saves:{}};
+  const bundle = {format:'eldoria-saves', v:1, build:((document.getElementById('buildTag')||{}).textContent||'').replace('сборка ',''), t:Date.now(), saves:{}};
   let n = 0;
-  for(const k of [SAVE_KEY, ...SLOT_KEYS]){ let v = null; try{ v = localStorage.getItem(k); }catch(e){} if(v){ bundle.saves[k] = v; n++; } }
+  flushSaves(); for(const k of [SAVE_KEY, ...SLOT_KEYS]){ let v = null; try{ v = localStorage.getItem(k); }catch(e){} if(v){ bundle.saves[k] = v; n++; } }
   if(!n){ renderSaves('Нечего экспортировать: сохранений пока нет.'); return; }
   const d = new Date(), pad = x=>String(x).padStart(2,'0');
   const name = 'eldoria-saves-'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.json';
@@ -27,7 +27,7 @@ function importSaves(file){
     const allowed = new Set([SAVE_KEY, ...SLOT_KEYS]); let ok = 0, bad = 0;
     for(const k of Object.keys(b.saves)){
       if(!allowed.has(k)){ bad++; continue; }
-      try{ const d = JSON.parse(b.saves[k]); if(!d || !d.player || !d.world) throw 0; localStorage.setItem(k, b.saves[k]); ok++; }catch(e){ bad++; }
+      try{ const raw = String(b.saves[k]), d = migrateSave(decodeSave(raw)); if(!d || !d.player || !d.world) throw 0; localStorage.setItem(k, raw.indexOf(LZ_TAG)===0 ? raw : encodeSave(d)); saveCache.delete(k); ok++; }catch(e){ bad++; }
     }
     renderSaves(ok ? 'Загружено сохранений: '+ok+(bad?' (пропущено: '+bad+')':'')+'. Теперь выберите «Загрузить».' : 'В файле нет подходящих сохранений.');
     refreshSaveUI();

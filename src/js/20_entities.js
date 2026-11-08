@@ -268,7 +268,7 @@ function drawStatusFx(sx,sy){
 }
 function drawStatusHUD(){
   const f = player.fx; if(!f) return;
-  let y = UI.t+244+(player.slowT>0?24:0);
+  let y = UI.t+hudH()+58+(player.slowT>0?24:0);
   for(const k of ['freeze','burn','poison']){
     if(!(f[k]>0)) continue;
     const I = STATUS_INFO[k], w = 112;
@@ -295,7 +295,7 @@ function maybeDropElixir(e){
 }
 function elixLayout(){
   const list = ELIX_KEYS.filter(k=> player.elix[k]>0 || (k!=='big' && player.buff[k]>0));
-  return list.map((k,i)=>({k, x:UI.l+8+i*40, y:UI.t+202, w:36, h:36}));
+  return list.map((k,i)=>({k, x:UI.l+8+i*40, y:UI.t+hudH()+16, w:36, h:36}));
 }
 function drawElixHUD(){
   const L = elixLayout();
@@ -311,7 +311,7 @@ function drawElixHUD(){
   }
   drawStatusHUD();
   if(player.slowT>0){
-    const y = UI.t+184, w = 112;
+    const y = UI.t+hudH()-2, w = 112;
     ctx.fillStyle = 'rgba(40,40,56,0.8)'; ctx.fillRect(UI.l+52,y,w,20); ctx.strokeStyle = '#a8a8c0'; ctx.lineWidth = 1; ctx.strokeRect(UI.l+52.5,y+0.5,w-1,19);
     ctx.fillStyle = '#e4e4f4'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('🕸 Замедление '+(player.slowT/1000).toFixed(1), UI.l+58, y+14);
   }

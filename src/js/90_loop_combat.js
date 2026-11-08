@@ -405,14 +405,23 @@ const ARTIFACT_INFO = (()=>{
 const codexScreen = document.getElementById('codexScreen'), codexList = document.getElementById('codexList'), codexTabsEl = document.getElementById('codexTabs'), codexBtn = document.getElementById('codexBtn');
 let codexTab = 'enemies', codexAcc = 0;
 function codexEnsure(){ if(!player.codex) player.codex = {e:{},a:{},k:{}}; return player.codex; }
+// новые записи энциклопедии, открытые почти одновременно, собираются в одно уведомление, а не в столбик плашек
+function codexNote(name){
+  const last = notifications.length ? notifications[notifications.length-1] : null;
+  const n = (last && last.codex && last.timer>600) ? last : notifications.find(x=>x.codex && x.timer>600);
+  if(!n){ notifications.push({text:'📖 Энциклопедия: '+name, color:'#8ad8ff', timer:2600, max:2600, codex:[name]}); return; }
+  n.codex.push(name); n.timer = n.max = 3200;
+  const k = n.codex.length, m10 = k%10, m100 = k%100, word = (m10===1 && m100!==11) ? 'запись' : (m10>=2 && m10<=4 && (m100<12 || m100>14)) ? 'записи' : 'записей';
+  n.text = '📖 Энциклопедия: +'+k+' '+word+' — '+n.codex.slice(0,2).join(', ')+(k>2 ? '…' : '');
+}
 function codexAddEnemy(type){
   const c = codexEnsure(); if(c.e[type] || !ENEMY_INFO[type]) return;
-  c.e[type] = 1; addNote('📖 Энциклопедия: '+ENEMY_INFO[type][1], '#8ad8ff');
+  c.e[type] = 1; codexNote(ENEMY_INFO[type][1]);
 }
 function codexAddArt(key, info){
   const c = codexEnsure(); if(c.a[key]) return;
   const a = info || ARTIFACT_INFO[key]; if(!a) return;
-  c.a[key] = {i:a.i, n:a.n, d:a.d, c:a.c||null}; addNote('📖 Энциклопедия: '+a.n, '#8ad8ff');
+  c.a[key] = {i:a.i, n:a.n, d:a.d, c:a.c||null}; codexNote(a.n);
 }
 function codexTick(dt){
   codexAcc += dt; if(codexAcc<0.4) return; codexAcc = 0;

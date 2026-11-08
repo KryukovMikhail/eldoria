@@ -242,6 +242,7 @@ function draw(){
   for(const e of loc.enemies){
     if(e.hp<=0) continue;
     const sx=e.x-camX, sy=e.y-camY;
+    if(!onScreen(sx-120, sy-160, e.w+240, e.h+280)) continue;      // за краем экрана не рисуем (с запасом на крылья, ауры и подписи боссов)
     if(e.elite){ ctx.strokeStyle='rgba(255,210,70,'+(0.6+0.3*Math.sin(Date.now()/200))+')'; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(sx+e.w/2, sy+e.h-2, e.w*0.7, e.w*0.28, 0, 0, 6.283); ctx.stroke(); }
     drawEnemy(e, sx, sy);
     const lift = ENEMY_LIFT[e.type] || 0, isBoss = BOSS_TYPES.includes(e.type);
@@ -299,7 +300,58 @@ function getLocName(l){
   return LEVEL_NAMES[l.level] || 'Подземелье';
 }
 
+// ---------- Панель героя: полная и компактная ----------
+// На телефоне (низкий экран) по умолчанию компактная: уровень, здоровье, опыт, деньги и цель в четыре строки.
+// Касание панели переключает вид; выбор запоминается.
+let hudPref = null; try{ hudPref = localStorage.getItem('eldoria_hud'); }catch(e){}
+function hudCompact(){ return hudPref ? hudPref==='compact' : canvas.height < 520; }
+function hudW(){ return hudCompact() ? 206 : 230; }
+function hudH(){ return hudCompact() ? 80 : 186; }
+function hudToggle(){
+  hudPref = hudCompact() ? 'full' : 'compact';
+  try{ localStorage.setItem('eldoria_hud', hudPref); }catch(e){}
+  mmCache.t = -1e9;
+}
+canvas.addEventListener('pointerdown', e=>{
+  if(gameState!=='playing') return;
+  const r = canvas.getBoundingClientRect(); if(!r.width) return;
+  const x = (e.clientX-r.left)*canvas.width/r.width - UI.l, y = (e.clientY-r.top)*canvas.height/r.height - UI.t;
+  if(x>=8 && x<=8+hudW() && y>=8 && y<=8+hudH()) hudToggle();
+});
+function xpText(){ return 'опыт '+Math.floor(player.xp)+'/'+player.xpNext; }
+function drawHUDCompact(){
+  ctx.save(); ctx.translate(UI.l, UI.t); ctx.textAlign = 'left';
+  const W = hudW(), H = hudH();
+  ctx.fillStyle = 'rgba(10,8,4,0.6)'; ctx.fillRect(8,8,W,H);
+  ctx.strokeStyle = '#5c4415'; ctx.strokeRect(8,8,W,H);
+  // 1: уровень и здоровье
+  ctx.fillStyle = '#f0e6c8'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('Ур. '+player.level, 14, 23);
+  drawHPBar(60,13,W-58,12, player.hp/player.maxHp, '#d9534f');
+  ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(Math.ceil(player.hp)+'/'+player.maxHp, 60+(W-58)/2, 22.5); ctx.textAlign = 'left';
+  // 2: опыт с подписью
+  drawHPBar(60,29,W-58,5, player.xp/player.xpNext, '#5aa7e0');
+  ctx.fillStyle = '#9cc8ea'; ctx.font = '9px sans-serif'; ctx.fillText(Math.floor(player.xp)+'/'+player.xpNext, 14, 36);   // опыт
+  // 3: золото, эликсиры, ключи, урон, защита, очки навыков
+  let x = 14; const y = 53;
+  const put = (txt, col, w)=>{ ctx.fillStyle = col; ctx.fillText(txt, x, y); x += w || (ctx.measureText(txt).width+9); };
+  ctx.font = '11px sans-serif';
+  coinAt(x+4,y-4,4.4,0); x += 11; put(String(player.gold), '#e0c23a');
+  drawPotionIcon(x+3,y-5,0.6,false); x += 9; put(String(player.potions), '#e05a5a');
+  if(player.vkeys>0) put('🗝'+player.vkeys, '#ffd34a');
+  put('⚔'+playerDamage(), '#cfc7a8');
+  put('🛡'+Math.round(Math.min(0.85, ARMORS[player.armor].reduce+gearStat('def')/100)*100)+'%', '#cfc7a8');
+  if(player.sp>0 && x < W-14) put('★'+player.sp, '#ffd34a');
+  // 4: задание или цель
+  ctx.font = 'italic 11px sans-serif';
+  let gt, col = '#d8b86a';
+  if(player.quest && QUESTS[player.quest.id]){ const qd = QUESTS[player.quest.id]; gt = player.quest.done ? '✔ «'+qd.name+'» — сдать' : '📜 '+qd.name+' '+player.quest.progress+'/'+qd.target; col = player.quest.done ? '#7fe07f' : '#e0c96a'; }
+  else gt = '➤ '+goalText();
+  while(gt.length>8 && ctx.measureText(gt).width>W-12) gt = gt.slice(0,-2);
+  ctx.fillStyle = col; ctx.fillText(gt, 14, 77);
+  ctx.restore();
+}
 function drawHUD(){
+  if(hudCompact()){ drawHUDCompact(); drawHUDTop(); return; }
   ctx.save(); ctx.translate(UI.l, UI.t);
   ctx.textAlign='left';
   // панель
@@ -319,6 +371,7 @@ function drawHUD(){
   if(player.vkeys>0){ ctx.fillStyle='#ffd34a'; ctx.font='bold 12px sans-serif'; ctx.fillText('🗝 '+player.vkeys, 176, 40); ctx.fillStyle='#f0e6c8'; }
 
   drawHPBar(16,46,150,7, player.xp/player.xpNext, '#5aa7e0');
+  ctx.fillStyle='#9cc8ea'; ctx.font='9px sans-serif'; ctx.fillText(xpText(), 172, 53);
 
   coinAt(22,64,5.2,0); drawPotionIcon(137,63,0.72,false);
   ctx.fillStyle='#e0c23a'; ctx.font='12px sans-serif';
@@ -358,16 +411,19 @@ function drawHUD(){
     ctx.fillText(gt, 16, 184); }
 
   ctx.restore();
-
+  drawHUDTop();
+}
+// название локации, уведомления и значок сохранения
+function drawHUDTop(){
   // название локации и уведомления — в свободной полосе между миникартой и кнопками
   ctx.font='bold 14px sans-serif';
   const locName2 = getLocName(loc) + atmoLabel();
   const bw = Math.max(150, ctx.measureText(locName2).width+28);
-  const mmRight = UI.l + 246 + (loc.type==='overworld' ? minimapSize()+6 : loc.wild ? 7*13+10 : 0);
+  const mmRight = UI.l + hudW() + 16 + (loc.type==='overworld' ? minimapSize()+6 : loc.wild ? 7*13+10 : 0);
   const Lb = mmRight + 8, Rb = canvas.width - UI.r - 260;
   const fits = (Rb-Lb) >= 270;                      // иначе — под верхним рядом
   const cxA = fits ? (Lb+Rb)/2 : canvas.width/2;
-  const by0 = fits ? UI.t+8 : UI.t+202, ny0 = fits ? UI.t+40 : UI.t+230;
+  const by0 = fits ? UI.t+8 : UI.t+hudH()+16, ny0 = fits ? UI.t+40 : UI.t+hudH()+44;
   ctx.textAlign='center';
   ctx.fillStyle='rgba(10,8,4,0.55)'; ctx.fillRect(cxA-bw/2, by0, bw, 22);
   ctx.fillStyle='#e8c873'; ctx.fillText(locName2, cxA, by0+16);
@@ -397,22 +453,35 @@ function drawHUD(){
 
 function minimapSize(){ return canvas.width<900 ? 112 : 146; }
 const MM_COL = { '~':[47,102,144], '^':[90,90,90], '#':[31,77,26], 'S':[138,90,43], 'B':[138,90,43], '.':[63,125,50] }, MM_FOG = [74,82,96];
+// клетки миникарты (2×2 клетки карты на точку) рисуются в маленький холст и обновляются не чаще раза в 0,3 с,
+// а не тремя тысячами fillRect каждый кадр
+const mmCache = {L:null, cv:null, t:-1e9};
+function minimapCells(F){
+  const now = performance.now(), L = loc;
+  if(mmCache.L===L && now-mmCache.t < 300) return mmCache.cv;
+  const cw = Math.ceil(L.width/2), ch = Math.ceil(L.height/2);
+  let cv = mmCache.cv; if(!cv){ cv = mmCache.cv = document.createElement('canvas'); }
+  if(cv.width!==cw || cv.height!==ch){ cv.width = cw; cv.height = ch; }
+  const g = cv.getContext('2d'), img = g.createImageData(cw, ch), d = img.data;
+  for(let y=0;y<L.height;y+=2) for(let x=0;x<L.width;x+=2){
+    const c = MM_COL[L.grid[y][x]] || MM_COL['.'];
+    const v = Math.max(F.data[y*F.W+x], x+1<F.W ? F.data[y*F.W+x+1] : 0, y+1<F.H ? F.data[(y+1)*F.W+x] : 0);   // неоткрытое скрыто туманом
+    const k = ((y>>1)*cw+(x>>1))*4;
+    d[k] = (MM_FOG[0]+(c[0]-MM_FOG[0])*v)|0; d[k+1] = (MM_FOG[1]+(c[1]-MM_FOG[1])*v)|0; d[k+2] = (MM_FOG[2]+(c[2]-MM_FOG[2])*v)|0; d[k+3] = 255;
+  }
+  g.putImageData(img, 0, 0); mmCache.L = L; mmCache.t = now;
+  return cv;
+}
 function drawMinimap(){
-  const mw=minimapSize(), mh=mw, mx=UI.l+248, my=UI.t+10;   // вверху, правее панели экипировки
+  const mw=minimapSize(), mh=mw, mx=UI.l+hudW()+18, my=UI.t+10;   // вверху, правее панели экипировки
   const F = getFog(loc);
   ctx.save();
   ctx.fillStyle='rgba(10,8,4,0.3)'; ctx.fillRect(mx-2,my-2,mw+4,mh+4);
   ctx.strokeStyle='rgba(92,68,21,0.8)'; ctx.strokeRect(mx-2,my-2,mw+4,mh+4);
   const sx = mw/loc.width, sy = mh/loc.height;
   ctx.globalAlpha = 0.5; // сама карта полупрозрачная — сквозь неё видно игру
-  for(let y=0;y<loc.height;y+=2){
-    for(let x=0;x<loc.width;x+=2){
-      const c = MM_COL[loc.grid[y][x]] || MM_COL['.'];
-      const v = Math.max(F.data[y*F.W+x], x+1<F.W ? F.data[y*F.W+x+1] : 0, y+1<F.H ? F.data[(y+1)*F.W+x] : 0);   // неоткрытое скрыто туманом
-      ctx.fillStyle = 'rgb('+((MM_FOG[0]+(c[0]-MM_FOG[0])*v)|0)+','+((MM_FOG[1]+(c[1]-MM_FOG[1])*v)|0)+','+((MM_FOG[2]+(c[2]-MM_FOG[2])*v)|0)+')';
-      ctx.fillRect(mx+x*sx, my+y*sy, sx*2, sy*2);
-    }
-  }
+  const MC = minimapCells(F), ps = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(MC, mx, my, MC.width*2*sx, MC.height*2*sy); ctx.imageSmoothingEnabled = ps;
   ctx.globalAlpha = 0.95;
   // лавка (красная точка) и входы в пещеры (коричневые) показываются, когда их уже нашли
   if(loc.shop && F.data[loc.shop.ty*F.W+loc.shop.tx]>0.5){

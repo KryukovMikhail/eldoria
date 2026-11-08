@@ -94,10 +94,7 @@ function townWell(g,p){
 function buildTownLayer(L){
   const T = TILE, W = L.width*T, H = L.height*T, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g = cv.getContext('2d'), P = townPaths(L), mk = L.shop;
-  for(let y=0;y<H;y+=8) for(let x=0;x<W;x+=8){
-    const n = vnoise(x/60,y/60,11)*0.5 + vnoise(x/18,y/18,12)*0.5, k = (n-0.5)*26;
-    g.fillStyle = 'rgb('+((74+k)|0)+','+((128+k)|0)+','+((58+k*0.8)|0)+')'; g.fillRect(x,y,8,8);
-  }
+  noiseFill({g, PX0:0, PY0:0, PX1:W, PY1:H}, (x,y)=>{ const n = vnoise(x/60,y/60,11)*0.5 + vnoise(x/18,y/18,12)*0.5, k = (n-0.5)*26; return [74+k, 128+k, 58+k*0.8]; });
   const wall = (x,y)=> x===0||y===0||x===L.width-1||y===L.height-1;
   const plaza = (x,y)=> mk && Math.hypot(x-mk.tx,y-(mk.ty+1))<=4.4;
   for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
@@ -334,19 +331,14 @@ const DPAL = { 1:{f:[78,72,66],w:[38,34,30],a:[150,136,118]}, 2:{f:[64,70,84],w:
   4:{f:[66,40,38],w:[30,15,14],a:[176,104,84]}, 5:{f:[204,174,112],w:[136,98,56],a:[232,196,136]}, 6:{f:[184,210,228],w:[74,112,156],a:[228,244,254]},
   7:{f:[62,70,64],w:[24,30,28],a:[150,162,152]}, 8:{f:[52,100,46],w:[16,52,26],a:[120,200,90]},
   11:{f:[108,102,94],w:[72,52,44],a:[176,160,140]}, 12:{f:[96,66,48],w:[40,26,28],a:[170,130,100]} , 13:{f:[46,98,132],w:[18,44,78],a:[130,210,240]}, 14:{f:[206,214,228],w:[96,132,190],a:[255,255,255]}};
-function buildDungeonLayer(L){
+function buildDungeonLayer(L, clip){
   if(L.biome==='town') return buildTownLayer(L);
   if(L.biome==='house') return buildHouseLayer(L);
-  const W = L.width*TILE, H = L.height*TILE, P = DPAL[L.pal||L.level] || DPAL[1];
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const g = cv.getContext('2d');
+  const T = layerTarget(L, clip), {cv, g, TX0, TY0, TX1, TY1} = T, P = DPAL[L.pal||L.level] || DPAL[1];
   const isF = (x,y)=> y>=0 && x>=0 && y<L.height && x<L.width && L.grid[y][x]!=='#';
   // пол: неровная каменная поверхность
-  for(let y=0;y<H;y+=8) for(let x=0;x<W;x+=8){
-    const n = vnoise(x/70,y/70,5)*0.5 + vnoise(x/22,y/22,8)*0.5, k = (n-0.5)*30;
-    g.fillStyle = 'rgb('+((P.f[0]+k)|0)+','+((P.f[1]+k)|0)+','+((P.f[2]+k)|0)+')'; g.fillRect(x,y,8,8);
-  }
-  for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+  noiseFill(T, (x,y)=>{ const n = vnoise(x/70,y/70,5)*0.5 + vnoise(x/22,y/22,8)*0.5, k = (n-0.5)*30; return [P.f[0]+k, P.f[1]+k, P.f[2]+k]; });
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(!isF(tx,ty)) continue;
     const x0 = tx*TILE, y0 = ty*TILE, R = (k)=>hash2(tx,ty,400+k);
     if(L.grid[ty][tx]==='L') continue;
@@ -434,7 +426,7 @@ function buildDungeonLayer(L){
   // лавовые озёра: свечение на камне, остывшая корка, жидкий огонь
   if(L.level===4){
     const isL = (x,y)=> y>=0 && x>=0 && y<L.height && x<L.width && L.grid[y][x]==='L';
-    for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+    for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
       if(!isL(tx,ty)) continue;
       const cx = tx*TILE+16, cy = ty*TILE+16, gr = g.createRadialGradient(cx,cy,6,cx,cy,52);
       gr.addColorStop(0,'rgba(255,110,20,0.34)'); gr.addColorStop(1,'rgba(255,110,20,0)');
@@ -449,7 +441,7 @@ function buildDungeonLayer(L){
     };
     for(const [rad,col,dx] of [[22,'rgba(255,92,24,0.30)',0],[18,'#c43a0a',1],[11,'#e8620f',2]]){
       g.fillStyle = col;
-      for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+      for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
         if(!isL(tx,ty)) continue;
         const sd = tx*131+ty*17+dx, jx = (hash2(tx,ty,720)-0.5)*9, jy = (hash2(tx,ty,721)-0.5)*9, cx = tx*TILE+16+jx, cy = ty*TILE+16+jy;
         blob(cx,cy,rad*(0.9+0.28*hash2(tx,ty,722)),sd);
@@ -458,7 +450,7 @@ function buildDungeonLayer(L){
         if(isL(tx+1,ty+1) && isL(tx+1,ty) && isL(tx,ty+1)) blob(tx*TILE+32,ty*TILE+32,rad*0.85,sd+13);
       }
     }
-    for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+    for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
       if(!isL(tx,ty)) continue;
       const R = (k)=>hash2(tx,ty,700+k);
       for(let i=0;i<5;i++){
@@ -468,11 +460,11 @@ function buildDungeonLayer(L){
     }
   }
   // стены: тёмная масса + валуны
-  for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(isF(tx,ty)) continue;
     g.fillStyle = 'rgb('+P.w[0]+','+P.w[1]+','+P.w[2]+')'; g.fillRect(tx*TILE,ty*TILE,TILE,TILE);
   }
-  for(let ty=0;ty<L.height;ty++) for(let tx=0;tx<L.width;tx++){
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(isF(tx,ty)) continue;
     const R = (k)=>hash2(tx,ty,500+k);
     if(L.biome==='city' && L.level===11 && tx>=2 && ty>=2 && tx<L.width-2 && ty<L.height-2){                       // дома с крышами (вид сверху)
@@ -569,10 +561,8 @@ function drawLavaAnim(x0,y0,x1,y1,camX,camY){
 }
 function drawDungeonGround(camX,camY){
   let layer = dungeonLayers.get(loc);
-  if(!layer){ layer = buildDungeonLayer(loc); dungeonLayers.set(loc, layer); }
-  const wx0 = Math.max(0,camX), wy0 = Math.max(0,camY);
-  const wx1 = Math.min(loc.width*TILE, camX+canvas.width), wy1 = Math.min(loc.height*TILE, camY+canvas.height);
-  if(wx1>wx0 && wy1>wy0) ctx.drawImage(layer, wx0, wy0, wx1-wx0, wy1-wy0, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
+  if(!layer){ layer = (loc.biome==='town' || loc.biome==='house') ? buildDungeonLayer(loc) : makeLayer(loc, buildDungeonLayer); dungeonLayers.set(loc, layer); }
+  blitLayer(layer, camX, camY);
   if(loc.biome==='house') drawHouseAnim(camX,camY);
   else if(loc.biome!=='town') drawDungeonExit(camX,camY);
 }

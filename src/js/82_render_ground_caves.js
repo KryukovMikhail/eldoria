@@ -34,19 +34,13 @@ function drawCoinPile(cx,cy,value){
 // ---------- Земля: трава, цветы, горы по краям (рисуется один раз и кешируется) ----------
 const groundLayers = new WeakMap();
 const FLOWER_COLORS = ['#f4f4f0','#f2d13a','#e87aa8','#a97ae8','#e0574f','#7ab8f0'];
-function buildGroundLayer(L){
-  const W = L.width*TILE, H = L.height*TILE;
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const g = cv.getContext('2d');
-  // 1) трава: плавные пятна светлее/темнее
-  for(let y=0;y<H;y+=8) for(let x=0;x<W;x+=8){
-    const n = vnoise(x/90,y/90,3)*0.6 + vnoise(x/30,y/30,9)*0.4;
-    g.fillStyle = 'rgb('+((52+n*22)|0)+','+((112+n*28)|0)+','+((44+n*14)|0)+')';
-    g.fillRect(x,y,8,8);
-  }
+function buildGroundLayer(L, clip){
+  const T = layerTarget(L, clip), {cv, g, TX0, TY0, TX1, TY1} = T;
+  // 1) трава: плавные пятна светлее/темнее (клетки 8×8 считаем в маленькой картинке и растягиваем без сглаживания)
+  noiseFill(T, (x,y)=>{ const n = vnoise(x/90,y/90,3)*0.6 + vnoise(x/30,y/30,9)*0.4; return [52+n*22, 112+n*28, 44+n*14]; });
   // 2) травинки, цветы, камешки
-  for(let ty=0;ty<L.height;ty++){
-    for(let tx=0;tx<L.width;tx++){
+  for(let ty=TY0;ty<TY1;ty++){
+    for(let tx=TX0;tx<TX1;tx++){
       const t = L.grid[ty][tx]; if(t==='^') continue;
       const x0 = tx*TILE, y0 = ty*TILE, R = (k)=>hash2(tx,ty,k);
       for(let i=0;i<5;i++){
@@ -66,7 +60,7 @@ function buildGroundLayer(L){
   }
   // 3) горы по краям: пологие и редкие, у подножия темнее, снежные шапки не у всех
   const GW = L.width, GH = L.height;
-  for(let ty=0;ty<GH;ty++) for(let tx=0;tx<GW;tx++){
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(L.grid[ty][tx]!=='^') continue;
     const x0 = tx*TILE, y0 = ty*TILE, R = (k)=>hash2(tx,ty,200+k), n = vnoise(tx*0.7,ty*0.7,17);
     g.fillStyle = 'rgb('+((58+n*24)|0)+','+((56+n*22)|0)+','+((60+n*22)|0)+')'; g.fillRect(x0,y0,TILE,TILE);
@@ -99,7 +93,7 @@ function buildGroundLayer(L){
     else { while(d<8 && L.grid[i][GW-1-d]==='^') d++; }
     return Math.max(1,d); };
   // рваный край: валуны и осыпь заходят на траву, а трава — на камень
-  for(let ty=0;ty<GH;ty++) for(let tx=0;tx<GW;tx++){
+  for(let ty=TY0;ty<TY1;ty++) for(let tx=TX0;tx<TX1;tx++){
     if(L.grid[ty][tx]!=='^') continue;
     for(const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
       const nx = tx+dx, ny = ty+dy; if(nx<0||ny<0||nx>=GW||ny>=GH || L.grid[ny][nx]==='^') continue;
@@ -126,6 +120,7 @@ function buildGroundLayer(L){
   mounds.push({bx:20,base:36,top:true,seed:901},{bx:GW*TILE-20,base:36,top:true,seed:902},{bx:20,base:GH*TILE-4,seed:903},{bx:GW*TILE-20,base:GH*TILE-4,seed:904});
   mounds.sort((a,b)=>a.base-b.base);
   for(const m of mounds){
+    if(!clipNear(T, m.bx, m.base-60, 150)) continue;                                            // гора далеко от этого куска
     const R = (k)=>hash2(m.seed,k,320);
     const bw = m.side ? 52+R(1)*28 : 70+R(1)*46, h = (m.top ? 34+R(2)*14 : m.side ? 26+R(3)*16 : 42+R(3)*26)*1.12;
     const bx = m.bx, baseY = m.base, ax = bx+(R(5)-0.5)*bw*0.3, ay = baseY-h, l = bx-bw/2, r = bx+bw/2;
@@ -164,10 +159,8 @@ function buildGroundLayer(L){
 }
 function drawGround(camX,camY){
   let layer = groundLayers.get(loc);
-  if(!layer){ layer = buildGroundLayer(loc); groundLayers.set(loc, layer); }
-  const wx0 = Math.max(0,camX), wy0 = Math.max(0,camY);
-  const wx1 = Math.min(loc.width*TILE, camX+canvas.width), wy1 = Math.min(loc.height*TILE, camY+canvas.height);
-  if(wx1>wx0 && wy1>wy0) ctx.drawImage(layer, wx0, wy0, wx1-wx0, wy1-wy0, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
+  if(!layer){ layer = makeLayer(loc, buildGroundLayer); groundLayers.set(loc, layer); }
+  blitLayer(layer, camX, camY);
 }
 
 // ---------- Пещеры: входы (overworld) и спуск в Провал (в подземелье) ----------

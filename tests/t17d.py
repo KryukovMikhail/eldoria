@@ -26,7 +26,7 @@ async def main():
         chk('after stage1 spear purchasable',len(r)==2 and r[1].startswith('Купить') and not any('🔒' in x for x in r),r)
         await E("()=>__t.closeShop()")
         # old save without POIs
-        r=await E("""()=>{ const t=__t; t.saveGame(); const k=t.latestSaveKey(); const d=JSON.parse(localStorage.getItem(k));
+        r=await E("""()=>{ const t=__t; t.saveGame(); const k=t.latestSaveKey(); const d=__t.decodeSave(localStorage.getItem(k));
            for(const id of Object.keys(d.world)) if(id.startsWith('poi_')) delete d.world[id];
            for(const id of Object.keys(d.world)){ delete d.world[id].poi; if(d.world[id].doors) d.world[id].doors=d.world[id].doors.filter(x=>!x.to.startsWith('poi_')); }
            delete d.player.codex; localStorage.setItem(k,JSON.stringify(d)); const okk=t.loadGame(k);

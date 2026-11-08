@@ -62,9 +62,11 @@ function vnoise(x,y,seed){
   return top+(bot-top)*v;
 }
 function boxBlur(src,dst,W,H,r,vertical){
+  if(vertical){ boxBlurV(src,dst,W,H,r); return; }
   const n = vertical ? W : H, len = vertical ? H : W, step = vertical ? W : 1, w = 2*r+1;
   for(let k=0;k<n;k++){
     const base = vertical ? k : k*W;
+    if(!vertical){ let any = false; for(let i=0;i<len;i++) if(src[base+i]!==0){ any = true; break; } if(!any){ dst.fill(0, base, base+len); continue; } }   // пустая строка
     let acc=0;
     for(let i=-r;i<=r;i++) if(i>=0 && i<len) acc += src[base+i*step];
     for(let i=0;i<len;i++){
@@ -75,25 +77,106 @@ function boxBlur(src,dst,W,H,r,vertical){
     }
   }
 }
-function buildWaterLayer(L){
-  const cpt = TILE/WATER_SCALE, W = L.width*cpt, H = L.height*cpt;
-  let a = new Float32Array(W*H), b = new Float32Array(W*H);
-  for(let ty=0; ty<L.height; ty++) for(let tx=0; tx<L.width; tx++){
-    if(L.grid[ty][tx]!=='~') continue;
-    for(let yy=0; yy<cpt; yy++){ const row=(ty*cpt+yy)*W+tx*cpt; for(let xx=0; xx<cpt; xx++) a[row+xx]=1; }
+// ---------- Кэш земли кусками ----------
+// Большие карты (поверхность, пустыня, джунгли…) раньше рисовались целиком в один огромный холст при входе:
+// на телефоне это давало паузу в 1–3 секунды. Теперь земля строится кусками по CHUNK px: сразу — только видимые,
+// остальные — по одному за кадр рядом с камерой. Построители рисуют в мировых координатах, кусок лишь сдвигает холст.
+const CHUNK = 256, CHUNK_MARGIN = 2, CHUNK_MAX = 110, CHUNK_MIN_TILES = 2400, CHUNK_GAP = 34;
+let chunkMadeT = -1e9;
+function layerTarget(L, clip){
+  const W = L.width*TILE, H = L.height*TILE, cv = document.createElement('canvas');
+  if(!clip){ cv.width = W; cv.height = H; return {cv, g:cv.getContext('2d'), W, H, clip:null, TX0:0, TY0:0, TX1:L.width, TY1:L.height, PX0:0, PY0:0, PX1:W, PY1:H}; }
+  cv.width = clip.w; cv.height = clip.h;
+  const g = cv.getContext('2d'); g.translate(-clip.x, -clip.y);
+  const m = CHUNK_MARGIN;
+  return {cv, g, W, H, clip,
+    TX0:Math.max(0, Math.floor(clip.x/TILE)-m), TY0:Math.max(0, Math.floor(clip.y/TILE)-m),
+    TX1:Math.min(L.width, Math.ceil((clip.x+clip.w)/TILE)+m), TY1:Math.min(L.height, Math.ceil((clip.y+clip.h)/TILE)+m),
+    PX0:clip.x, PY0:clip.y, PX1:Math.min(W, clip.x+clip.w), PY1:Math.min(H, clip.y+clip.h)};   // CHUNK кратен 8: сетка шума совпадает
+}
+// крупный объект с центром (x,y) и «радиусом» r попадает в кусок?
+function clipNear(T, x, y, r){ const c = T.clip; return !c || (x+r >= c.x && x-r <= c.x+c.w && y+r >= c.y && y-r <= c.y+c.h); }
+class ChunkLayer{
+  constructor(L, build, blit){ this.L = L; this.build = build; this.blit = blit || null; this.W = L.width*TILE; this.H = L.height*TILE; this.nx = Math.ceil(this.W/CHUNK); this.ny = Math.ceil(this.H/CHUNK); this.chunks = new Map(); this.built = 0; }
+  key(i,j){ return j*this.nx+i; }
+  make(i,j){
+    const x = i*CHUNK, y = j*CHUNK, c = this.build(this.L, {x, y, w:Math.min(CHUNK, this.W-x), h:Math.min(CHUNK, this.H-y)});
+    this.chunks.set(this.key(i,j), c); this.built++; chunkMadeT = performance.now(); return c;
   }
-  for(let pass=0; pass<2; pass++){ boxBlur(a,b,W,H,6,false); boxBlur(b,a,W,H,6,true); }
-  const cv = document.createElement('canvas'); cv.width=W; cv.height=H;
-  const g = cv.getContext('2d'), img = g.createImageData(W,H), d = img.data;
-  for(let y=0;y<H;y++){
-    for(let x=0;x<W;x++){
-      let F = a[y*W+x];
+  get(i,j){ const k = this.key(i,j); if(this.chunks.has(k)){ const c = this.chunks.get(k); this.chunks.delete(k); this.chunks.set(k, c); return c; } return this.make(i,j); }  // порядок Map = давность использования; кусок может быть пустым (null)
+  range(camX, camY){ return [Math.max(0, Math.floor(camX/CHUNK)), Math.max(0, Math.floor(camY/CHUNK)), Math.min(this.nx-1, Math.floor((camX+canvas.width-1)/CHUNK)), Math.min(this.ny-1, Math.floor((camY+canvas.height-1)/CHUNK))]; }
+  draw(camX, camY){
+    const [i0,j0,i1,j1] = this.range(camX, camY);
+    for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const c = this.get(i,j); if(!c) continue; if(this.blit) this.blit(c, i*CHUNK-camX, j*CHUNK-camY); else ctx.drawImage(c, i*CHUNK-camX, j*CHUNK-camY); }
+    this.prefetch(i0-1, j0-1, i1+1, j1+1);
+    while(this.chunks.size > CHUNK_MAX){ const k = this.chunks.keys().next().value, c = this.chunks.get(k); if(c){ c.width = 1; c.height = 1; } this.chunks.delete(k); }
+  }
+  // заранее строим один соседний кусок за кадр, чтобы при движении камеры не было рывков
+  prefetch(i0, j0, i1, j1){
+    if(performance.now()-chunkMadeT < CHUNK_GAP) return;              // не больше одного куска за CHUNK_GAP мс на все слои
+    for(let j=Math.max(0,j0);j<=Math.min(this.ny-1,j1);j++) for(let i=Math.max(0,i0);i<=Math.min(this.nx-1,i1);i++)
+      if(!this.chunks.has(this.key(i,j))){ this.make(i,j); return; }
+  }
+  dispose(){ for(const c of this.chunks.values()) if(c){ c.width = 1; c.height = 1; } this.chunks.clear(); }
+}
+// фон из клеток 8×8: цвет считаем на маленькой картинке, затем растягиваем без сглаживания (вместо тысяч fillRect)
+function noiseFill(T, col){
+  const x0 = T.PX0 & ~7, y0 = T.PY0 & ~7, cw = Math.ceil((T.PX1-x0)/8), ch = Math.ceil((T.PY1-y0)/8);
+  if(cw<=0 || ch<=0) return;
+  const sm = document.createElement('canvas'); sm.width = cw; sm.height = ch;
+  const sg = sm.getContext('2d'), img = sg.createImageData(cw, ch), d = img.data;
+  for(let j=0;j<ch;j++) for(let i=0;i<cw;i++){ const c = col(x0+i*8, y0+j*8), k = (j*cw+i)*4; d[k] = c[0]|0; d[k+1] = c[1]|0; d[k+2] = c[2]|0; d[k+3] = 255; }
+  sg.putImageData(img, 0, 0);
+  const g = T.g, ps = g.imageSmoothingEnabled; g.imageSmoothingEnabled = false; g.drawImage(sm, x0, y0, cw*8, ch*8); g.imageSmoothingEnabled = ps;
+}
+function L_big(L){ return L.width*L.height >= CHUNK_MIN_TILES; }
+function makeLayer(L, build){ return L_big(L) ? new ChunkLayer(L, build) : build(L, null); }
+function blitLayer(layer, camX, camY){
+  if(layer instanceof ChunkLayer){ layer.draw(camX, camY); return; }
+  const wx0 = Math.max(0,camX), wy0 = Math.max(0,camY);
+  const wx1 = Math.min(loc.width*TILE, camX+canvas.width), wy1 = Math.min(loc.height*TILE, camY+canvas.height);
+  if(wx1>wx0 && wy1>wy0) ctx.drawImage(layer, wx0, wy0, wx1-wx0, wy1-wy0, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
+}
+// вертикальное размытие построчно (все столбцы сразу): тот же результат, что столбцами, но память читается подряд — в разы быстрее
+function boxBlurV(src,dst,W,H,r){
+  const w = 2*r+1, acc = new Float64Array(W);
+  for(let i=-r;i<=r;i++) if(i>=0 && i<H){ const o = i*W; for(let x=0;x<W;x++) acc[x] += src[o+x]; }
+  for(let i=0;i<H;i++){
+    const o = i*W, add = i+r+1, rem = i-r;
+    for(let x=0;x<W;x++) dst[o+x] = acc[x]/w;
+    if(add<H){ const oa = add*W; for(let x=0;x<W;x++) acc[x] += src[oa+x]; }
+    if(rem>=0){ const orm = rem*W; for(let x=0;x<W;x++) acc[x] -= src[orm+x]; }
+  }
+}
+// Вода: маска клеток '~' размывается и шумится. Кусок воды считает размытие с запасом WATER_PAD вокруг,
+// поэтому внутри куска результат тот же, что у целой карты; по краю куска оставлена 1 px «рамка» для сглаживания без швов.
+const WATER_PAD = 26, WATER_RIM = 1;
+function waterRegion(L, ox, oy, OW, OH){                  // область маски (в px маски), может выходить за карту
+  const cpt = TILE/WATER_SCALE, MW = L.width*cpt, MH = L.height*cpt;
+  const rx = ox-WATER_PAD, ry = oy-WATER_PAD, RW = OW+2*WATER_PAD, RH = OH+2*WATER_PAD;
+  const tx0 = Math.max(0, Math.floor(rx/cpt)), ty0 = Math.max(0, Math.floor(ry/cpt)), tx1 = Math.min(L.width, Math.ceil((rx+RW)/cpt)), ty1 = Math.min(L.height, Math.ceil((ry+RH)/cpt));
+  let a = null;
+  for(let ty=ty0; ty<ty1; ty++) for(let tx=tx0; tx<tx1; tx++){
+    if(L.grid[ty][tx]!=='~') continue;
+    if(!a) a = new Float32Array(RW*RH);
+    for(let yy=Math.max(0,ty*cpt-ry); yy<Math.min(RH,(ty+1)*cpt-ry); yy++){ const row = yy*RW; for(let xx=Math.max(0,tx*cpt-rx); xx<Math.min(RW,(tx+1)*cpt-rx); xx++) a[row+xx] = 1; }
+  }
+  if(!a) return null;                                     // воды рядом нет — кусок пустой
+  let b = new Float32Array(RW*RH);
+  for(let pass=0; pass<2; pass++){ boxBlur(a,b,RW,RH,6,false); boxBlur(b,a,RW,RH,6,true); }
+  const cv = document.createElement('canvas'); cv.width = OW; cv.height = OH;
+  const g = cv.getContext('2d'), img = g.createImageData(OW,OH), d = img.data;
+  for(let y=0;y<OH;y++){
+    const Y = oy+y; if(Y<0 || Y>=MH) continue;
+    for(let x=0;x<OW;x++){
+      const X = ox+x; if(X<0 || X>=MW) continue;
+      let F = a[(y+WATER_PAD)*RW + x+WATER_PAD];
       if(F<0.2) continue;
-      F += (vnoise(x/28,y/28,11)-0.5)*0.26 + (vnoise(x/11,y/11,23)-0.5)*0.12 + (vnoise(x/60,y/60,5)-0.5)*0.22;
+      F += (vnoise(X/28,Y/28,11)-0.5)*0.26 + (vnoise(X/11,Y/11,23)-0.5)*0.12 + (vnoise(X/60,Y/60,5)-0.5)*0.22;
       const alpha = sstep(0.47,0.53,F);
       if(alpha<=0) continue;
       const t = sstep(0.55,0.95,F);               // мелководье светлее, глубина темнее
-      const i = (y*W+x)*4;
+      const i = (y*OW+x)*4;
       d[i]   = 74 + (40-74)*t;
       d[i+1] = 138 + (92-138)*t;
       d[i+2] = 182 + (140-182)*t;
@@ -103,15 +186,25 @@ function buildWaterLayer(L){
   g.putImageData(img,0,0);
   return cv;
 }
+function buildWaterLayer(L, clip){
+  const S = WATER_SCALE;
+  if(!clip) return waterRegion(L, 0, 0, L.width*TILE/S, L.height*TILE/S) || (()=>{ const c = document.createElement('canvas'); c.width = c.height = 1; return c; })();
+  return waterRegion(L, clip.x/S-WATER_RIM, clip.y/S-WATER_RIM, clip.w/S+2*WATER_RIM, clip.h/S+2*WATER_RIM);
+}
+function blitWaterChunk(c, dx, dy){
+  const S = WATER_SCALE, r = WATER_RIM, w = c.width-2*r, h = c.height-2*r;
+  ctx.drawImage(c, r, r, w, h, dx, dy, w*S, h*S);
+}
 function drawWater(x0,y0,x1,y1,camX,camY){
   let layer = waterLayers.get(loc);
-  if(!layer){ layer = buildWaterLayer(loc); waterLayers.set(loc, layer); }
+  if(!layer){ layer = L_big(loc) ? new ChunkLayer(loc, buildWaterLayer, blitWaterChunk) : buildWaterLayer(loc); waterLayers.set(loc, layer); }
   const S = WATER_SCALE;
   const wx0 = Math.max(0,camX), wy0 = Math.max(0,camY);
   const wx1 = Math.min(loc.width*TILE, camX+canvas.width), wy1 = Math.min(loc.height*TILE, camY+canvas.height);
   if(wx1>wx0 && wy1>wy0){
     const prev = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(layer, wx0/S, wy0/S, (wx1-wx0)/S, (wy1-wy0)/S, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
+    if(layer instanceof ChunkLayer) layer.draw(camX, camY);
+    else ctx.drawImage(layer, wx0/S, wy0/S, (wx1-wx0)/S, (wy1-wy0)/S, wx0-camX, wy0-camY, wx1-wx0, wy1-wy0);
     ctx.imageSmoothingEnabled = prev;
   }
   // лёгкая рябь на воде (только там, где вокруг клетки тоже вода)

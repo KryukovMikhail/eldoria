@@ -32,7 +32,7 @@ async def main():
         chk('lava glow points', r[0] and r[1]>=2, r)
         await pg.wait_for_timeout(600); await pg.screenshot(path=SC+'z_lava.png')
         # torches not serialized
-        r=await E("()=>{ const t=__t; t.saveGame(); const k=t.latestSaveKey(); return JSON.parse(localStorage.getItem(k)).world.lava.torch===undefined }"); chk('torches not saved', r)
+        r=await E("()=>{ const t=__t; t.saveGame(); const k=t.latestSaveKey(); return __t.decodeSave(localStorage.getItem(k)).world.lava.torch===undefined }"); chk('torches not saved', r)
         # quality low runs, no errors; frames
         for q in ['low','mid','high']:
             await E("(q)=>__t.setQuality(q)", q)

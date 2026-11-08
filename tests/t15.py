@@ -51,10 +51,10 @@ async def main():
         chk('chain walk ends with won',r[-1]=='won' and r[-2]=='treasure:true' and not any('STUCK' in str(x) or 'CLOSED' in str(x) or 'failed' in str(x) or x.endswith('-') for x in r),r[-4:])
         # миграция старого сохранения
         await pg.evaluate("()=>{__t.beginNewGame()}"); await pg.wait_for_timeout(200)
-        r=await E("""()=>{ __t.player.level=7; __t.player.gold=777; __t.goTo('dungeon3',100,100,''); __t.saveGame(); const k=__t.latestSaveKey(); const d=JSON.parse(localStorage.getItem(k));
+        r=await E("""()=>{ __t.player.level=7; __t.player.gold=777; __t.goTo('dungeon3',100,100,''); __t.saveGame(); const k=__t.latestSaveKey(); const d=__t.decodeSave(localStorage.getItem(k));
             for(const id of Object.keys(d.world)) if(!['overworld','town','house1','house2','dungeon1','dungeon3','lava','desert','ice','grave','jungle'].includes(id)) delete d.world[id];
             d.world.dungeon2=d.world.dungeon1; delete d.world.lair1; d.world.overworld.entrances.forEach(e=>{ if(e.dungeon==='lair1') e.dungeon='dungeon1'; });
-            localStorage.setItem(k,JSON.stringify(d)); const res=__t.loadGame(k);
+            d.v=1; localStorage.setItem(k,JSON.stringify(d)); const res=__t.loadGame(k);
             return [res,__t.locId,__t.player.level,__t.player.gold,!!__t.world.lair1&&!!__t.world.city&&!!__t.world.manor&&!__t.world.dungeon2,__t.world.overworld.entrances.map(e=>e.dungeon).join(','), Math.round(__t.player.x/32)+','+Math.round(__t.player.y/32)] }""")
         chk('legacy save migrates: hero kept, back on surface',r[0]==True and r[1]=='overworld' and r[2]==7 and r[3]==777 and r[4]==True and r[5]=='lair1,town,secret1,secret2,deep,sky,wild',r)
         # сохранение/загрузка нового мира с лairами

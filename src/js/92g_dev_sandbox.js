@@ -33,7 +33,7 @@ function drawPerf(){
     ['Карта '+loc.width+'×'+loc.height+' · '+currentLocId+(loc.wild ? ' '+loc.wild.rx+','+loc.wild.ry : ''), '#e8dcc0'],
     ['Качество: '+(QLEVELS[quality] ? QLEVELS[quality].name : quality)+(autoQ ? ' (авто)' : '')+' · отряд '+c.party, '#e8dcc0']
   ];
-  const x = UI.l+8, w = 214, lh = 14, h = lines.length*lh+10, y = Math.max(UI.t+212, Math.round(canvas.height*0.45)-h/2);
+  const x = UI.l+8, w = 214, lh = 14, h = lines.length*lh+10, y = Math.max(UI.t+hudH()+26, Math.round(canvas.height*0.45)-h/2);
   ctx.save(); ctx.fillStyle = 'rgba(8,10,14,0.72)'; ctx.fillRect(x, y, w, h); ctx.strokeStyle = 'rgba(160,200,255,0.35)'; ctx.lineWidth = 1; ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
   ctx.font = '11px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   lines.forEach((l,i)=>{ ctx.fillStyle = l[1]; ctx.fillText(l[0], x+6, y+5+i*lh); });
@@ -57,7 +57,7 @@ function devTick(dt){
 function drawSandboxTag(){
   if(!sandboxOn() || gameState==='start') return;
   ctx.save(); ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-  const t = '🧪 ПЕСОЧНИЦА', w = ctx.measureText(t).width+14, x = UI.l+10, y = UI.t+188;
+  const t = '🧪 ПЕСОЧНИЦА', w = ctx.measureText(t).width+14, x = UI.l+10, y = UI.t+hudH()+2;
   ctx.fillStyle = 'rgba(60,20,90,0.75)'; ctx.fillRect(x, y, w, 16); ctx.fillStyle = '#e8c8ff'; ctx.fillText(t, x+7, y+2); ctx.restore();
 }
 const sandboxScreen = document.createElement('div');

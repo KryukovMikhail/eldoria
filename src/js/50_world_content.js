@@ -630,7 +630,7 @@ function goTo(locId, x, y, message){
   loc = world[locId];
   // большие карты кешируются в крупные холсты: при уходе на другой большой уровень освобождаем память (важно для iOS)
   if(prevLoc && prevLoc!==loc && loc.width*loc.height>=2000){
-    for(const m of [groundLayers, dungeonLayers, waterLayers]){ const c = m.get(prevLoc); if(c){ if(c.getContext){ c.width = 1; c.height = 1; } m.delete(prevLoc); } }
+    for(const m of [groundLayers, dungeonLayers, waterLayers]){ const c = m.get(prevLoc); if(c){ if(c.getContext){ c.width = 1; c.height = 1; } else if(c.dispose) c.dispose(); m.delete(prevLoc); } }
   }
   player.x = x; player.y = y;
   transitionCooldown = 700;

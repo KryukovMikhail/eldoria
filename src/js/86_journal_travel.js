@@ -84,7 +84,7 @@ function trackPoint(){
   if(s.loc===currentLocId && s.x!==undefined) return {x:s.x, y:s.y, label:s.label};
   if(s.loc===currentLocId){ return null; }
   const r = routeInfo(s.loc); if(!r) return null;
-  return {x:r.first.x, y:r.first.y, label:'→ '+locLabel(r.first.to)};
+  return {x:r.first.x, y:r.first.y, label:locLabel(r.first.to)};   // направление показывает сама стрелка
 }
 function drawTrackArrow(camX, camY){
   if(gameState!=='playing') return;
@@ -100,7 +100,11 @@ function drawTrackArrow(camX, camY){
   } else {
     const cx = W/2, cy = H/2, dx = px-cx, dy = py-cy;
     const k = Math.min((cx-m-UI.r)/Math.max(Math.abs(dx),1e-6), (cy-m-UI.b)/Math.max(Math.abs(dy),1e-6));
-    const ax = cx+dx*k, ay = cy+dy*k, pulse = 1+Math.sin(t*5)*0.12;
+    let ax = cx+dx*k, ay = cy+dy*k;
+    // не заезжать на панель героя и миникарту: стрелку сдвигаем по тому же лучу ниже них
+    const topBand = UI.t+hudH()+34, leftBand = UI.l+hudW()+24+(loc.type==='overworld' ? minimapSize() : loc.wild ? 7*13 : 0);
+    if(dy<0 && ay<topBand && ax<leftBand){ const k2 = (topBand-cy)/dy; if(k2>0 && k2<k){ ax = cx+dx*k2; ay = topBand; } }
+    const pulse = 1+Math.sin(t*5)*0.12;
     ctx.translate(ax,ay); ctx.rotate(Math.atan2(dy,dx)); ctx.scale(pulse,pulse);
     ctx.fillStyle = '#ffd34a'; ctx.strokeStyle = '#3a2a06'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-8,-10); ctx.lineTo(-3,0); ctx.lineTo(-8,10); ctx.closePath(); ctx.fill(); ctx.stroke();
