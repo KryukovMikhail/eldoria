@@ -1,4 +1,4 @@
-# Легенды Эльдории
+# The Legend of Eldoria
 
 2D RPG на Canvas в одном файле `index.html` (играть: https://kryukovmikhail.github.io/eldoria/).
 Работает на десктопе, iOS и Android, устанавливается как PWA.

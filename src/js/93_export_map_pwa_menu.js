@@ -10,7 +10,7 @@ function exportSaves(){
   try{
     const file = new File([blob], name, {type:'application/json'});
     if(isTouchDevice && navigator.canShare && navigator.canShare({files:[file]})){
-      navigator.share({files:[file], title:'Сохранения Легенд Эльдории'}).then(()=>renderSaves('Файл передан: '+name), ()=>renderSaves('Отправка отменена.'));
+      navigator.share({files:[file], title:'Сохранения The Legend of Eldoria'}).then(()=>renderSaves('Файл передан: '+name), ()=>renderSaves('Отправка отменена.'));
       return;
     }
   }catch(e){}
@@ -23,7 +23,7 @@ function importSaves(file){
   rd.onerror = ()=>renderSaves('Не удалось прочитать файл.');
   rd.onload = ()=>{
     let b; try{ b = JSON.parse(rd.result); }catch(e){ renderSaves('Файл повреждён: это не файл сохранений.'); return; }
-    if(!b || b.format!=='eldoria-saves' || !b.saves){ renderSaves('Это не файл сохранений Легенд Эльдории.'); return; }
+    if(!b || b.format!=='eldoria-saves' || !b.saves){ renderSaves('Это не файл сохранений The Legend of Eldoria.'); return; }
     const allowed = new Set([SAVE_KEY, ...SLOT_KEYS]); let ok = 0, bad = 0;
     for(const k of Object.keys(b.saves)){
       if(!allowed.has(k)){ bad++; continue; }

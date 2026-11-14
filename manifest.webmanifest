@@ -1,6 +1,6 @@
 {
-  "name": "Легенды Эльдории",
-  "short_name": "Эльдория",
+  "name": "The Legend of Eldoria",
+  "short_name": "Eldoria",
   "description": "2D RPG: логова боссов, подземелья, пустыни и льды",
   "start_url": "./",
   "scope": "./",

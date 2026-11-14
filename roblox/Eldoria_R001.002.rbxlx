@@ -1,8 +1,8 @@
-<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4"><External>null</External><External>nil</External><Item class="Workspace" referent="RBX00000004"><Properties><string name="Name">Workspace</string></Properties></Item><Item class="Players" referent="RBX00000005"><Properties><string name="Name">Players</string><bool name="CharacterAutoLoads">false</bool></Properties></Item><Item class="Lighting" referent="RBX00000006"><Properties><string name="Name">Lighting</string><token name="Technology">4</token><bool name="GlobalShadows">true</bool></Properties></Item><Item class="ReplicatedStorage" referent="RBX00000009"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX00000008"><Properties><string name="Name">Eldoria</string></Properties><Item class="ModuleScript" referent="RBX00000007"><Properties><string name="Name">Config</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Хроники Эльдории для Roblox: общие настройки (сервер и клиент)
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4"><External>null</External><External>nil</External><Item class="Workspace" referent="RBX00000004"><Properties><string name="Name">Workspace</string></Properties></Item><Item class="Players" referent="RBX00000005"><Properties><string name="Name">Players</string><bool name="CharacterAutoLoads">false</bool></Properties></Item><Item class="Lighting" referent="RBX00000006"><Properties><string name="Name">Lighting</string><token name="Technology">4</token><bool name="GlobalShadows">true</bool></Properties></Item><Item class="ReplicatedStorage" referent="RBX00000009"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX00000008"><Properties><string name="Name">Eldoria</string></Properties><Item class="ModuleScript" referent="RBX00000007"><Properties><string name="Name">Config</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- The Legend of Eldoria для Roblox: общие настройки (сервер и клиент)
 local Config = {}
 
-Config.BUILD = "R001.001"
-Config.TITLE = "Хроники Эльдории"
+Config.BUILD = "R001.002"
+Config.TITLE = "The Legend of Eldoria"
 
 -- Мир
 Config.CELL = 8            -- размер клетки карты в студах
@@ -85,7 +85,7 @@ Config.BOSS_TAUNT = "Мортракс: «Ещё один глупец пришё
 Config.BOSS_LORE = "Мортракс продал душу Эфирию ради вечной жизни. Не стойте на месте — он бьёт по площади, а раненый зовёт скелетов."
 
 return Config
-]]></ProtectedString></Properties></Item></Item></Item><Item class="ServerScriptService" referent="RBX0000000B"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX0000000A"><Properties><string name="Name">EldoriaServer</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Хроники Эльдории для Roblox — главный серверный скрипт
+]]></ProtectedString></Properties></Item></Item></Item><Item class="ServerScriptService" referent="RBX0000000B"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX0000000A"><Properties><string name="Name">EldoriaServer</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- The Legend of Eldoria для Roblox — главный серверный скрипт
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
@@ -902,7 +902,7 @@ task.spawn(function()
 	end
 end)
 
-print("Хроники Эльдории " .. Config.BUILD .. ": мир готов")
+print("The Legend of Eldoria " .. Config.BUILD .. ": мир готов")
 ]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000001"><Properties><string name="Name">Enemies</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Враги: появление, поведение, урон, смерть, снаряды и удары босса по площади
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -2482,7 +2482,7 @@ function WorldGen.buildLair(folder)
 end
 
 return WorldGen
-]]></ProtectedString></Properties></Item></Item></Item><Item class="StarterPlayer" referent="RBX00000010"><Properties><string name="Name">StarterPlayer</string><float name="CameraMaxZoomDistance">60</float></Properties><Item class="StarterPlayerScripts" referent="RBX0000000D"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX0000000C"><Properties><string name="Name">EldoriaClient</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- Хроники Эльдории для Roblox — клиент: интерфейс, управление, эффекты
+]]></ProtectedString></Properties></Item></Item></Item><Item class="StarterPlayer" referent="RBX00000010"><Properties><string name="Name">StarterPlayer</string><float name="CameraMaxZoomDistance">60</float></Properties><Item class="StarterPlayerScripts" referent="RBX0000000D"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX0000000C"><Properties><string name="Name">EldoriaClient</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[-- The Legend of Eldoria для Roblox — клиент: интерфейс, управление, эффекты
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")

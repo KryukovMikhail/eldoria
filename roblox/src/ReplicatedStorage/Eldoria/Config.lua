@@ -1,8 +1,8 @@
--- Хроники Эльдории для Roblox: общие настройки (сервер и клиент)
+-- The Legend of Eldoria для Roblox: общие настройки (сервер и клиент)
 local Config = {}
 
-Config.BUILD = "R001.001"
-Config.TITLE = "Хроники Эльдории"
+Config.BUILD = "R001.002"
+Config.TITLE = "The Legend of Eldoria"
 
 -- Мир
 Config.CELL = 8            -- размер клетки карты в студах

@@ -1,11 +1,11 @@
-# Хроники Эльдории для Roblox
+# The Legend of Eldoria для Roblox
 
 3D-версия первой главы игры (вид от третьего лица): Оверворлд, лавка торговца, задания и логово Мортракса.
-Текущая сборка — **R001.001**.
+Текущая сборка — **R001.002**.
 
 ## Как запустить
 
-1. Скачайте `Eldoria_R001.001.rbxlx` и откройте его двойным щелчком в Roblox Studio.
+1. Скачайте `Eldoria_R001.002.rbxlx` и откройте его двойным щелчком в Roblox Studio.
 2. Нажмите **Play**. Мир строится при запуске, поэтому в режиме редактирования сцена пустая; через 5–10 секунд появится герой.
 3. Чтобы сохранялся прогресс: опубликуйте игру (File → Publish to Roblox) и включите
    Game Settings → Security → **Enable Studio Access to API Services**.
@@ -44,7 +44,7 @@ cd roblox
 python3 tools/luacheck.py src
 python3 tools/globals.py src
 python3 tools/mock/run.py        # прогон игры на макете Roblox, в конце «ОШИБОК В ОБРАБОТЧИКАХ: 0»
-python3 tools/build_rbxlx.py Eldoria_R001.001.rbxlx
+python3 tools/build_rbxlx.py Eldoria_R001.002.rbxlx
 ```
 
 Нужен пакет `liblua5.4-0` (Ubuntu: `sudo apt-get install liblua5.4-0`). При каждом релизе поднимается минорная версия сборки (`Config.BUILD`, R001.0NN).

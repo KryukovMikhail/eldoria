@@ -17,7 +17,7 @@ dlgBtn.addEventListener('click', ()=>{
   if(gameState==='dialog') gameState = 'playing';
   const f = dlgDone; dlgDone = null; if(f) f();
 });
-function newGameWithIntro(){ beginNewGame(); showDialog('Легенды Эльдории', STORY_INTRO, 'В путь!'); }
+function newGameWithIntro(){ beginNewGame(); showDialog('The Legend of Eldoria', STORY_INTRO, 'В путь!'); }
 
 // ---------- ключи и сундуки ----------
 let chestLoot = [];

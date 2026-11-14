@@ -6,13 +6,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Эльдория">
+<meta name="apple-mobile-web-app-title" content="Eldoria">
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%231a140a'/%3E%3Crect%20x='3'%20y='3'%20width='94'%20height='94'%20rx='19'%20fill='none'%20stroke='%235c4415'%20stroke-width='4'/%3E%3Ctext%20x='50'%20y='70'%20font-size='58'%20text-anchor='middle'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
-<title>Легенды Эльдории — 2D RPG</title>
+<title>The Legend of Eldoria — 2D RPG</title>
 <style>
 /*@@CSS@@*/
 </style>
@@ -46,10 +46,45 @@
     <div class="actionBtn skillBtn hidden" id="shieldBtn">🛡</div>
   </div>
 
+  <div id="splash" role="dialog" aria-label="The Legend of Eldoria">
+    <canvas id="splashCv"></canvas>
+    <div id="splashUI">
+      <div class="spEmblem" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="100%" height="100%">
+          <defs>
+            <linearGradient id="spGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".35" stop-color="#e9c46a"/><stop offset=".6" stop-color="#a8701f"/><stop offset=".8" stop-color="#e2b752"/><stop offset="1" stop-color="#fbe7a6"/></linearGradient>
+            <radialGradient id="spDeep" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#1d4f6a"/><stop offset="1" stop-color="#071a26"/></radialGradient>
+            <linearGradient id="spGemA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9ffff"/><stop offset=".5" stop-color="#6ae0e8"/><stop offset="1" stop-color="#1a7f96"/></linearGradient>
+            <linearGradient id="spGemB" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bff7ff"/><stop offset="1" stop-color="#0f5a70"/></linearGradient>
+          </defs>
+          <g class="spRays" stroke="#fff2b0" stroke-linecap="round" opacity=".55">
+            <path d="M60 2V14M60 106V118M2 60H14M106 60H118M19 19L27 27M93 93L101 101M101 19L93 27M27 93L19 101" stroke-width="2.2"/>
+          </g>
+          <circle cx="60" cy="60" r="44" fill="url(#spDeep)" stroke="url(#spGold)" stroke-width="5"/>
+          <circle cx="60" cy="60" r="37.5" fill="none" stroke="#e9c46a" stroke-width="1" stroke-dasharray="2 4.3" opacity=".85"/>
+          <g fill="url(#spGold)"><path d="M60 13l3 5h-6zM60 107l-3-5h6zM13 60l5-3v6zM107 60l-5 3v-6z"/></g>
+          <g class="spGem">
+            <path d="M60 27L80 52L60 93L40 52Z" fill="url(#spGemA)"/>
+            <path d="M60 27L68 52L60 93L52 52Z" fill="url(#spGemB)" opacity=".75"/>
+            <path d="M40 52H80L60 27Z" fill="#dffcff" opacity=".55"/>
+            <path d="M40 52L60 93L52 52Z" fill="#0b4d61" opacity=".45"/>
+            <path d="M60 27L80 52L60 93L40 52Z" fill="none" stroke="#fff8d6" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M48 44l5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".9"/>
+          </g>
+        </svg>
+      </div>
+      <h1 class="spTitle"><span class="l1">The Legend of</span> <span class="l2">Eldoria</span></h1>
+      <svg class="spFlourish" viewBox="0 0 300 20" aria-hidden="true"><path d="M8 10H128M172 10H292" stroke="#e2b752" stroke-width="1.4"/><path d="M128 10q11-9 22 0q11 9 22 0" fill="none" stroke="#e2b752" stroke-width="1.4"/><path d="M150 3l5 7-5 7-5-7z" fill="#6ae0e8" stroke="#fbe7a6" stroke-width="1"/><circle cx="8" cy="10" r="2.2" fill="#e2b752"/><circle cx="292" cy="10" r="2.2" fill="#e2b752"/></svg>
+      <div class="spTag">Сердце Эльдории ждёт своего героя</div>
+      <button id="splashPlay" type="button"><span class="pl1">Играть</span><span class="pl2">Play</span></button>
+    </div>
+    <div id="splashBuild"></div>
+  </div>
+
   <div id="startScreen" class="overlay">
-    <div id="buildTag">сборка D001.049</div>
+    <div id="buildTag">сборка D001.050</div>
     <div class="scroll"><div class="scrollIn">
-    <h2>Легенды Эльдории</h2>
+    <h2>The Legend of Eldoria</h2>
     <div id="introText">
     <p>Огромный открытый мир ждёт вас. Исследуйте леса и равнины, найдите вход в <b>тёмную пещеру</b> — в её глубине есть спуск в логово,
     сражайтесь с волками, скелетами и слизнями, собирайте золото и эликсиры.

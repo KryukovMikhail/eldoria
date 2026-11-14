@@ -49,5 +49,5 @@ jobs:
           done
       - name: Файл .rbxlx собран из src (не забыли пересобрать?)
         run: |
-          python3 tools/build_rbxlx.py Eldoria_R001.001.rbxlx
-          git diff --exit-code -- Eldoria_R001.001.rbxlx || (echo "::error::Запустите python3 tools/build_rbxlx.py и закоммитьте .rbxlx"; exit 1)
+          python3 tools/build_rbxlx.py Eldoria_R001.002.rbxlx
+          git diff --exit-code -- Eldoria_R001.002.rbxlx || (echo "::error::Запустите python3 tools/build_rbxlx.py и закоммитьте .rbxlx"; exit 1)

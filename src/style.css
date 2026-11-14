@@ -192,3 +192,53 @@
 #fireworks { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
 #winScreen > *:not(#fireworks) { position:relative; z-index:1; }
 @media (max-height:520px){ #startScreen #qDesc { display:none; } #startScreen .scroll h2 { font-size:22px; margin:0 0 2px; } }
+
+/* ---------- Заставка The Legend of Eldoria ---------- */
+#updateBar { z-index:80; }
+#splash { position:absolute; inset:0; z-index:70; overflow:hidden; background:#06110b; color:#f6ecd0; transition:opacity .9s ease; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
+#splash.hidden { display:none; }
+#splash.leaving { opacity:0; pointer-events:none; }
+#splash.leaving #splashUI { transform:scale(1.06); filter:brightness(1.6); }
+#splashCv { position:absolute; inset:0; width:100%; height:100%; image-rendering:auto; background:#06110b; }
+#splashUI { position:absolute; top:0; bottom:0; right:max(3%,env(safe-area-inset-right)); width:min(56%,620px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(4px,1.6vh,14px);
+  padding:max(10px,env(safe-area-inset-top)) 8px max(10px,env(safe-area-inset-bottom)); box-sizing:border-box; text-align:center; transition:transform .9s ease, filter .9s ease; }
+#splash .spEmblem { width:clamp(64px,22vh,150px); height:clamp(64px,22vh,150px); filter:drop-shadow(0 0 18px rgba(106,224,232,.55)) drop-shadow(0 6px 10px rgba(0,0,0,.6));
+  opacity:0; transform:scale(.6) rotate(-12deg); animation:spEmblemIn 1.4s cubic-bezier(.2,1.3,.4,1) .5s forwards, spPulse 4s ease-in-out 2s infinite; }
+#splash .spEmblem .spRays { transform-origin:60px 60px; animation:spSpin 40s linear infinite; }
+#splash .spEmblem .spGem { transform-origin:60px 60px; animation:spGem 3.2s ease-in-out infinite; }
+#splash .spTitle { margin:0; line-height:.9; display:flex; flex-direction:column; align-items:center; font-weight:700;
+  font-family:'Cinzel Decorative','Cinzel','Trajan Pro','Palatino Linotype',Palatino,'Book Antiqua',Georgia,'Times New Roman',serif; }
+#splash .spTitle span { display:block; background-image:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.95) 50%,transparent 58%),linear-gradient(180deg,#fff7d2 0%,#f3d27a 28%,#c48d2a 52%,#83520f 64%,#d9a945 80%,#fff0b4 100%);
+  background-size:260% 100%,100% 100%; background-repeat:no-repeat; background-position:160% 0,0 0; -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 1px 0 #fff3c2) drop-shadow(0 2px 0 #5a3508) drop-shadow(0 7px 12px rgba(0,0,0,.7)); opacity:0; }
+#splash .spTitle .l1 { font-size:clamp(15px,5.2vh,40px); font-style:italic; font-weight:600; letter-spacing:.14em; text-transform:none; margin-bottom:.12em; animation:spRise 1.1s ease 1.3s forwards, spShine 6s ease-in-out 3.2s infinite; }
+#splash .spTitle .l2 { font-size:clamp(40px,17vh,124px); letter-spacing:.07em; text-transform:uppercase; padding:0 .1em; animation:spRise 1.3s ease 1.6s forwards, spShine 6s ease-in-out 3.4s infinite; }
+#splash .spFlourish { width:clamp(170px,46vh,330px); height:auto; opacity:0; animation:spFade 1s ease 2.2s forwards; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+#splash .spTag { font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:clamp(12px,3.4vh,19px); color:#f3e6bf; letter-spacing:.04em; text-shadow:0 1px 3px #000, 0 0 12px rgba(0,0,0,.8); opacity:0; animation:spFade 1s ease 2.5s forwards; }
+#splashPlay { margin-top:clamp(2px,1.5vh,12px); position:relative; cursor:pointer; display:flex; flex-direction:column; align-items:center; line-height:1; min-width:clamp(150px,40vh,230px);
+  padding:clamp(8px,2.2vh,14px) 38px clamp(6px,1.6vh,10px); border-radius:14px; border:2px solid #f0cf78; color:#fff4cc;
+  background:radial-gradient(120% 140% at 50% 0%,#3d6b3b 0%,#1f3d22 55%,#122614 100%);
+  box-shadow:0 0 0 3px #3a2508, 0 0 0 5px #c79a3c, 0 8px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,240,190,.45), 0 0 26px rgba(240,207,120,.35);
+  font-family:'Cinzel','Trajan Pro','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif; opacity:0; transform:translateY(10px);
+  animation:spRise .9s ease 2.9s forwards, spGlow 2.4s ease-in-out 4s infinite; -webkit-tap-highlight-color:transparent; }
+#splashPlay::before, #splashPlay::after { content:'◆'; position:absolute; top:50%; transform:translateY(-50%); color:#6ae0e8; font-size:12px; text-shadow:0 0 6px #6ae0e8; }
+#splashPlay::before { left:14px; } #splashPlay::after { right:14px; }
+#splashPlay .pl1 { font-size:clamp(20px,6vh,32px); font-weight:700; letter-spacing:.12em; text-transform:uppercase; text-shadow:0 2px 0 #3a2508, 0 0 12px rgba(255,220,130,.5); }
+#splashPlay .pl2 { font-size:clamp(9px,2.4vh,12px); letter-spacing:.5em; text-transform:uppercase; color:#e2c77e; margin-top:4px; padding-left:.5em; }
+#splashPlay:hover, #splashPlay:focus-visible { outline:none; filter:brightness(1.15); }
+#splashPlay:active { transform:translateY(2px) scale(.98); }
+#splashBuild { position:absolute; left:max(10px,env(safe-area-inset-left)); bottom:max(6px,env(safe-area-inset-bottom)); font-size:10px; letter-spacing:1px; color:rgba(240,230,200,.55); text-shadow:0 1px 2px #000; }
+#splash.skip * { animation-delay:0s !important; animation-duration:.25s !important; }
+#splash.skip .spEmblem { animation:spEmblemIn .25s ease forwards, spPulse 4s ease-in-out .3s infinite !important; }
+@keyframes spEmblemIn { to { opacity:1; transform:scale(1) rotate(0); } }
+@keyframes spPulse { 0%,100% { filter:drop-shadow(0 0 14px rgba(106,224,232,.45)) drop-shadow(0 6px 10px rgba(0,0,0,.6)); } 50% { filter:drop-shadow(0 0 30px rgba(140,240,248,.85)) drop-shadow(0 6px 10px rgba(0,0,0,.6)); } }
+@keyframes spSpin { to { transform:rotate(360deg); } }
+@keyframes spGem { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
+@keyframes spRise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+@keyframes spFade { to { opacity:1; } }
+@keyframes spShine { 0%,70% { background-position:160% 0,0 0; } 100% { background-position:-60% 0,0 0; } }
+@keyframes spGlow { 0%,100% { box-shadow:0 0 0 3px #3a2508, 0 0 0 5px #c79a3c, 0 8px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,240,190,.45), 0 0 18px rgba(240,207,120,.25); } 50% { box-shadow:0 0 0 3px #3a2508, 0 0 0 5px #e9c46a, 0 8px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,240,190,.45), 0 0 36px rgba(255,220,130,.6); } }
+/* узкий экран (телефон вертикально): название по центру сверху, лес снизу */
+@media (max-aspect-ratio: 1/1){ #splashUI { left:0; right:0; width:auto; justify-content:flex-start; padding-top:max(9vh,env(safe-area-inset-top)); }
+  #splash .spTitle .l2 { font-size:clamp(40px,14vw,110px); } #splash .spTitle .l1 { font-size:clamp(15px,5vw,34px); } #splash .spEmblem { width:clamp(70px,24vw,140px); height:clamp(70px,24vw,140px); } }
+@media (prefers-reduced-motion: reduce){ #splash .spEmblem .spRays, #splash .spEmblem .spGem { animation:none; } }

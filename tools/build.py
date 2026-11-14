@@ -18,6 +18,10 @@ def build(test=False):
         marker = 'requestAnimationFrame(loop);\n})();'
         assert body.count(marker) == 1, 'не нашёл точку вставки тестового хука'
         body = body.replace(marker, hook)
+    if test:
+        # в тестовой сборке заставка не показывается (тесты сразу работают с меню); ?splash в адресе её включает
+        assert '<html lang="ru">' in tpl
+        tpl = tpl.replace('<html lang="ru">', '<html lang="ru" data-test="1">', 1)
     assert '/*@@CSS@@*/' in tpl and '/*@@JS@@*/' in tpl
     return tpl.replace('/*@@CSS@@*/', css).replace('/*@@JS@@*/', body)
 

@@ -1,4 +1,4 @@
--- Хроники Эльдории для Roblox — главный серверный скрипт
+-- The Legend of Eldoria для Roblox — главный серверный скрипт
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
@@ -815,4 +815,4 @@ task.spawn(function()
 	end
 end)
 
-print("Хроники Эльдории " .. Config.BUILD .. ": мир готов")
+print("The Legend of Eldoria " .. Config.BUILD .. ": мир готов")

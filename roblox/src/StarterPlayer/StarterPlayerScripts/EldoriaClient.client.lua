@@ -1,4 +1,4 @@
--- Хроники Эльдории для Roblox — клиент: интерфейс, управление, эффекты
+-- The Legend of Eldoria для Roblox — клиент: интерфейс, управление, эффекты
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
